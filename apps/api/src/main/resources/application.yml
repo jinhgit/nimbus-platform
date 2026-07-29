@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: nimbus-api
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:nimbus}
+    username: ${DB_USER:nimbus}
+    password: ${DB_PASSWORD:nimbus}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  jackson:
+    property-naming-strategy: LOWER_CAMEL_CASE
+    default-property-inclusion: non_null
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+nimbus:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+
+logging:
+  level:
+    root: INFO
+    io.nimbus.platform: DEBUG
+
+# OAuth placeholders (API-01 구현 시 실제 값 주입)
+# spring.security.oauth2.client.registration.github.client-id=
+# spring.security.oauth2.client.registration.github.client-secret=

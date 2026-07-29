@@ -52,6 +52,7 @@
 |------|-------|
 | [00-System-Overview.md](architecture/00-System-Overview.md) | End-to-end system |
 | [01-Domain-Map.md](architecture/01-Domain-Map.md) | Domains & Aggregates |
+| [02-Monorepo-Layout.md](architecture/02-Monorepo-Layout.md) | 실제 monorepo 코드 배치 |
 
 ---
 

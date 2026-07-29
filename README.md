@@ -1,129 +1,147 @@
 # Nimbus Platform
 
-> **AI Native Internal Developer Platform (IDP)**
+AI Native Internal Developer Platform (IDP).
 
-Spotify Backstage + Port + Humanitec + GitHub + ArgoCD + AI Ops 를 하나의 플랫폼으로 통합하는 Platform Engineering SaaS 설계 문서 저장소입니다.
+개발자가 Kubernetes / Helm / Terraform을 직접 다루지 않아도 서비스를 만들고 배포할 수 있는 Platform Engineering Portal을 목표로 한다.  
+설계 문서와 monorepo 뼈대가 같이 들어 있다.
 
-**이 프로젝트는 Backstage 클론이 아닙니다.**  
-목표는 **AI Native Platform Engineering Portal** 을 만드는 것입니다.
-
----
-
-## Mission
-
-> **Empower Developers, Automate Infrastructure.**
-
-개발자가 인프라를 배우기 전에 서비스를 만들 수 있도록 한다.
-
-## Vision
-
-> 개발자의 생산성을 극대화하는 **AI Platform Engineer**
-
-장기 확장: Platform Engineering · GitOps · AI Ops · FinOps · Multi Cloud
+> Backstage 클론이 아니라, Backstage + Port + Humanitec + GitHub + ArgoCD + AI Ops 를 한 플랫폼으로 묶는 방향.
 
 ---
 
-## Core Philosophy
+## 현재 상태
 
-| 원칙 | 설명 |
-|------|------|
-| **Developer First** | Infrastructure First 가 아닌 DX 우선 |
-| **Zero YAML** | 사용자는 YAML을 직접 작성하지 않음 |
-| **AI First** | Platform Engineer / SRE / DevOps 역할의 AI Agent |
-| **GitOps First** | Terraform → GitOps Repo → ArgoCD → Kubernetes |
-| **One Click Deploy** | Service Wizard 기반 오케스트레이션 |
+**Phase 0 — Foundation (뼈대)**
+
+- monorepo 구조 (`apps/api`, `apps/web`, `docs`)
+- Spring Boot API 스켈레톤 + health endpoint
+- Next.js 웹 스켈레톤 (다크 테마 홈 / dashboard placeholder)
+- Docker Compose (PostgreSQL 16, Redis 7)
+- PRD / API Engineering Spec 문서
+
+아직 구현 전: OAuth, Wizard, Provision, GitHub Adapter 등 (docs 참고)
 
 ---
 
-## Domain Hierarchy
+## 구조
 
 ```text
-Workspace
-  └── Project          (비즈니스 컨텍스트)
-        └── Service    (배포 단위 애플리케이션)
-              └── Environment  (DEV / STAGE / PRODUCTION)
-                    └── Deployment
+.
+├── apps/
+│   ├── api/          # Spring Boot (Java 21)
+│   └── web/          # Next.js 15 (TypeScript)
+├── docs/
+│   ├── prd/          # PRD v1.1 ~ v1.5D
+│   ├── api/          # API-01 ~ API-05 명세
+│   └── architecture/
+├── docker-compose.yml
+├── Makefile
+└── .env.example
 ```
+
+### API 패키지 (도메인 뼈대)
 
 ```text
-Service Catalog → Blueprint → Service Wizard → Provisioning (Saga)
-  → GitHub · Terraform · Helm · ArgoCD · Kubernetes
+io.nimbus.platform
+  common/     # ApiResponse, exception, config
+  health/
+  auth/       # API-01
+  workspace/  # API-02
+  project/    # API-03
+  catalog/    # API-03-05
+  wizard/     # API-04-01
+  ai/         # API-04-02
+  provision/  # API-04-03
+  github/     # API-05-01
 ```
 
 ---
 
-## Document Map
+## 빠른 시작
 
-### PRD (Product Requirements)
+### 1. 인프라
 
-| 문서 | 설명 |
-|------|------|
-| [PRD v1.1](docs/prd/PRD-v1.1-Project-Overview.md) | Overview, Vision, Epic, IA, Architecture, MVP |
-| [PRD v1.2](docs/prd/PRD-v1.2-Functional-Specification.md) | Portal, Auth, Wizard, GitHub, CI/CD, Job, Audit |
-| [PRD v1.3](docs/prd/PRD-v1.3-Infrastructure-Platform.md) | Terraform, Helm, GitOps, ArgoCD, Observability |
-| [PRD v1.4](docs/prd/PRD-v1.4-AI-Native-Platform.md) | AI Agents, Context Engine, Guardrails |
-| [PRD v1.5A](docs/prd/PRD-v1.5A-Database-Design.md) | PostgreSQL ERD, Redis, Soft Delete |
-| [PRD v1.5C](docs/prd/PRD-v1.5C-Frontend-Design.md) | Next.js UI/UX, DX First, Component System |
-| [PRD v1.5D](docs/prd/PRD-v1.5D-Engineering-Roadmap.md) | 16-week plan, Sprint, KPI, DoD |
+```bash
+docker compose up -d
+# postgres :5432  /  redis :6379
+```
 
-### API Engineering Specs (구현 가능 수준)
+### 2. API
 
-| 문서 | 설명 |
-|------|------|
-| [API-01 Authentication](docs/api/API-01-Authentication.md) | OAuth, JWT, RBAC, Session |
-| [API-02 Workspace](docs/api/API-02-Workspace.md) | Team, Member, Invite, Role |
-| [API-03-01 Project Core](docs/api/API-03-01-Project-Core.md) | Project CRUD, Archive, Clone, Favorite |
-| [API-03-02 Environment](docs/api/API-03-02-Environment.md) | Cluster, Namespace, Promote, GitOps |
-| [API-03-03 Variable & Secret](docs/api/API-03-03-Variable-Secret.md) | ConfigMap, Encryption, Rotation, Sync |
-| [API-03-04 Project Metadata](docs/api/API-03-04-Project-Metadata.md) | Label, Tag, Annotation, AI Metadata |
-| [API-03-05 Service Catalog](docs/api/API-03-05-Service-Catalog.md) | Golden Path, Blueprint, Template |
-| [API-04-01 Service Wizard](docs/api/API-04-01-Service-Wizard-Core.md) | Workflow Engine, 7-step Wizard |
-| [API-04-02 AI Recommendation](docs/api/API-04-02-AI-Recommendation.md) | Decision Engine, Context Builder |
-| [API-04-03 Provisioning](docs/api/API-04-03-Provisioning-Orchestration.md) | Saga, Retry, Rollback, WebSocket |
-| [API-05-01 GitHub Integration](docs/api/API-05-01-GitHub-Integration.md) | SCM Provider, Repo, Actions, Webhook |
+```bash
+cd apps/api
+./gradlew bootRun --args='--spring.profiles.active=local'
+# http://localhost:8080/api/v1/health
+```
 
-### Architecture
+### 3. Web
 
-| 문서 | 설명 |
-|------|------|
-| [System Overview](docs/architecture/00-System-Overview.md) | 전체 구조, 흐름, 기술 스택 요약 |
-| [Domain Map](docs/architecture/01-Domain-Map.md) | 도메인·Aggregate·이벤트 맵 |
+```bash
+cd apps/web
+cp .env.example .env.local   # 필요 시
+npm install --cache ./.npm-cache   # 로컬 캐시 이슈 있을 때
+npm run dev
+# http://localhost:3000
+```
+
+또는 루트에서:
+
+```bash
+make up
+make api    # 별도 터미널
+make web    # 별도 터미널
+```
 
 ---
 
-## Target Stack (요약)
+## 스택
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 15, TypeScript, shadcn/ui, Tailwind, Zustand, TanStack Query |
-| Backend | Java 21, Spring Boot 3.5, Spring Security, JPA |
-| Data | PostgreSQL 16, Redis |
-| Infra | Terraform, Helm, ArgoCD, Amazon EKS (MVP: k3d/kind) |
-| SCM | GitHub (GitProvider 추상화) |
-| Observability | Prometheus, Grafana, Loki |
-| AI | Gemini / Groq / OpenRouter / Ollama (AIProvider 어댑터) |
+| Layer | 기술 |
+|-------|------|
+| Web | Next.js 15, TypeScript, Tailwind |
+| API | Java 21, Spring Boot 4, Security, JPA, Redis |
+| DB | PostgreSQL 16 |
+| Cache | Redis 7 |
+| Docs | PRD + Engineering API Spec (`docs/`) |
+
+Spring Boot는 start.spring.io 기준으로 **4.0.x** 를 사용한다. (초기 PRD의 3.5 대신 현재 호환 버전)
 
 ---
 
-## KPI (v1)
+## 문서
 
-| 항목 | 목표 |
+전체 인덱스: [docs/INDEX.md](docs/INDEX.md)
+
+| 영역 | 경로 |
 |------|------|
-| 서비스 생성 시간 | ≤ 1분 |
-| Repository 생성 | ≤ 30초 |
-| 배포 성공률 | ≥ 95% |
-| AI Architecture Review | ≤ 5초 |
-| Wizard Step | ≤ 6~7 |
-| YAML 직접 작성 | 0줄 |
+| PRD | [docs/prd/](docs/prd/) |
+| API Spec | [docs/api/](docs/api/) |
+| Architecture | [docs/architecture/](docs/architecture/) |
 
 ---
 
-## Author
+## 로드맵 (요약)
 
-Nasuyu Yu
+1. Auth (GitHub OAuth + JWT)
+2. Workspace / Project
+3. Service Wizard + Provision Job
+4. GitHub Integration
+5. AI Recommendation
+6. Observability 연동
+
+상세: [PRD v1.5D Engineering Roadmap](docs/prd/PRD-v1.5D-Engineering-Roadmap.md)
+
+---
+
+## 원칙
+
+- Developer First / Zero YAML / GitOps First
+- 긴 작업은 Job + Saga (동기 provision 금지)
+- AI는 채팅이 아니라 Decision Engine
+- 큰 기능 단위마다 문서 갱신 + commit/push
 
 ---
 
 ## License
 
-Private personal project documentation. All rights reserved unless otherwise noted.
+Private personal project. All rights reserved unless otherwise noted.

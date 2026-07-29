@@ -20,6 +20,7 @@ credentials*
 
 # Build
 node_modules/
+.npm-cache/
 dist/
 build/
 target/
@@ -27,6 +28,10 @@ target/
 out/
 .next/
 coverage/
+*.log
+
+# Workspace
+.workspace-fix
 
 # Logs
 *.log

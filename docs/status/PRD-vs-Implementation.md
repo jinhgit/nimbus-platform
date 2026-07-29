@@ -144,7 +144,7 @@
 | API-03-05 Catalog | Template, Blueprint | 🔶 (시드+조회 중심) |
 | API-04-01 Wizard | Workflow | ✅ 핵심 |
 | API-04-02 AI | Decision Engine | 🔶 rule-engine |
-| API-04-03 Provision | Saga, Rollback | 🔶 Async steps, 보상 약함 |
+| API-04-03 Provision | Saga, Rollback, Retry | ✅ Sprint C (step DB · compensate log · retry) |
 | API-05-01 GitHub | SCM Provider | 🔶 OAuth/PAT/Repo 생성 |
 
 ---
@@ -179,7 +179,7 @@ DEMO-SCENARIO 기준 핵심 플로우는 **구현됨**.
 4. **Environment 도메인** — ✅ Sprint A  
 5. **Environment Promote** — ✅ Sprint B (상태 전이 + config 복사; GitOps 실 PR 후속)  
 6. **Variable / Secret** — ✅ Sprint B (AES · 마스킹 · Reveal audit; GH Sync 후속)  
-7. **Provision Saga 강화** — Step 상태 DB, 실패 시 보상 로그, Retry API → **Sprint C**  
+7. **Provision Saga 강화** — ✅ Sprint C (step DB · compensate · retry · 권한)  
 8. **ArgoCD Application 실연동** (클러스터에 Argo 있는 환경 전제)
 
 ### P2 — 품질·관측·AI
@@ -207,8 +207,9 @@ DEMO-SCENARIO 기준 핵심 플로우는 **구현됨**.
 | Audit Log · UI · application-prod | ✅ |
 | **Sprint A: Environment 도메인·API·Service Detail·Audit** | ✅ |
 | **Sprint B: Variable/Secret + Promote + Audit** | ✅ |
+| **Sprint C: Provision Saga · Retry · 권한** | ✅ |
 
-**다음 (Sprint C):** Provision Saga 강화 + 테스트/권한 다듬기
+**다음:** ArgoCD 실연동 / OpenAPI·E2E / Incident AI (P2)
 
 ---
 

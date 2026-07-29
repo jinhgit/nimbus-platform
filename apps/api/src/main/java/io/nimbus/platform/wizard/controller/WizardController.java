@@ -4,6 +4,7 @@ import io.nimbus.platform.ai.dto.AiDtos;
 import io.nimbus.platform.auth.security.NimbusPrincipal;
 import io.nimbus.platform.auth.security.SecurityUtils;
 import io.nimbus.platform.common.api.ApiResponse;
+import io.nimbus.platform.provision.dto.ProvisionDtos;
 import io.nimbus.platform.wizard.dto.WizardDtos;
 import io.nimbus.platform.wizard.service.WizardService;
 import jakarta.validation.Valid;
@@ -88,6 +89,24 @@ public class WizardController {
     public ApiResponse<WizardDtos.WizardResponse> cancel(@PathVariable UUID wizardId) {
         NimbusPrincipal principal = SecurityUtils.requirePrincipal();
         return ApiResponse.ok(wizardService.cancel(principal, wizardId));
+    }
+
+    @PostMapping("/{wizardId}/retry")
+    public ApiResponse<WizardDtos.ExecuteResponse> retry(@PathVariable UUID wizardId) {
+        NimbusPrincipal principal = SecurityUtils.requirePrincipal();
+        return ApiResponse.ok(wizardService.retry(principal, wizardId));
+    }
+
+    @GetMapping("/{wizardId}/saga")
+    public ApiResponse<ProvisionDtos.SagaResponse> latestSaga(@PathVariable UUID wizardId) {
+        NimbusPrincipal principal = SecurityUtils.requirePrincipal();
+        return ApiResponse.ok(wizardService.latestSaga(principal, wizardId));
+    }
+
+    @GetMapping("/{wizardId}/sagas")
+    public ApiResponse<List<ProvisionDtos.SagaResponse>> listSagas(@PathVariable UUID wizardId) {
+        NimbusPrincipal principal = SecurityUtils.requirePrincipal();
+        return ApiResponse.ok(wizardService.listSagas(principal, wizardId));
     }
 
     @GetMapping("/{wizardId}/logs")

@@ -11,14 +11,17 @@ import {
   fetchProjects,
   fetchMe,
   fetchService,
+  fetchWizardSaga,
   getWizard,
   previewWizard,
   recommendWizard,
+  retryWizard,
   updateWizard,
   type AiRecommendation,
   type AppService,
   type CatalogTemplate,
   type Project,
+  type ProvisionSaga,
   type Wizard,
   type WizardPreview,
 } from "@/lib/api";
@@ -60,6 +63,7 @@ export default function WizardPage() {
   const [githubConnected, setGithubConnected] = useState(false);
   const [k8sAvailable, setK8sAvailable] = useState(false);
   const [createdService, setCreatedService] = useState<AppService | null>(null);
+  const [saga, setSaga] = useState<ProvisionSaga | null>(null);
 
   useEffect(() => {
     fetchMe().then(async (me) => {
@@ -87,18 +91,22 @@ export default function WizardPage() {
 
   useEffect(() => {
     if (!wizard || step !== 5) return;
-    if (wizard.status === "COMPLETED" || wizard.status === "FAILED") return;
+    if (wizard.status === "COMPLETED") return;
     const id = setInterval(async () => {
-      const res = await getWizard(wizard.id);
+      const [res, s] = await Promise.all([
+        getWizard(wizard.id),
+        fetchWizardSaga(wizard.id),
+      ]);
       if (res.success && res.data) {
         setWizard(res.data);
         if (res.data.status === "COMPLETED") {
           setStep(6);
         }
       }
+      if (s.success && s.data) setSaga(s.data);
     }, 500);
     return () => clearInterval(id);
-  }, [wizard, step]);
+  }, [wizard?.id, wizard?.status, step]);
 
   // Complete 단계에서 생성된 서비스 상세 로드
   useEffect(() => {
@@ -468,7 +476,14 @@ export default function WizardPage() {
 
         {step === 5 && wizard && (
           <div className="space-y-4">
-            <h2 className="text-lg font-medium">프로비저닝</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-lg font-medium">프로비저닝 (Saga)</h2>
+              {saga && (
+                <span className="text-xs text-[var(--muted)]">
+                  attempt {saga.attempt} · {saga.status}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-[var(--muted)]">
               {wizard.progressMessage ?? wizard.status}
             </p>
@@ -481,22 +496,80 @@ export default function WizardPage() {
             <p className="text-2xl font-semibold tabular-nums">
               {wizard.progress ?? 0}%
             </p>
-            <ul className="space-y-2 text-sm text-[var(--muted)]">
-              {[
-                { label: "Repository / SCM", at: 20 },
-                { label: "Helm · Terraform · Actions", at: 48 },
-                { label: "로컬 Kubernetes 연결", at: 62 },
-                { label: "Namespace · Deployment", at: 75 },
-                { label: "Pod Ready / Health", at: 100 },
-              ].map((item) => {
-                const done = (wizard.progress ?? 0) >= item.at;
-                return (
-                  <li key={item.label} className={done ? "text-emerald-400" : ""}>
-                    {done ? "✓" : "○"} {item.label}
-                  </li>
-                );
-              })}
-            </ul>
+            {saga?.steps?.length ? (
+              <ul className="space-y-2 text-sm">
+                {saga.steps.map((s) => {
+                  const ok = s.status === "SUCCESS";
+                  const bad = s.status === "FAILED" || s.status === "ROLLED_BACK";
+                  const run = s.status === "RUNNING";
+                  return (
+                    <li
+                      key={s.id}
+                      className={
+                        ok
+                          ? "text-emerald-400"
+                          : bad
+                            ? "text-red-300"
+                            : run
+                              ? "text-sky-300"
+                              : "text-[var(--muted)]"
+                      }
+                    >
+                      <span className="font-mono text-[11px]">{s.stepCode}</span>
+                      {" · "}
+                      {s.name}
+                      {" · "}
+                      <span className="text-xs">{s.status}</span>
+                      {s.message ? (
+                        <span className="mt-0.5 block text-[11px] text-[var(--muted)]">
+                          {s.message}
+                        </span>
+                      ) : null}
+                      {s.compensationMessage ? (
+                        <span className="mt-0.5 block text-[11px] text-amber-300/80">
+                          compensate: {s.compensationMessage}
+                        </span>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="text-sm text-[var(--muted)]">Loading saga steps…</p>
+            )}
+            {wizard.status === "FAILED" && (
+              <div className="rounded-lg border border-red-900/40 bg-red-950/30 p-3">
+                <p className="text-sm text-red-200">
+                  Provision failed
+                  {saga?.failureReason ? `: ${saga.failureReason}` : ""}
+                </p>
+                {saga?.compensationLog && (
+                  <pre className="mt-2 max-h-28 overflow-auto text-[10px] text-[var(--muted)]">
+                    {saga.compensationLog}
+                  </pre>
+                )}
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
+                    setLoading(true);
+                    setError(null);
+                    const res = await retryWizard(wizard.id);
+                    setLoading(false);
+                    if (!res.success) {
+                      setError(res.error?.message ?? "Retry failed");
+                      return;
+                    }
+                    const refreshed = await getWizard(wizard.id);
+                    if (refreshed.data) setWizard(refreshed.data);
+                    setSaga(null);
+                  }}
+                  className="mt-3 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-medium text-white"
+                >
+                  Retry provision
+                </button>
+              </div>
+            )}
           </div>
         )}
 

@@ -20,6 +20,7 @@ public enum AuditAction {
     CREATE_WIZARD,
     UPDATE_WIZARD,
     EXECUTE_WIZARD,
+    RETRY_WIZARD,
     CANCEL_WIZARD,
 
     CONNECT_GITHUB,

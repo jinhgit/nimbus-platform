@@ -193,6 +193,15 @@ public class ServiceWizard extends BaseEntity {
         appendLog("Provision job queued");
     }
 
+    /** FAILED 후 Retry — COMPLETED 서비스가 있으면 재시도 불가 (별도 정책). */
+    public void resetForRetry() {
+        this.status = WizardStatus.PROVISIONING;
+        this.progress = 0;
+        this.progressMessage = "Retry queued";
+        this.serviceId = null;
+        appendLog("Provision retry queued");
+    }
+
     public void updateProgress(int progress, String message, WizardStatus status) {
         this.progress = progress;
         this.progressMessage = message;

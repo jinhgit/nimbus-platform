@@ -421,9 +421,48 @@ export async function validateWizard(wizardId: string) {
 export async function executeWizard(wizardId: string) {
   return apiPost<{
     wizardId: string;
+    jobId: string;
     status: string;
     progress: number;
   }>(`/api/v1/service-wizard/${wizardId}/execute`);
+}
+
+export async function retryWizard(wizardId: string) {
+  return apiPost<{
+    wizardId: string;
+    jobId: string;
+    status: string;
+    progress: number;
+  }>(`/api/v1/service-wizard/${wizardId}/retry`);
+}
+
+export type SagaStep = {
+  id: string;
+  stepCode: string;
+  name: string;
+  stepOrder: number;
+  status: string;
+  message?: string;
+  compensationMessage?: string;
+  startedAt?: string;
+  finishedAt?: string;
+};
+
+export type ProvisionSaga = {
+  id: string;
+  wizardId: string;
+  attempt: number;
+  status: string;
+  currentStepCode?: string;
+  failureReason?: string;
+  compensationLog?: string;
+  startedAt?: string;
+  finishedAt?: string;
+  steps: SagaStep[];
+};
+
+export async function fetchWizardSaga(wizardId: string) {
+  return apiGet<ProvisionSaga>(`/api/v1/service-wizard/${wizardId}/saga`);
 }
 
 export async function wizardLogs(wizardId: string) {

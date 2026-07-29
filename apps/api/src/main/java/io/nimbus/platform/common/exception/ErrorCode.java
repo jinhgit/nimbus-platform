@@ -69,6 +69,10 @@ public enum ErrorCode {
     WIZARD_VALIDATION_FAILED("WIZARD003", "Wizard validation failed", HttpStatus.BAD_REQUEST),
     WIZARD_ALREADY_EXECUTED("WIZARD004", "Wizard already executed", HttpStatus.CONFLICT),
     WIZARD_CANCEL_DENIED("WIZARD005", "Wizard cannot be cancelled", HttpStatus.BAD_REQUEST),
+    WIZARD_RETRY_DENIED("WIZARD006", "Wizard cannot be retried in current state", HttpStatus.BAD_REQUEST),
+    PROVISION_SAGA_NOT_FOUND("PROV001", "Provision saga not found", HttpStatus.NOT_FOUND),
+    PROVISION_STEP_NOT_FOUND("PROV002", "Provision step not found", HttpStatus.NOT_FOUND),
+    PROVISION_FAILED("PROV003", "Provision failed", HttpStatus.BAD_GATEWAY),
 
     // AI
     AI_RECOMMENDATION_FAILED("AI001", "AI recommendation failed", HttpStatus.BAD_GATEWAY),

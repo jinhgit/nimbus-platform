@@ -15,6 +15,7 @@ import io.nimbus.platform.environment.repository.EnvVariableRepository;
 import io.nimbus.platform.environment.repository.ServiceEnvironmentRepository;
 import io.nimbus.platform.github.crypto.TokenCryptoService;
 import io.nimbus.platform.workspace.service.WorkspaceBootstrapService;
+import io.nimbus.platform.workspace.service.WorkspacePermissionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class EnvironmentConfigService {
     private final EnvVariableRepository variableRepository;
     private final EnvSecretRepository secretRepository;
     private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final WorkspacePermissionService workspacePermissionService;
     private final TokenCryptoService tokenCryptoService;
     private final AuditService auditService;
 
@@ -36,6 +38,7 @@ public class EnvironmentConfigService {
             EnvVariableRepository variableRepository,
             EnvSecretRepository secretRepository,
             WorkspaceBootstrapService workspaceBootstrapService,
+            WorkspacePermissionService workspacePermissionService,
             TokenCryptoService tokenCryptoService,
             AuditService auditService
     ) {
@@ -43,6 +46,7 @@ public class EnvironmentConfigService {
         this.variableRepository = variableRepository;
         this.secretRepository = secretRepository;
         this.workspaceBootstrapService = workspaceBootstrapService;
+        this.workspacePermissionService = workspacePermissionService;
         this.tokenCryptoService = tokenCryptoService;
         this.auditService = auditService;
     }
@@ -261,6 +265,7 @@ public class EnvironmentConfigService {
 
     private ServiceEnvironment requireWritableEnv(NimbusPrincipal principal, UUID environmentId) {
         ServiceEnvironment env = requireEnvMember(principal, environmentId);
+        workspacePermissionService.requireMutator(env.getWorkspaceId(), principal.userId());
         if (env.getStatus() == EnvironmentStatus.ARCHIVED) {
             throw new BusinessException(ErrorCode.ENVIRONMENT_ARCHIVED);
         }

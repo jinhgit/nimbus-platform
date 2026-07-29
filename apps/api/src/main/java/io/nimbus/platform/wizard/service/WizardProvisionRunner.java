@@ -2,14 +2,17 @@ package io.nimbus.platform.wizard.service;
 
 import io.nimbus.platform.common.exception.BusinessException;
 import io.nimbus.platform.common.exception.ErrorCode;
+import io.nimbus.platform.environment.service.EnvironmentService;
 import io.nimbus.platform.github.domain.GitRepositoryRecord;
 import io.nimbus.platform.github.repository.GitRepositoryRecordRepository;
 import io.nimbus.platform.github.service.GitHubConnectionService;
 import io.nimbus.platform.github.service.GitHubProvisionService;
 import io.nimbus.platform.k8s.domain.K8sDeploymentRecord;
 import io.nimbus.platform.k8s.service.K8sDeployService;
-import io.nimbus.platform.environment.service.EnvironmentService;
 import io.nimbus.platform.pipeline.service.BuildPipelineService;
+import io.nimbus.platform.provision.domain.ProvisionSaga;
+import io.nimbus.platform.provision.domain.StepCode;
+import io.nimbus.platform.provision.service.ProvisionSagaService;
 import io.nimbus.platform.serviceapp.domain.AppService;
 import io.nimbus.platform.serviceapp.repository.AppServiceRepository;
 import io.nimbus.platform.wizard.domain.ServiceWizard;
@@ -28,9 +31,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.UUID;
 
 /**
- * Provision orchestrator.
- * 1) GitHub 연결 시 실제 Repo 생성
- * 2) 로컬 k3d/kind 가용 시 실배포 (불가 시 시뮬레이션)
+ * Provision orchestrator with persisted Saga steps (Sprint C).
  */
 @Component
 public class WizardProvisionRunner {
@@ -45,6 +46,7 @@ public class WizardProvisionRunner {
     private final K8sDeployService k8sDeployService;
     private final BuildPipelineService buildPipelineService;
     private final EnvironmentService environmentService;
+    private final ProvisionSagaService sagaService;
     private final WizardService wizardService;
     private final ObjectMapper objectMapper;
     private final boolean autoPipelineOnWizard;
@@ -58,6 +60,7 @@ public class WizardProvisionRunner {
             K8sDeployService k8sDeployService,
             BuildPipelineService buildPipelineService,
             EnvironmentService environmentService,
+            ProvisionSagaService sagaService,
             @Lazy WizardService wizardService,
             ObjectMapper objectMapper,
             @Value("${nimbus.pipeline.auto-on-wizard:true}") boolean autoPipelineOnWizard
@@ -70,118 +73,165 @@ public class WizardProvisionRunner {
         this.k8sDeployService = k8sDeployService;
         this.buildPipelineService = buildPipelineService;
         this.environmentService = environmentService;
+        this.sagaService = sagaService;
         this.wizardService = wizardService;
         this.objectMapper = objectMapper;
         this.autoPipelineOnWizard = autoPipelineOnWizard;
     }
 
+    /**
+     * 동기 진입: Saga 생성 후 비동기 실행.
+     */
+    @Transactional
+    public UUID startSaga(ServiceWizard wizard) {
+        ProvisionSaga saga = sagaService.createForWizard(wizard);
+        return saga.getId();
+    }
+
     @Async
-    public void runAsync(UUID wizardId) {
+    public void runAsync(UUID wizardId, UUID sagaId) {
         try {
-            ServiceWizard wizard = wizardRepository.findByIdAndDeletedAtIsNull(wizardId).orElse(null);
+            sagaService.markRunning(sagaId);
+            ServiceWizard wizard = load(wizardId);
             if (wizard == null) {
                 return;
             }
-            boolean githubConnected = connectionService.findActiveEntity(wizard.getCreatedBy()).isPresent();
-            GitRepositoryRecord repo = null;
-
-            if (githubConnected) {
-                repo = runGitHubSteps(wizardId);
-                if (repo == null && isFailed(wizardId)) {
-                    return;
-                }
-            } else {
-                runGitHubSimulation(wizardId);
-            }
-
-            if (isFailed(wizardId) || isCancelled(wizardId)) {
+            if (wizard.getStatus() == WizardStatus.CANCELLED) {
                 return;
             }
 
-            K8sDeploymentRecord deploy = runK8sSteps(wizardId);
+            boolean githubConnected = connectionService.findActiveEntity(wizard.getCreatedBy()).isPresent();
+            GitRepositoryRecord repo = null;
+
+            // SCM_PREPARE
+            stepRun(wizardId, sagaId, StepCode.SCM_PREPARE, "GitHub 연결 확인", 5, WizardStatus.PROVISIONING);
+            sleep(150);
+            if (abort(wizardId)) {
+                return;
+            }
+            sagaService.succeedStep(sagaId, StepCode.SCM_PREPARE,
+                    githubConnected ? "GitHub connected" : "No SCM — simulation path");
+
+            // SCM_REPO
+            stepRun(wizardId, sagaId, StepCode.SCM_REPO,
+                    githubConnected ? "Repository 생성 중 (GitHub API)" : "Repository 생성 (sim)",
+                    20, WizardStatus.PROVISIONING);
+            sleep(200);
+            if (abort(wizardId)) {
+                return;
+            }
+            if (githubConnected) {
+                try {
+                    WizardDtos.PreviewResponse preview = resolvePreview(load(wizardId));
+                    repo = gitHubProvisionService.provisionFromWizard(load(wizardId), preview);
+                    sagaService.succeedStep(sagaId, StepCode.SCM_REPO, "Repo: " + repo.getHtmlUrl());
+                } catch (BusinessException ex) {
+                    if (ex.getErrorCode() == ErrorCode.GITHUB_REPO_EXISTS) {
+                        failSaga(wizardId, sagaId, StepCode.SCM_REPO,
+                                "Repository 이름이 이미 존재합니다: " + wizard.getServiceName());
+                        return;
+                    }
+                    failSaga(wizardId, sagaId, StepCode.SCM_REPO, ex.getMessage());
+                    return;
+                }
+            } else {
+                sleep(250);
+                sagaService.succeedStep(sagaId, StepCode.SCM_REPO, "Simulated repository");
+            }
+
+            // SCM_MANIFESTS
+            stepRun(wizardId, sagaId, StepCode.SCM_MANIFESTS,
+                    githubConnected ? "Helm · Terraform · Actions · Argo 커밋" : "Manifest 생성 (sim)",
+                    45, WizardStatus.PROVISIONING);
+            sleep(300);
+            if (abort(wizardId)) {
+                return;
+            }
+            sagaService.succeedStep(sagaId, StepCode.SCM_MANIFESTS,
+                    githubConnected ? "Manifests committed" : "Manifests simulated");
+
+            // K8S_PREPARE
+            stepRun(wizardId, sagaId, StepCode.K8S_PREPARE,
+                    "로컬 Kubernetes 연결 확인 (k3d/kind)", 62, WizardStatus.DEPLOYING);
+            sleep(150);
+            if (abort(wizardId)) {
+                return;
+            }
+            boolean available = k8sDeployService.isClusterAvailable();
+            sagaService.succeedStep(sagaId, StepCode.K8S_PREPARE,
+                    available ? "Cluster available" : "Cluster unavailable — sim deploy");
+
+            // K8S_DEPLOY
+            stepRun(wizardId, sagaId, StepCode.K8S_DEPLOY,
+                    available ? "Namespace · Deployment 적용" : "클러스터 없음 — K8s 시뮬레이션",
+                    80, WizardStatus.DEPLOYING);
+            sleep(150);
+            if (abort(wizardId)) {
+                return;
+            }
+            K8sDeploymentRecord deploy = k8sDeployService.deployFromWizard(load(wizardId));
+            sagaService.succeedStep(sagaId, StepCode.K8S_DEPLOY,
+                    "Deploy " + deploy.getStatus() + " ns=" + deploy.getNamespaceName());
+
+            // FINALIZE
+            stepRun(wizardId, sagaId, StepCode.FINALIZE, "Service · Environment · Pipeline 확정",
+                    95, WizardStatus.DEPLOYING);
+            if (abort(wizardId)) {
+                return;
+            }
             complete(wizardId, repo, deploy);
+            sagaService.succeedStep(sagaId, StepCode.FINALIZE, "Service ready");
+            sagaService.complete(sagaId);
+            applyProgress(wizardId, 100, "Completed", WizardStatus.COMPLETED);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            fail(wizardId, "Interrupted");
+            failSaga(wizardId, sagaId, null, "Interrupted");
         } catch (Exception e) {
-            log.error("Provision failed for wizard {}", wizardId, e);
-            fail(wizardId, e.getMessage());
+            log.error("Provision failed for wizard {} saga {}", wizardId, sagaId, e);
+            failSaga(wizardId, sagaId, null, e.getMessage() != null ? e.getMessage() : "Unknown error");
         }
     }
 
-    private GitRepositoryRecord runGitHubSteps(UUID wizardId) throws InterruptedException {
-        applyStep(wizardId, "GitHub 연결 확인", 5, WizardStatus.PROVISIONING);
-        sleep(200);
+    private void stepRun(
+            UUID wizardId,
+            UUID sagaId,
+            StepCode code,
+            String message,
+            int progress,
+            WizardStatus status
+    ) {
+        sagaService.startStep(sagaId, code, message);
+        applyProgress(wizardId, progress, message, status);
+    }
 
-        ServiceWizard wizard = load(wizardId);
-        if (wizard == null || wizard.getStatus() == WizardStatus.CANCELLED) {
-            return null;
-        }
-        WizardDtos.PreviewResponse preview = resolvePreview(wizard);
-
-        applyStep(wizardId, "Repository 생성 중 (GitHub API)", 18, WizardStatus.PROVISIONING);
-        GitRepositoryRecord repo;
-        try {
-            repo = gitHubProvisionService.provisionFromWizard(wizard, preview);
-        } catch (BusinessException ex) {
-            if (ex.getErrorCode() == ErrorCode.GITHUB_REPO_EXISTS) {
-                fail(wizardId, "Repository 이름이 이미 존재합니다: " + wizard.getServiceName());
-                return null;
+    private void failSaga(UUID wizardId, UUID sagaId, StepCode failedCode, String reason) {
+        if (failedCode != null) {
+            try {
+                sagaService.failStep(sagaId, failedCode, reason);
+            } catch (Exception ignored) {
+                // step may already be failed
             }
-            throw ex;
         }
-
-        applyStep(wizardId, "README · Dockerfile 커밋", 32, WizardStatus.PROVISIONING);
-        sleep(150);
-        applyStep(wizardId, "Helm · Terraform · Actions 커밋", 45, WizardStatus.PROVISIONING);
-        sleep(150);
-        applyStep(wizardId, "ArgoCD · k8s Manifest 커밋", 55, WizardStatus.PROVISIONING);
-        sleep(150);
-        return repo;
+        try {
+            sagaService.compensate(sagaId, reason);
+        } catch (Exception e) {
+            log.warn("Compensation failed for saga {}: {}", sagaId, e.getMessage());
+            try {
+                sagaService.failWithoutCompensate(sagaId, reason);
+            } catch (Exception ignored) {
+            }
+        }
+        fail(wizardId, reason);
     }
 
-    private void runGitHubSimulation(UUID wizardId) throws InterruptedException {
-        applyStep(wizardId, "GitHub 미연결 — SCM 시뮬레이션", 5, WizardStatus.PROVISIONING);
-        sleep(300);
-        applyStep(wizardId, "Repository 생성 (sim)", 20, WizardStatus.PROVISIONING);
-        sleep(350);
-        applyStep(wizardId, "GitHub Actions 생성 (sim)", 35, WizardStatus.PROVISIONING);
-        sleep(350);
-        applyStep(wizardId, "Helm · Terraform 생성 (sim)", 48, WizardStatus.PROVISIONING);
-        sleep(300);
-        applyStep(wizardId, "ArgoCD Manifest 생성 (sim)", 55, WizardStatus.PROVISIONING);
-        sleep(250);
-    }
-
-    private K8sDeploymentRecord runK8sSteps(UUID wizardId) throws InterruptedException {
-        applyStep(wizardId, "로컬 Kubernetes 연결 확인 (k3d/kind)", 62, WizardStatus.DEPLOYING);
-        sleep(200);
-
-        ServiceWizard wizard = load(wizardId);
-        if (wizard == null || wizard.getStatus() == WizardStatus.CANCELLED) {
-            return null;
-        }
-
-        boolean available = k8sDeployService.isClusterAvailable();
-        if (available) {
-            applyStep(wizardId, "Namespace · Deployment 적용", 75, WizardStatus.DEPLOYING);
-        } else {
-            applyStep(wizardId, "클러스터 없음 — K8s 시뮬레이션", 75, WizardStatus.DEPLOYING);
-        }
-
-        K8sDeploymentRecord deploy = k8sDeployService.deployFromWizard(wizard);
-
-        applyStep(wizardId,
-                available
-                        ? "Pod Ready 대기 (" + deploy.getReadyReplicas() + "/" + deploy.getReplicas() + ")"
-                        : "Deploy 시뮬레이션 완료",
-                90, WizardStatus.DEPLOYING);
-        sleep(200);
-        applyStep(wizardId, "Health Verify", 100, WizardStatus.DEPLOYING);
-        return deploy;
+    private boolean abort(UUID wizardId) {
+        return isFailed(wizardId) || isCancelled(wizardId);
     }
 
     private WizardDtos.PreviewResponse resolvePreview(ServiceWizard wizard) {
+        if (wizard == null) {
+            throw new BusinessException(ErrorCode.WIZARD_NOT_FOUND);
+        }
         if (wizard.getPreviewJson() != null && !wizard.getPreviewJson().isBlank()) {
             try {
                 return objectMapper.readValue(wizard.getPreviewJson(), WizardDtos.PreviewResponse.class);
@@ -193,9 +243,17 @@ public class WizardProvisionRunner {
     }
 
     @Transactional
-    protected void applyStep(UUID wizardId, String message, int progress, WizardStatus status) {
+    protected void applyProgress(UUID wizardId, int progress, String message, WizardStatus status) {
         ServiceWizard wizard = wizardRepository.findByIdAndDeletedAtIsNull(wizardId).orElse(null);
         if (wizard == null || wizard.getStatus() == WizardStatus.CANCELLED) {
+            return;
+        }
+        // COMPLETED 는 complete() 가 이미 설정 — 덮어쓰지 않음 단 최종 메시지
+        if (wizard.getStatus() == WizardStatus.COMPLETED && status != WizardStatus.COMPLETED) {
+            return;
+        }
+        if (status == WizardStatus.COMPLETED) {
+            // complete() already set service; only touch progress message if needed
             return;
         }
         wizard.updateProgress(progress, message, status);
@@ -237,7 +295,6 @@ public class WizardProvisionRunner {
         service.markReady();
         service = appServiceRepository.save(service);
 
-        // Sprint A: 기본 Environment (Wizard 선택 type) 생성
         try {
             var env = environmentService.ensureDefaultForService(service, wizard.getCreatedBy());
             wizard.appendLogPublic("Environment: " + env.getType() + " ns=" + env.getNamespaceName());
@@ -264,7 +321,6 @@ public class WizardProvisionRunner {
         wizard.complete(service.getId());
         wizardRepository.save(wizard);
 
-        // 이미지 빌드 파이프라인 자동 트리거 (async)
         if (autoPipelineOnWizard) {
             try {
                 buildPipelineService.createForWizard(

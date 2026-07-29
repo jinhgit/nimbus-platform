@@ -16,13 +16,18 @@ import io.nimbus.platform.project.repository.ProjectRepository;
 import io.nimbus.platform.serviceapp.domain.AppService;
 import io.nimbus.platform.serviceapp.domain.EnvironmentType;
 import io.nimbus.platform.serviceapp.repository.AppServiceRepository;
+import io.nimbus.platform.provision.dto.ProvisionDtos;
+import io.nimbus.platform.provision.service.ProvisionSagaService;
 import io.nimbus.platform.wizard.domain.ServiceWizard;
 import io.nimbus.platform.wizard.domain.WizardStatus;
 import io.nimbus.platform.wizard.dto.WizardDtos;
 import io.nimbus.platform.wizard.repository.ServiceWizardRepository;
 import io.nimbus.platform.workspace.service.WorkspaceBootstrapService;
+import io.nimbus.platform.workspace.service.WorkspacePermissionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
@@ -39,8 +44,10 @@ public class WizardService {
     private final AppServiceRepository appServiceRepository;
     private final CatalogService catalogService;
     private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final WorkspacePermissionService workspacePermissionService;
     private final RuleBasedAiService aiService;
     private final WizardProvisionRunner provisionRunner;
+    private final ProvisionSagaService provisionSagaService;
     private final ObjectMapper objectMapper;
     private final AuditService auditService;
 
@@ -50,8 +57,10 @@ public class WizardService {
             AppServiceRepository appServiceRepository,
             CatalogService catalogService,
             WorkspaceBootstrapService workspaceBootstrapService,
+            WorkspacePermissionService workspacePermissionService,
             RuleBasedAiService aiService,
             WizardProvisionRunner provisionRunner,
+            ProvisionSagaService provisionSagaService,
             ObjectMapper objectMapper,
             AuditService auditService
     ) {
@@ -60,8 +69,10 @@ public class WizardService {
         this.appServiceRepository = appServiceRepository;
         this.catalogService = catalogService;
         this.workspaceBootstrapService = workspaceBootstrapService;
+        this.workspacePermissionService = workspacePermissionService;
         this.aiService = aiService;
         this.provisionRunner = provisionRunner;
+        this.provisionSagaService = provisionSagaService;
         this.objectMapper = objectMapper;
         this.auditService = auditService;
     }
@@ -242,6 +253,7 @@ public class WizardService {
     @Transactional
     public WizardDtos.ExecuteResponse execute(NimbusPrincipal principal, UUID wizardId) {
         ServiceWizard wizard = requireWizardAccess(principal, wizardId);
+        workspacePermissionService.requireMutator(wizard.getWorkspaceId(), principal.userId());
         if (wizard.getStatus() != WizardStatus.DRAFT) {
             throw new BusinessException(ErrorCode.WIZARD_ALREADY_EXECUTED);
         }
@@ -250,7 +262,6 @@ public class WizardService {
             throw new BusinessException(ErrorCode.WIZARD_VALIDATION_FAILED,
                     String.join(", ", validation.errors()));
         }
-        // ensure preview exists
         if (wizard.getPreviewJson() == null) {
             preview(principal, wizardId);
             wizard = requireWizardAccess(principal, wizardId);
@@ -258,7 +269,8 @@ public class WizardService {
 
         wizard.startProvisioning();
         wizardRepository.save(wizard);
-        provisionRunner.runAsync(wizard.getId());
+        UUID sagaId = provisionRunner.startSaga(wizard);
+        scheduleAsyncRun(wizard.getId(), sagaId);
         auditService.recordSuccess(
                 principal,
                 AuditAction.EXECUTE_WIZARD,
@@ -266,14 +278,74 @@ public class WizardService {
                 wizard.getId(),
                 wizard.getServiceName(),
                 wizard.getWorkspaceId(),
-                "서비스 프로비저닝 시작"
+                "서비스 프로비저닝 시작 (saga)"
         );
         return new WizardDtos.ExecuteResponse(
                 wizard.getId(),
-                wizard.getId(),
+                sagaId,
                 wizard.getStatus(),
                 wizard.getProgress()
         );
+    }
+
+    /**
+     * FAILED 위자드 재시도 — 새 Saga attempt.
+     */
+    @Transactional
+    public WizardDtos.ExecuteResponse retry(NimbusPrincipal principal, UUID wizardId) {
+        ServiceWizard wizard = requireWizardAccess(principal, wizardId);
+        workspacePermissionService.requireMutator(wizard.getWorkspaceId(), principal.userId());
+        if (wizard.getStatus() != WizardStatus.FAILED) {
+            throw new BusinessException(ErrorCode.WIZARD_RETRY_DENIED,
+                    "Only FAILED wizards can be retried (status=" + wizard.getStatus() + ")");
+        }
+        if (wizard.getServiceId() != null) {
+            throw new BusinessException(ErrorCode.WIZARD_RETRY_DENIED,
+                    "Service already created; create a new wizard instead");
+        }
+        wizard.resetForRetry();
+        wizardRepository.save(wizard);
+        UUID sagaId = provisionRunner.startSaga(wizard);
+        scheduleAsyncRun(wizard.getId(), sagaId);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.RETRY_WIZARD,
+                "WIZARD",
+                wizard.getId(),
+                wizard.getServiceName(),
+                wizard.getWorkspaceId(),
+                "프로비저닝 재시도"
+        );
+        return new WizardDtos.ExecuteResponse(
+                wizard.getId(),
+                sagaId,
+                wizard.getStatus(),
+                wizard.getProgress()
+        );
+    }
+
+    /** 트랜잭션 커밋 후 비동기 실행 — saga/wizard 가 보이도록. */
+    private void scheduleAsyncRun(UUID wizardId, UUID sagaId) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    provisionRunner.runAsync(wizardId, sagaId);
+                }
+            });
+        } else {
+            provisionRunner.runAsync(wizardId, sagaId);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ProvisionDtos.SagaResponse latestSaga(NimbusPrincipal principal, UUID wizardId) {
+        return provisionSagaService.getLatestForWizard(principal, wizardId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProvisionDtos.SagaResponse> listSagas(NimbusPrincipal principal, UUID wizardId) {
+        return provisionSagaService.listForWizard(principal, wizardId);
     }
 
     @Transactional

@@ -16,6 +16,7 @@ import io.nimbus.platform.serviceapp.domain.AppService;
 import io.nimbus.platform.serviceapp.domain.EnvironmentType;
 import io.nimbus.platform.serviceapp.repository.AppServiceRepository;
 import io.nimbus.platform.workspace.service.WorkspaceBootstrapService;
+import io.nimbus.platform.workspace.service.WorkspacePermissionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,7 @@ public class EnvironmentPromoteService {
     private final PromotionRecordRepository promotionRecordRepository;
     private final EnvironmentConfigService configService;
     private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final WorkspacePermissionService workspacePermissionService;
     private final AuditService auditService;
 
     public EnvironmentPromoteService(
@@ -42,6 +44,7 @@ public class EnvironmentPromoteService {
             PromotionRecordRepository promotionRecordRepository,
             EnvironmentConfigService configService,
             WorkspaceBootstrapService workspaceBootstrapService,
+            WorkspacePermissionService workspacePermissionService,
             AuditService auditService
     ) {
         this.environmentRepository = environmentRepository;
@@ -49,6 +52,7 @@ public class EnvironmentPromoteService {
         this.promotionRecordRepository = promotionRecordRepository;
         this.configService = configService;
         this.workspaceBootstrapService = workspaceBootstrapService;
+        this.workspacePermissionService = workspacePermissionService;
         this.auditService = auditService;
     }
 
@@ -60,7 +64,7 @@ public class EnvironmentPromoteService {
     ) {
         ServiceEnvironment source = environmentRepository.findByIdAndDeletedAtIsNull(sourceEnvironmentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENVIRONMENT_NOT_FOUND));
-        workspaceBootstrapService.requireMember(source.getWorkspaceId(), principal.userId());
+        workspacePermissionService.requireMutator(source.getWorkspaceId(), principal.userId());
 
         if (source.getStatus() == EnvironmentStatus.ARCHIVED) {
             throw new BusinessException(ErrorCode.ENVIRONMENT_ARCHIVED);

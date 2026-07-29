@@ -48,12 +48,12 @@ Platform Engineering Portal을 목표로 한다.
 - Provision Progress 시뮬레이션 (async job)
 - Next.js: Login · Dashboard · Projects · Services · Catalog · Wizard
 
-**GitHub Adapter:** Settings에서 PAT 연결 → Wizard Deploy 시 실제 Private Repo + 파일 생성  
+**GitHub SCM:** Settings → **OAuth 정식 연결** (권장) 또는 PAT 보조 → Wizard Deploy 시 Private Repo 생성  
 **K8s 실배포:** `./scripts/kind-up.sh` 또는 `k3d-up.sh` → Wizard Deploy 시 Namespace/Deployment/Service 적용  
 **Monitoring:** `make obs-up` → Prometheus :9090 · Grafana :3001 (admin/nimbus) · 미기동 시 demo 메트릭  
 **로그:** `/logs` 스냅샷 + 실시간 스트림 (fetch SSE)  
 **파이프라인:** Wizard 완료 시 이미지 빌드 Job 자동 큐 · `/pipelines` 에서 실행/재실행  
-**다음:** OAuth App SCM · 실 Docker build 연동
+**다음:** 실 Docker build · GitHub App 설치 방식
 
 ---
 

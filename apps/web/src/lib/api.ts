@@ -129,6 +129,7 @@ export type GitHubConnection = {
   avatarUrl?: string;
   status: string;
   scopes?: string;
+  authMethod?: string;
   lastValidatedAt?: string;
   connectedAt?: string;
 };
@@ -140,6 +141,21 @@ export type GitHubHealth = {
   rateLimitRemaining?: number;
   rateLimitLimit?: number;
   connected: boolean;
+  authMethod?: string;
+};
+
+export type GitHubStatus = {
+  connected: boolean;
+  provider: string;
+  oauthConfigured: boolean;
+  authMethod?: string;
+  login?: string;
+};
+
+export type GitHubOauthConfig = {
+  oauthConfigured: boolean;
+  scmScopes: string;
+  authorizePath: string;
 };
 
 export type GitHubRepo = {
@@ -410,8 +426,18 @@ export async function connectGitHub(personalAccessToken: string) {
   });
 }
 
+export async function fetchGitHubOauthConfig() {
+  return apiGet<GitHubOauthConfig>("/api/v1/github/oauth/config");
+}
+
+export async function startGitHubOauth() {
+  return apiGet<{ authorizeUrl: string; oauthConfigured: boolean }>(
+    "/api/v1/github/oauth/authorize",
+  );
+}
+
 export async function fetchGitHubStatus() {
-  return apiGet<{ connected: boolean; provider: string }>("/api/v1/github/status");
+  return apiGet<GitHubStatus>("/api/v1/github/status");
 }
 
 export async function fetchGitHubConnection() {

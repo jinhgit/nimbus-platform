@@ -34,12 +34,16 @@ public class GitHubConnection extends BaseEntity {
     @Column(name = "access_token_enc", nullable = false)
     private String accessTokenEnc;
 
-    @Column(length = 64)
+    @Column(length = 128)
     private String scopes;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private ConnectionStatus status = ConnectionStatus.CONNECTED;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_method", nullable = false, length = 16)
+    private AuthMethod authMethod = AuthMethod.PAT;
 
     @Column(name = "last_validated_at")
     private Instant lastValidatedAt;
@@ -54,7 +58,8 @@ public class GitHubConnection extends BaseEntity {
             String githubUserId,
             String avatarUrl,
             String accessTokenEnc,
-            String scopes
+            String scopes,
+            AuthMethod authMethod
     ) {
         GitHubConnection c = new GitHubConnection();
         c.userId = userId;
@@ -64,23 +69,35 @@ public class GitHubConnection extends BaseEntity {
         c.avatarUrl = avatarUrl;
         c.accessTokenEnc = accessTokenEnc;
         c.scopes = scopes;
+        c.authMethod = authMethod != null ? authMethod : AuthMethod.PAT;
         c.status = ConnectionStatus.CONNECTED;
         c.lastValidatedAt = Instant.now();
         return c;
     }
 
-    public void updateToken(String accessTokenEnc, String login, String avatarUrl, String scopes) {
+    public void updateToken(
+            String accessTokenEnc,
+            String login,
+            String avatarUrl,
+            String scopes,
+            AuthMethod authMethod
+    ) {
         this.accessTokenEnc = accessTokenEnc;
         this.login = login;
         this.avatarUrl = avatarUrl;
         this.scopes = scopes;
+        if (authMethod != null) {
+            this.authMethod = authMethod;
+        }
         this.status = ConnectionStatus.CONNECTED;
         this.lastValidatedAt = Instant.now();
+        this.restore();
     }
 
     public void disconnect() {
         this.status = ConnectionStatus.DISCONNECTED;
         this.accessTokenEnc = "";
+        // softDelete 하지 않음 — user_id unique 유지 후 재연결 가능
     }
 
     public void markValidated() {
@@ -122,6 +139,10 @@ public class GitHubConnection extends BaseEntity {
 
     public ConnectionStatus getStatus() {
         return status;
+    }
+
+    public AuthMethod getAuthMethod() {
+        return authMethod;
     }
 
     public Instant getLastValidatedAt() {

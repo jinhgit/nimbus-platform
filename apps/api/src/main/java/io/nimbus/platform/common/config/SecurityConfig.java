@@ -42,6 +42,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/github").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/github/callback").permitAll()
+                        // SCM OAuth callback (state 로 사용자 식별)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/github/oauth/callback").permitAll()
                         .requestMatchers("/api/v1/**").authenticated()
                         .anyRequest().permitAll()
                 )

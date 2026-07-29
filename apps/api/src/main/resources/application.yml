@@ -51,8 +51,13 @@ nimbus:
   github:
     client-id: ${GITHUB_CLIENT_ID:}
     client-secret: ${GITHUB_CLIENT_SECRET:}
+    # 로그인 OAuth
     redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8080/api/v1/auth/github/callback}
     frontend-callback: ${FRONTEND_CALLBACK_URL:http://localhost:3000/auth/callback}
+    # SCM 연결 OAuth (repo 권한) — GitHub OAuth App 에 callback 등록 필요
+    scm-redirect-uri: ${GITHUB_SCM_REDIRECT_URI:http://localhost:8080/api/v1/github/oauth/callback}
+    scm-frontend-callback: ${GITHUB_SCM_FRONTEND_CALLBACK:http://localhost:3000/settings}
+    scm-scopes: ${GITHUB_SCM_SCOPES:repo workflow read:user user:email}
   k8s:
     enabled: ${K8S_ENABLED:true}
     # empty = default ~/.kube/config

@@ -1,5 +1,6 @@
 package io.nimbus.platform.github.dto;
 
+import io.nimbus.platform.github.domain.AuthMethod;
 import io.nimbus.platform.github.domain.ConnectionStatus;
 import io.nimbus.platform.github.domain.RepoStatus;
 import jakarta.validation.constraints.NotBlank;
@@ -17,12 +18,26 @@ public final class GitHubDtos {
     ) {
     }
 
+    public record OAuthConfigResponse(
+            boolean oauthConfigured,
+            String scmScopes,
+            String authorizePath
+    ) {
+    }
+
+    public record OAuthAuthorizeResponse(
+            String authorizeUrl,
+            boolean oauthConfigured
+    ) {
+    }
+
     public record ConnectionResponse(
             UUID id,
             String login,
             String avatarUrl,
             ConnectionStatus status,
             String scopes,
+            AuthMethod authMethod,
             Instant lastValidatedAt,
             Instant connectedAt
     ) {
@@ -34,7 +49,17 @@ public final class GitHubDtos {
             String login,
             Integer rateLimitRemaining,
             Integer rateLimitLimit,
-            boolean connected
+            boolean connected,
+            AuthMethod authMethod
+    ) {
+    }
+
+    public record StatusResponse(
+            boolean connected,
+            String provider,
+            boolean oauthConfigured,
+            AuthMethod authMethod,
+            String login
     ) {
     }
 

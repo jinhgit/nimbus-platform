@@ -359,6 +359,30 @@ export async function fetchServices(params: {
   return apiGet<AppService[]>(`/api/v1/services${q ? `?${q}` : ""}`);
 }
 
+export async function fetchService(serviceId: string) {
+  return apiGet<AppService>(`/api/v1/services/${serviceId}`);
+}
+
+export async function fetchK8sDeploymentByService(serviceId: string) {
+  return apiGet<K8sDeployment | null>(
+    `/api/v1/k8s/deployments/by-service/${serviceId}`,
+  );
+}
+
+export type ArchitectureReview = {
+  score: number;
+  strengths: string[];
+  risks: string[];
+  recommendations: string[];
+  provider: string;
+};
+
+export async function fetchArchitectureReview(wizardId: string) {
+  return apiPost<ArchitectureReview>(
+    `/api/v1/ai/architecture-review/${wizardId}`,
+  );
+}
+
 export async function createWizard(input: {
   projectId: string;
   serviceName: string;

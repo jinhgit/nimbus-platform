@@ -111,9 +111,14 @@ export default function DashboardPage() {
           ) : (
             <ul className="divide-y divide-[var(--border)]">
               {services.slice(0, 5).map((s) => (
-                <li key={s.id} className="flex justify-between py-3 text-sm">
-                  <span>{s.name}</span>
-                  <span className="text-xs text-emerald-400">{s.status}</span>
+                <li key={s.id}>
+                  <Link
+                    href={`/services/${s.id}`}
+                    className="flex justify-between py-3 text-sm hover:text-white"
+                  >
+                    <span>{s.name}</span>
+                    <span className="text-xs text-emerald-400">{s.status}</span>
+                  </Link>
                 </li>
               ))}
             </ul>

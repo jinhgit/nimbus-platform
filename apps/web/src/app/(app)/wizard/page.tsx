@@ -10,11 +10,13 @@ import {
   fetchK8sCluster,
   fetchProjects,
   fetchMe,
+  fetchService,
   getWizard,
   previewWizard,
   recommendWizard,
   updateWizard,
   type AiRecommendation,
+  type AppService,
   type CatalogTemplate,
   type Project,
   type Wizard,
@@ -57,6 +59,7 @@ export default function WizardPage() {
   const [previewTab, setPreviewTab] = useState<(typeof PREVIEW_TABS)[number]["id"]>("structure");
   const [githubConnected, setGithubConnected] = useState(false);
   const [k8sAvailable, setK8sAvailable] = useState(false);
+  const [createdService, setCreatedService] = useState<AppService | null>(null);
 
   useEffect(() => {
     fetchMe().then(async (me) => {
@@ -96,6 +99,14 @@ export default function WizardPage() {
     }, 500);
     return () => clearInterval(id);
   }, [wizard, step]);
+
+  // Complete 단계에서 생성된 서비스 상세 로드
+  useEffect(() => {
+    if (step !== 6 || !wizard?.serviceId) return;
+    fetchService(wizard.serviceId).then((res) => {
+      if (res.success && res.data) setCreatedService(res.data);
+    });
+  }, [step, wizard?.serviceId]);
 
   const selectedTemplate = useMemo(
     () => templates.find((t) => t.id === templateId),
@@ -490,23 +501,92 @@ export default function WizardPage() {
         )}
 
         {step === 6 && (
-          <div className="space-y-4 text-center">
-            <h2 className="text-lg font-medium text-emerald-400">완료</h2>
-            <p className="text-sm text-[var(--muted)]">
-              서비스{" "}
-              <strong className="text-white">{wizard?.serviceName}</strong> 가
-              생성되었습니다.
-            </p>
-            <div className="flex justify-center gap-3">
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-lg font-medium text-emerald-400">완료</h2>
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                서비스{" "}
+                <strong className="text-white">
+                  {createdService?.name ?? wizard?.serviceName}
+                </strong>
+                가 생성되었습니다.
+              </p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                GitHub · Kubernetes · Pipeline · AI Review 를 서비스 상세에서 이어서 확인하세요.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <CompleteCard
+                title="GitHub"
+                ok={Boolean(createdService?.githubRepoUrl)}
+                body={
+                  createdService?.githubRepoUrl ? (
+                    <a
+                      href={createdService.githubRepoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[var(--primary)] hover:underline"
+                    >
+                      {createdService.githubOwner}/{createdService.githubRepoName}
+                    </a>
+                  ) : (
+                    "미연결 / 시뮬레이션"
+                  )
+                }
+              />
+              <CompleteCard
+                title="Kubernetes"
+                ok={
+                  createdService?.k8sStatus === "RUNNING" ||
+                  createdService?.k8sStatus === "SIMULATED"
+                }
+                body={
+                  createdService?.k8sNamespace
+                    ? `${createdService.k8sNamespace} · ${createdService.k8sStatus}`
+                    : "미배포 / 시뮬레이션"
+                }
+              />
+              <CompleteCard
+                title="환경"
+                ok
+                body={`${wizard?.environmentType ?? createdService?.environmentType ?? "—"} · replica ${
+                  createdService?.replicaCount ?? wizard?.replicaCount ?? 1
+                }`}
+              />
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-3">
+              {wizard?.serviceId || createdService?.id ? (
+                <Link
+                  href={`/services/${createdService?.id ?? wizard?.serviceId}`}
+                  className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-hover)]"
+                >
+                  서비스 상세 보기
+                </Link>
+              ) : (
+                <Link
+                  href="/services"
+                  className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white"
+                >
+                  서비스 목록
+                </Link>
+              )}
               <Link
-                href="/services"
-                className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white"
+                href="/pipelines"
+                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm hover:bg-white/5"
               >
-                서비스 목록
+                파이프라인
+              </Link>
+              <Link
+                href="/monitoring"
+                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm hover:bg-white/5"
+              >
+                모니터링
               </Link>
               <Link
                 href="/dashboard"
-                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm"
+                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm hover:bg-white/5"
               >
                 대시보드
               </Link>
@@ -543,6 +623,30 @@ export default function WizardPage() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function CompleteCard({
+  title,
+  ok,
+  body,
+}: {
+  title: string;
+  ok: boolean;
+  body: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-black/20 p-4 text-left">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs text-[var(--muted)]">{title}</p>
+        <span
+          className={`text-xs ${ok ? "text-emerald-400" : "text-[var(--muted)]"}`}
+        >
+          {ok ? "OK" : "—"}
+        </span>
+      </div>
+      <div className="text-sm">{body}</div>
     </div>
   );
 }

@@ -51,6 +51,90 @@ export type Project = {
   updatedAt?: string;
 };
 
+export type CatalogTemplate = {
+  id: string;
+  name: string;
+  description?: string;
+  type: string;
+  runtime: string;
+  language: string;
+  latestVersion: string;
+  official: boolean;
+  status: string;
+  tags?: string;
+};
+
+export type AppService = {
+  id: string;
+  name: string;
+  description?: string;
+  runtime: string;
+  status: string;
+  environmentType: string;
+  replicaCount?: number;
+  databaseType?: string;
+  cacheType?: string;
+  hpaEnabled?: boolean;
+  projectId: string;
+  workspaceId: string;
+  templateId?: string;
+  wizardId?: string;
+};
+
+export type AiRecommendation = {
+  runtime: string;
+  runtimeConfidence: number;
+  database: string;
+  databaseConfidence: number;
+  cache: string;
+  cacheConfidence: number;
+  replicaCount: number;
+  hpaEnabled: boolean;
+  cpu: string;
+  memory: string;
+  overallScore: number;
+  summary: string;
+  items: { key: string; value: string; confidence: number; reason: string }[];
+  provider: string;
+};
+
+export type WizardPreview = {
+  repository: string;
+  runtime: string;
+  environment: string;
+  repositoryStructure: Record<string, string>;
+  blueprint: string;
+  helmValues: string;
+  terraformVars: string;
+  githubActions: string;
+  deploymentYaml: string;
+  argoApplication: string;
+};
+
+export type Wizard = {
+  id: string;
+  projectId: string;
+  workspaceId: string;
+  serviceName: string;
+  templateId?: string;
+  runtime?: string;
+  environmentType?: string;
+  databaseType?: string;
+  cacheType?: string;
+  replicaCount?: number;
+  hpaEnabled?: boolean;
+  cpu?: string;
+  memory?: string;
+  domain?: string;
+  status: string;
+  currentStep?: number;
+  progress?: number;
+  progressMessage?: string;
+  serviceId?: string;
+  recommendation?: AiRecommendation | null;
+  preview?: WizardPreview | null;
+};
+
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("nimbus_access_token");
@@ -167,6 +251,75 @@ export async function createProject(input: {
   description?: string;
 }) {
   return apiPost<Project>("/api/v1/projects", input);
+}
+
+export async function fetchCatalog(q?: string) {
+  const qs = q ? `?q=${encodeURIComponent(q)}` : "";
+  return apiGet<CatalogTemplate[]>(`/api/v1/catalog${qs}`);
+}
+
+export async function fetchServices(params: {
+  workspaceId?: string;
+  projectId?: string;
+}) {
+  const sp = new URLSearchParams();
+  if (params.workspaceId) sp.set("workspaceId", params.workspaceId);
+  if (params.projectId) sp.set("projectId", params.projectId);
+  const q = sp.toString();
+  return apiGet<AppService[]>(`/api/v1/services${q ? `?${q}` : ""}`);
+}
+
+export async function createWizard(input: {
+  projectId: string;
+  serviceName: string;
+  templateId?: string;
+}) {
+  return apiPost<Wizard>("/api/v1/service-wizard", input);
+}
+
+export async function getWizard(wizardId: string) {
+  return apiGet<Wizard>(`/api/v1/service-wizard/${wizardId}`);
+}
+
+export async function updateWizard(
+  wizardId: string,
+  body: Record<string, unknown>,
+) {
+  return apiPatch<Wizard>(`/api/v1/service-wizard/${wizardId}`, body);
+}
+
+export async function recommendWizard(wizardId: string) {
+  return apiPost<AiRecommendation>(
+    `/api/v1/service-wizard/${wizardId}/recommend`,
+  );
+}
+
+export async function previewWizard(wizardId: string) {
+  return apiPost<WizardPreview>(`/api/v1/service-wizard/${wizardId}/preview`);
+}
+
+export async function validateWizard(wizardId: string) {
+  return apiPost<{ valid: boolean; warnings: string[]; errors: string[] }>(
+    `/api/v1/service-wizard/${wizardId}/validate`,
+  );
+}
+
+export async function executeWizard(wizardId: string) {
+  return apiPost<{
+    wizardId: string;
+    status: string;
+    progress: number;
+  }>(`/api/v1/service-wizard/${wizardId}/execute`);
+}
+
+export async function wizardLogs(wizardId: string) {
+  return apiGet<{
+    wizardId: string;
+    status: string;
+    progress: number;
+    progressMessage?: string;
+    logs?: string;
+  }>(`/api/v1/service-wizard/${wizardId}/logs`);
 }
 
 export async function logout() {

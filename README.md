@@ -36,18 +36,19 @@ Platform Engineering Portal을 목표로 한다.
 
 ## 현재 상태
 
-**Phase 1 — Foundation (Auth / Workspace / Project)**
+**Phase 1~2 — Foundation + Catalog / Wizard**
 
 - monorepo: `apps/api`, `apps/web`, `docs`
-- **Dev Login** (free-only 로컬) + GitHub OAuth 훅 (Client ID 설정 시)
-- JWT Access Token + Refresh Token
-- Workspace / Team / Member API
-- Project CRUD (Archive/Restore)
-- Next.js: Login · App Shell · Dashboard · Projects · Workspaces
-- 로컬 API: H2 파일 DB (`--spring.profiles.active=local`, Docker 불필요)
-- Docker Compose: PostgreSQL 16, Redis 7 (선택)
+- **Dev Login** (free-only 로컬) + GitHub OAuth 훅
+- JWT · Workspace · Project · **Service**
+- **Service Catalog** (Golden Path seed templates)
+- **Service Wizard** 7단계: Info → Template → Infra → AI → Preview → Provision → Complete
+- **AI Recommendation** (rule-engine, Confidence/Reason — Ollama 확장 가능)
+- Preview: Blueprint · Helm · TF · Actions · YAML · Argo
+- Provision Progress 시뮬레이션 (async job)
+- Next.js: Login · Dashboard · Projects · Services · Catalog · Wizard
 
-**다음:** Service Catalog · Service Wizard · Provision Saga · GitHub Adapter
+**다음:** GitHub Adapter 실연동 · k3d 배포 · Monitoring 링크
 
 ---
 

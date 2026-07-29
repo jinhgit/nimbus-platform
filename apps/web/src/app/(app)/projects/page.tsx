@@ -55,7 +55,11 @@ export default function ProjectsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          비즈니스 컨텍스트 단위. Service / Wizard 는 다음 스프린트에서 연결합니다.
+          비즈니스 컨텍스트 단위. Service는{" "}
+          <a href="/wizard" className="text-[var(--primary)] hover:underline">
+            Service Wizard
+          </a>
+          로 생성합니다.
         </p>
       </div>
 

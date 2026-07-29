@@ -15,6 +15,9 @@ import {
 const nav = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/projects", label: "Projects" },
+  { href: "/services", label: "Services" },
+  { href: "/catalog", label: "Catalog" },
+  { href: "/wizard", label: "Create Service" },
   { href: "/workspaces", label: "Workspaces" },
 ];
 

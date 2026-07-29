@@ -6,7 +6,9 @@ import {
   API_BASE,
   fetchMe,
   fetchProjects,
+  fetchServices,
   fetchWorkspaces,
+  type AppService,
   type MeResponse,
   type Project,
   type WorkspaceSummary,
@@ -16,6 +18,7 @@ export default function DashboardPage() {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [services, setServices] = useState<AppService[]>([]);
   const [health, setHealth] = useState<string>("checking");
 
   useEffect(() => {
@@ -38,13 +41,17 @@ export default function DashboardPage() {
     fetchProjects(ws).then((res) => {
       if (res.success && res.data) setProjects(res.data);
     });
+    fetchServices({ workspaceId: ws }).then((res) => {
+      if (res.success && res.data) setServices(res.data);
+    });
   }, [me, workspaces]);
 
+  const readyServices = services.filter((s) => s.status === "READY").length;
   const widgets = [
     { label: "API Health", value: health },
-    { label: "Workspaces", value: String(workspaces.length) },
     { label: "Projects", value: String(projects.length) },
-    { label: "Role", value: me?.role ?? "—" },
+    { label: "Services", value: String(services.length) },
+    { label: "Healthy Deploy", value: String(readyServices) },
   ];
 
   return (
@@ -59,10 +66,10 @@ export default function DashboardPage() {
           </p>
         </div>
         <Link
-          href="/projects"
+          href="/wizard"
           className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-hover)]"
         >
-          프로젝트 보기
+          Create Service
         </Link>
       </div>
 
@@ -80,26 +87,49 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <section className="mt-8 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
-        <h2 className="mb-3 text-sm font-medium">최근 프로젝트</h2>
-        {projects.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">
-            아직 프로젝트가 없습니다.{" "}
-            <Link href="/projects" className="text-[var(--primary)] hover:underline">
-              생성하기
-            </Link>
-          </p>
-        ) : (
-          <ul className="divide-y divide-[var(--border)]">
-            {projects.slice(0, 5).map((p) => (
-              <li key={p.id} className="flex items-center justify-between py-3 text-sm">
-                <span>{p.name}</span>
-                <span className="text-xs text-[var(--muted)]">{p.status}</span>
-              </li>
-            ))}
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="mb-3 text-sm font-medium">Recent Services</h2>
+          {services.length === 0 ? (
+            <p className="text-sm text-[var(--muted)]">
+              아직 서비스가 없습니다.{" "}
+              <Link href="/wizard" className="text-[var(--primary)] hover:underline">
+                Wizard 시작
+              </Link>
+            </p>
+          ) : (
+            <ul className="divide-y divide-[var(--border)]">
+              {services.slice(0, 5).map((s) => (
+                <li key={s.id} className="flex justify-between py-3 text-sm">
+                  <span>{s.name}</span>
+                  <span className="text-xs text-emerald-400">{s.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="mb-3 text-sm font-medium">Platform Snapshot</h2>
+          <ul className="space-y-2 text-sm text-[var(--muted)]">
+            <li>Cluster: local (k3d/kind 연동 예정) · Healthy</li>
+            <li>GitHub: Adapter 연동 예정 · Free tier</li>
+            <li>AI: rule-engine (Ollama 확장 가능)</li>
+            <li>Catalog templates: Golden Path ready</li>
           </ul>
-        )}
-      </section>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href="/catalog" className="text-xs text-[var(--primary)] hover:underline">
+              Catalog
+            </Link>
+            <Link href="/projects" className="text-xs text-[var(--primary)] hover:underline">
+              Projects
+            </Link>
+            <Link href="/services" className="text-xs text-[var(--primary)] hover:underline">
+              Services
+            </Link>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

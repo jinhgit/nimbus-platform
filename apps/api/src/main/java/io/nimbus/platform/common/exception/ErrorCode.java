@@ -39,7 +39,28 @@ public enum ErrorCode {
     PROJECT_NOT_FOUND("PROJECT002", "Project not found", HttpStatus.NOT_FOUND),
     PROJECT_PERMISSION("PROJECT003", "Project permission denied", HttpStatus.FORBIDDEN),
     PROJECT_ARCHIVED("PROJECT004", "Project is archived", HttpStatus.BAD_REQUEST),
-    PROJECT_DELETE_BLOCKED("PROJECT005", "Project cannot be deleted", HttpStatus.BAD_REQUEST);
+    PROJECT_DELETE_BLOCKED("PROJECT005", "Project cannot be deleted", HttpStatus.BAD_REQUEST),
+
+    // Catalog
+    TEMPLATE_NOT_FOUND("TEMPLATE001", "Template not found", HttpStatus.NOT_FOUND),
+    TEMPLATE_NAME_DUPLICATE("TEMPLATE002", "Template name already exists", HttpStatus.CONFLICT),
+    TEMPLATE_NOT_PUBLISHED("TEMPLATE003", "Template is not published", HttpStatus.BAD_REQUEST),
+    TEMPLATE_PUBLISH_FAILED("TEMPLATE004", "Template publish failed", HttpStatus.BAD_REQUEST),
+
+    // Service
+    SERVICE_NOT_FOUND("SERVICE001", "Service not found", HttpStatus.NOT_FOUND),
+    SERVICE_NAME_DUPLICATE("SERVICE002", "Service name already exists", HttpStatus.CONFLICT),
+    SERVICE_PERMISSION("SERVICE003", "Service permission denied", HttpStatus.FORBIDDEN),
+
+    // Wizard
+    WIZARD_NOT_FOUND("WIZARD001", "Wizard not found", HttpStatus.NOT_FOUND),
+    WIZARD_INVALID_STATE("WIZARD002", "Wizard is not in a valid state", HttpStatus.BAD_REQUEST),
+    WIZARD_VALIDATION_FAILED("WIZARD003", "Wizard validation failed", HttpStatus.BAD_REQUEST),
+    WIZARD_ALREADY_EXECUTED("WIZARD004", "Wizard already executed", HttpStatus.CONFLICT),
+    WIZARD_CANCEL_DENIED("WIZARD005", "Wizard cannot be cancelled", HttpStatus.BAD_REQUEST),
+
+    // AI
+    AI_RECOMMENDATION_FAILED("AI001", "AI recommendation failed", HttpStatus.BAD_GATEWAY);
 
     private final String code;
     private final String defaultMessage;

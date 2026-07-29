@@ -61,6 +61,9 @@ PRD v1.1  Vision / Epic / IA
 
 | 단계 | 상태 |
 |------|------|
-| 설계 문서 축적 | 있음 |
-| Monorepo 뼈대 | 있음 |
-| 도메인 기능 구현 | 이어갈 예정 |
+| 설계 문서 축적 | ✅ |
+| Monorepo 뼈대 | ✅ |
+| 시연 MVP (Wizard·GitHub·Obs) | ✅~🔶 |
+| 실운영 P0 (Audit · prod 프로필) | ✅ |
+| 상세 매트릭스 | [status/PRD-vs-Implementation.md](status/PRD-vs-Implementation.md) |
+| 루트 README (포트폴리오) | [../README.md](../README.md) |

@@ -13,6 +13,7 @@
 | 목적 | 문서 |
 |------|------|
 | 전체 한 장 요약 | [prd/PRD-MASTER.md](prd/PRD-MASTER.md) |
+| **최종 시연 시나리오 (10~15분)** | [demo/DEMO-SCENARIO.md](demo/DEMO-SCENARIO.md) |
 | 설계가 쌓인 레이어 맵 | [architecture/03-Canonical-Decisions.md](architecture/03-Canonical-Decisions.md) *(Evolution Map)* |
 | 용어 | [architecture/04-Glossary.md](architecture/04-Glossary.md) |
 | 처음부터 제품 이야기 | [prd/PRD-v1.1-…](prd/PRD-v1.1-Project-Overview.md) |
@@ -28,6 +29,7 @@
 ```text
 docs/
 ├── README.md · INDEX.md
+├── demo/           # 시연 시나리오 · 포트폴리오 가이드
 ├── prd/            # 제품 요구 (v1.1 ~ Master) — 전부 유효
 ├── api/            # Engineering Spec — PRD 위에 얹힌 구현 단위
 └── architecture/   # 시스템 그림, 도메인 맵, monorepo, 용어, evolution

@@ -26,6 +26,7 @@ Platform Engineering Portal을 목표로 한다.
 | 문서 | 용도 |
 |------|------|
 | [docs/README.md](docs/README.md) | 문서 허브 |
+| [docs/demo/DEMO-SCENARIO.md](docs/demo/DEMO-SCENARIO.md) | **최종 시연 10~15분** · MVP 가능/제외 · 면접 한 문장 |
 | [docs/prd/](docs/prd/) | PRD v1.1~v1.5 + Master 요약 |
 | [docs/api/](docs/api/) | 구현용 API Spec |
 | [docs/architecture/03-Canonical-Decisions.md](docs/architecture/03-Canonical-Decisions.md) | 설계 누적 맵 (Evolution) |

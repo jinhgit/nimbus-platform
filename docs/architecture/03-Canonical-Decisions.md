@@ -208,7 +208,13 @@ GitHub App 권장, OAuth App 으로도 MVP 가능.
 
 ```text
 [개별 PRD v1.1~1.5]  +  [API Spec 01~05]  +  [이 Evolution Map]  +  [PRD-MASTER 요약]
+                         +  [Demo Scenario]
 ```
 
 읽는 순서 강제가 아니다.  
 깊게 파고 싶을 때 원본 PRD/API를 보고, 한눈에 누적 레이어만 보고 싶을 때 여기를 보면 된다.
+
+**시연 목표(10~15분 플로우, MVP 가능/제외, 면접 한 문장):**  
+→ [docs/demo/DEMO-SCENARIO.md](../demo/DEMO-SCENARIO.md)
+
+구현 우선순위는 Demo Scenario §7 을 나침반으로 쓴다.

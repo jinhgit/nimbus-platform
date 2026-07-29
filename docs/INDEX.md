@@ -29,6 +29,19 @@ Nimbus 설계 문서 전체 목록.
 2. Evolution Map  
 3. Glossary  
 
+**시연·포트폴리오**
+
+1. [Demo Scenario](demo/DEMO-SCENARIO.md) — 10~15분 최종 시연 플로우  
+2. Free-Only 제약과 함께 읽기  
+
+---
+
+## Demo / Portfolio
+
+| File | Topic |
+|------|-------|
+| [DEMO-SCENARIO](demo/DEMO-SCENARIO.md) | 최종 시연 10~15분, MVP 가능/제외, 면접 한 문장, 체크리스트 |
+
 ---
 
 ## Architecture

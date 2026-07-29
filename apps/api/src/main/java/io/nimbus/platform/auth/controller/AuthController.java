@@ -85,7 +85,13 @@ public class AuthController {
             @CookieValue(value = "refresh_token", required = false) String refreshToken,
             HttpServletResponse response
     ) {
-        authService.logout(refreshToken);
+        NimbusPrincipal principal = null;
+        try {
+            principal = SecurityUtils.requirePrincipal();
+        } catch (Exception ignored) {
+            // 토큰 만료 등으로 principal 없어도 로그아웃 처리
+        }
+        authService.logout(principal, refreshToken);
         clearRefreshCookie(response);
         return ApiResponse.ok(null);
     }

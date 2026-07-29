@@ -1,0 +1,83 @@
+# 실운영 프로필: Postgres 필수, Dev Login 비활성, 시크릿은 환경변수로만
+#
+# 필수 env:
+#   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+#   JWT_SECRET  (32자 이상)
+#   CORS_ORIGINS
+# 권장:
+#   GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
+#   GITHUB_REDIRECT_URI, FRONTEND_CALLBACK_URL
+#   GITHUB_SCM_REDIRECT_URI, GITHUB_SCM_FRONTEND_CALLBACK
+#   TOKEN_CRYPTO_KEY  (AES 키 — 미설정 시 기본 키 사용 금지 권장)
+#   REDIS_HOST, REDIS_PORT  (세션 확장 시)
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN:5}
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    show-sql: false
+    open-in-view: false
+  h2:
+    console:
+      enabled: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: never
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: nimbus-api
+
+nimbus:
+  cors:
+    allowed-origins: ${CORS_ORIGINS}
+  auth:
+    dev-login-enabled: false
+    access-token-ttl-seconds: ${ACCESS_TOKEN_TTL:3600}
+    refresh-token-ttl-seconds: ${REFRESH_TOKEN_TTL:604800}
+    jwt-secret: ${JWT_SECRET}
+  github:
+    client-id: ${GITHUB_CLIENT_ID:}
+    client-secret: ${GITHUB_CLIENT_SECRET:}
+    redirect-uri: ${GITHUB_REDIRECT_URI}
+    frontend-callback: ${FRONTEND_CALLBACK_URL}
+    scm-redirect-uri: ${GITHUB_SCM_REDIRECT_URI:}
+    scm-frontend-callback: ${GITHUB_SCM_FRONTEND_CALLBACK:}
+  k8s:
+    # 실운영에서는 로컬 클러스터 제한 해제 가능 (별도 환경에서 설정)
+    enabled: ${K8S_ENABLED:false}
+    strict-local: ${K8S_STRICT_LOCAL:false}
+  observability:
+    prometheus-url: ${PROMETHEUS_URL:}
+    grafana-url: ${GRAFANA_URL:}
+    loki-url: ${LOKI_URL:}
+    demo-metrics-when-unavailable: false
+  pipeline:
+    auto-on-wizard: ${PIPELINE_AUTO_ON_WIZARD:true}
+
+logging:
+  level:
+    root: INFO
+    io.nimbus.platform: INFO
+    org.hibernate.SQL: WARN

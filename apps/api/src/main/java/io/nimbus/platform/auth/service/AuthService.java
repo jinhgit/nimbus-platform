@@ -2,6 +2,8 @@ package io.nimbus.platform.auth.service;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import io.nimbus.platform.audit.domain.AuditAction;
+import io.nimbus.platform.audit.service.AuditService;
 import io.nimbus.platform.auth.domain.GlobalRole;
 import io.nimbus.platform.auth.domain.User;
 import io.nimbus.platform.auth.domain.UserStatus;
@@ -47,6 +49,7 @@ public class AuthService {
     private final GithubProperties githubProperties;
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
+    private final AuditService auditService;
 
     public AuthService(
             UserRepository userRepository,
@@ -56,7 +59,8 @@ public class AuthService {
             TokenStore tokenStore,
             JwtProperties jwtProperties,
             GithubProperties githubProperties,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            AuditService auditService
     ) {
         this.userRepository = userRepository;
         this.workspaceRepository = workspaceRepository;
@@ -66,6 +70,7 @@ public class AuthService {
         this.jwtProperties = jwtProperties;
         this.githubProperties = githubProperties;
         this.objectMapper = objectMapper;
+        this.auditService = auditService;
         this.restClient = RestClient.builder().build();
     }
 
@@ -85,7 +90,20 @@ public class AuthService {
         ensureWorkspace(user);
         user.markLogin();
         userRepository.save(user);
-        return issueTokens(user);
+        AuthDtos.LoginResponse tokens = issueTokens(user);
+        auditService.recordRaw(
+                user.getId(),
+                user.getEmail(),
+                user.getName(),
+                AuditAction.LOGIN,
+                "USER",
+                user.getId(),
+                user.getEmail(),
+                user.getCurrentWorkspaceId(),
+                null,
+                "Dev Login"
+        );
+        return tokens;
     }
 
     public AuthDtos.GithubLoginResponse startGithubLogin() {
@@ -140,7 +158,20 @@ public class AuthService {
             ensureWorkspace(user);
             user.markLogin();
             userRepository.save(user);
-            return issueTokens(user);
+            AuthDtos.LoginResponse tokens = issueTokens(user);
+            auditService.recordRaw(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getName(),
+                    AuditAction.LOGIN,
+                    "USER",
+                    user.getId(),
+                    user.getEmail(),
+                    user.getCurrentWorkspaceId(),
+                    null,
+                    "GitHub OAuth Login"
+            );
+            return tokens;
         } catch (BusinessException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -162,9 +193,20 @@ public class AuthService {
         return issueTokens(user);
     }
 
-    public void logout(String refreshToken) {
+    public void logout(NimbusPrincipal principal, String refreshToken) {
         if (refreshToken != null && !refreshToken.isBlank()) {
             tokenStore.delete("refresh:" + refreshToken);
+        }
+        if (principal != null) {
+            auditService.recordSuccess(
+                    principal,
+                    AuditAction.LOGOUT,
+                    "USER",
+                    principal.userId(),
+                    principal.email(),
+                    principal.workspaceId(),
+                    "Logout"
+            );
         }
     }
 
@@ -195,7 +237,17 @@ public class AuthService {
         workspaceBootstrapService.requireMember(workspaceId, user.getId());
         user.switchWorkspace(workspaceId);
         userRepository.save(user);
-        return issueTokens(user);
+        AuthDtos.LoginResponse tokens = issueTokens(user);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.SWITCH_WORKSPACE,
+                "WORKSPACE",
+                workspaceId,
+                null,
+                workspaceId,
+                "워크스페이스 전환"
+        );
+        return tokens;
     }
 
     public AuthDtos.TokenValidateResponse validate(NimbusPrincipal principal) {

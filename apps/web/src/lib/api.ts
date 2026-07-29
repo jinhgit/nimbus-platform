@@ -655,4 +655,44 @@ export async function rerunPipeline(pipelineId: string) {
   return apiPost<Pipeline>(`/api/v1/pipelines/${pipelineId}/rerun`);
 }
 
+export type AuditLogItem = {
+  id: string;
+  actorId?: string;
+  actorEmail?: string;
+  actorName?: string;
+  action: string;
+  resourceType?: string;
+  resourceId?: string;
+  resourceName?: string;
+  workspaceId?: string;
+  result: string;
+  message?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt?: string;
+};
+
+export type AuditListResponse = {
+  items: AuditLogItem[];
+  count: number;
+  limit: number;
+};
+
+export async function fetchAuditLogs(params?: {
+  workspaceId?: string;
+  actorId?: string;
+  action?: string;
+  resourceType?: string;
+  limit?: number;
+}) {
+  const sp = new URLSearchParams();
+  if (params?.workspaceId) sp.set("workspaceId", params.workspaceId);
+  if (params?.actorId) sp.set("actorId", params.actorId);
+  if (params?.action) sp.set("action", params.action);
+  if (params?.resourceType) sp.set("resourceType", params.resourceType);
+  if (params?.limit != null) sp.set("limit", String(params.limit));
+  const q = sp.toString();
+  return apiGet<AuditListResponse>(`/api/v1/audit${q ? `?${q}` : ""}`);
+}
+
 export { API_BASE };

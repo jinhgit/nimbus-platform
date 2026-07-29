@@ -21,6 +21,7 @@ const nav = [
   { href: "/pipelines", label: "파이프라인" },
   { href: "/monitoring", label: "모니터링" },
   { href: "/logs", label: "로그" },
+  { href: "/audit", label: "감사 로그" },
   { href: "/workspaces", label: "워크스페이스" },
   { href: "/infrastructure", label: "인프라" },
   { href: "/settings", label: "설정" },

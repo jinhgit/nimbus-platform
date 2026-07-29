@@ -1,5 +1,7 @@
 package io.nimbus.platform.pipeline.service;
 
+import io.nimbus.platform.audit.domain.AuditAction;
+import io.nimbus.platform.audit.service.AuditService;
 import io.nimbus.platform.auth.security.NimbusPrincipal;
 import io.nimbus.platform.common.exception.BusinessException;
 import io.nimbus.platform.common.exception.ErrorCode;
@@ -23,17 +25,20 @@ public class BuildPipelineService {
     private final AppServiceRepository appServiceRepository;
     private final WorkspaceBootstrapService workspaceBootstrapService;
     private final BuildPipelineRunner pipelineRunner;
+    private final AuditService auditService;
 
     public BuildPipelineService(
             BuildPipelineRepository pipelineRepository,
             AppServiceRepository appServiceRepository,
             WorkspaceBootstrapService workspaceBootstrapService,
-            BuildPipelineRunner pipelineRunner
+            BuildPipelineRunner pipelineRunner,
+            AuditService auditService
     ) {
         this.pipelineRepository = pipelineRepository;
         this.appServiceRepository = appServiceRepository;
         this.workspaceBootstrapService = workspaceBootstrapService;
         this.pipelineRunner = pipelineRunner;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -52,6 +57,15 @@ public class BuildPipelineService {
         );
         pipeline = pipelineRepository.save(pipeline);
         pipelineRunner.runAsync(pipeline.getId());
+        auditService.recordSuccess(
+                principal,
+                AuditAction.CREATE_PIPELINE,
+                "PIPELINE",
+                pipeline.getId(),
+                pipeline.getName(),
+                pipeline.getWorkspaceId(),
+                "파이프라인 실행: " + service.getName()
+        );
         return toResponse(pipeline);
     }
 
@@ -117,6 +131,15 @@ public class BuildPipelineService {
         if (old.getStatus() == PipelineStatus.RUNNING || old.getStatus() == PipelineStatus.QUEUED) {
             throw new BusinessException(ErrorCode.PIPELINE_INVALID_STATE, "Pipeline already running");
         }
+        auditService.recordSuccess(
+                principal,
+                AuditAction.RERUN_PIPELINE,
+                "PIPELINE",
+                old.getId(),
+                old.getName(),
+                old.getWorkspaceId(),
+                "파이프라인 재실행"
+        );
         return createAndRun(principal, old.getServiceId());
     }
 

@@ -217,4 +217,8 @@ GitHub App 권장, OAuth App 으로도 MVP 가능.
 **시연 목표(10~15분 플로우, MVP 가능/제외, 면접 한 문장):**  
 → [docs/demo/DEMO-SCENARIO.md](../demo/DEMO-SCENARIO.md)
 
-구현 우선순위는 Demo Scenario §7 을 나침반으로 쓴다.
+**PRD 대비 구현 현황 · 실운영 우선순위:**  
+→ [docs/status/PRD-vs-Implementation.md](../status/PRD-vs-Implementation.md)
+
+구현 우선순위: 로컬(k3d 마감) 보류 · **실운영 풀스택 P0~P1** (Audit → Env/Secret → GitOps) 우선.  
+시연 동선은 Demo Scenario 를 유지한다.

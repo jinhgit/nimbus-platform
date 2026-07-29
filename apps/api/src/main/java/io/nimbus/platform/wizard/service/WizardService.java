@@ -2,6 +2,8 @@ package io.nimbus.platform.wizard.service;
 
 import io.nimbus.platform.ai.dto.AiDtos;
 import io.nimbus.platform.ai.service.RuleBasedAiService;
+import io.nimbus.platform.audit.domain.AuditAction;
+import io.nimbus.platform.audit.service.AuditService;
 import io.nimbus.platform.auth.security.NimbusPrincipal;
 import io.nimbus.platform.catalog.domain.RuntimeType;
 import io.nimbus.platform.catalog.domain.ServiceTemplate;
@@ -40,6 +42,7 @@ public class WizardService {
     private final RuleBasedAiService aiService;
     private final WizardProvisionRunner provisionRunner;
     private final ObjectMapper objectMapper;
+    private final AuditService auditService;
 
     public WizardService(
             ServiceWizardRepository wizardRepository,
@@ -49,7 +52,8 @@ public class WizardService {
             WorkspaceBootstrapService workspaceBootstrapService,
             RuleBasedAiService aiService,
             WizardProvisionRunner provisionRunner,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            AuditService auditService
     ) {
         this.wizardRepository = wizardRepository;
         this.projectRepository = projectRepository;
@@ -59,6 +63,7 @@ public class WizardService {
         this.aiService = aiService;
         this.provisionRunner = provisionRunner;
         this.objectMapper = objectMapper;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -89,7 +94,17 @@ public class WizardService {
             wizard.updateDraft(null, templateId, runtime, EnvironmentType.DEV,
                     null, null, null, null, null, null, null, 1);
         }
-        return toResponse(wizardRepository.save(wizard));
+        ServiceWizard saved = wizardRepository.save(wizard);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.CREATE_WIZARD,
+                "WIZARD",
+                saved.getId(),
+                saved.getServiceName(),
+                saved.getWorkspaceId(),
+                "서비스 위자드 생성"
+        );
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -244,6 +259,15 @@ public class WizardService {
         wizard.startProvisioning();
         wizardRepository.save(wizard);
         provisionRunner.runAsync(wizard.getId());
+        auditService.recordSuccess(
+                principal,
+                AuditAction.EXECUTE_WIZARD,
+                "WIZARD",
+                wizard.getId(),
+                wizard.getServiceName(),
+                wizard.getWorkspaceId(),
+                "서비스 프로비저닝 시작"
+        );
         return new WizardDtos.ExecuteResponse(
                 wizard.getId(),
                 wizard.getId(),
@@ -264,7 +288,17 @@ public class WizardService {
             throw new BusinessException(ErrorCode.WIZARD_CANCEL_DENIED, "Deploy 중에는 취소할 수 없습니다");
         }
         wizard.cancel();
-        return toResponse(wizardRepository.save(wizard));
+        ServiceWizard saved = wizardRepository.save(wizard);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.CANCEL_WIZARD,
+                "WIZARD",
+                saved.getId(),
+                saved.getServiceName(),
+                saved.getWorkspaceId(),
+                "위자드 취소"
+        );
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)

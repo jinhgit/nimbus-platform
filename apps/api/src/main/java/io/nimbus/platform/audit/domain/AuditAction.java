@@ -1,0 +1,33 @@
+package io.nimbus.platform.audit.domain;
+
+/**
+ * 감사 이벤트 액션. PRD v1.5A audit_log action 예시 확장.
+ */
+public enum AuditAction {
+    LOGIN,
+    LOGOUT,
+    SWITCH_WORKSPACE,
+
+    CREATE_WORKSPACE,
+    UPDATE_WORKSPACE,
+
+    CREATE_PROJECT,
+    UPDATE_PROJECT,
+    DELETE_PROJECT,
+    ARCHIVE_PROJECT,
+    RESTORE_PROJECT,
+
+    CREATE_WIZARD,
+    UPDATE_WIZARD,
+    EXECUTE_WIZARD,
+    CANCEL_WIZARD,
+
+    CONNECT_GITHUB,
+    DISCONNECT_GITHUB,
+
+    CREATE_PIPELINE,
+    RERUN_PIPELINE,
+
+    DEPLOY_K8S,
+    DELETE_K8S
+}

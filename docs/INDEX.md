@@ -34,6 +34,18 @@ Nimbus 설계 문서 전체 목록.
 1. [Demo Scenario](demo/DEMO-SCENARIO.md) — 10~15분 최종 시연 플로우  
 2. Free-Only 제약과 함께 읽기  
 
+**구현 현황**
+
+1. [PRD vs 구현 매트릭스](status/PRD-vs-Implementation.md) — 문서 대비 코드 상태 · 실운영 로드맵  
+
+---
+
+## Status
+
+| File | Topic |
+|------|-------|
+| [PRD-vs-Implementation](status/PRD-vs-Implementation.md) | PRD/API vs 구현, 로컬 보류, 실운영 P0~P2 |
+
 ---
 
 ## Demo / Portfolio

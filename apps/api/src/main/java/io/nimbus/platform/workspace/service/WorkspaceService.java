@@ -1,5 +1,7 @@
 package io.nimbus.platform.workspace.service;
 
+import io.nimbus.platform.audit.domain.AuditAction;
+import io.nimbus.platform.audit.service.AuditService;
 import io.nimbus.platform.auth.domain.User;
 import io.nimbus.platform.auth.repository.UserRepository;
 import io.nimbus.platform.auth.security.NimbusPrincipal;
@@ -38,6 +40,7 @@ public class WorkspaceService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final WorkspaceBootstrapService bootstrapService;
+    private final AuditService auditService;
 
     public WorkspaceService(
             WorkspaceRepository workspaceRepository,
@@ -45,7 +48,8 @@ public class WorkspaceService {
             TeamRepository teamRepository,
             ProjectRepository projectRepository,
             UserRepository userRepository,
-            WorkspaceBootstrapService bootstrapService
+            WorkspaceBootstrapService bootstrapService,
+            AuditService auditService
     ) {
         this.workspaceRepository = workspaceRepository;
         this.memberRepository = memberRepository;
@@ -53,6 +57,7 @@ public class WorkspaceService {
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.bootstrapService = bootstrapService;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -67,6 +72,15 @@ public class WorkspaceService {
         memberRepository.save(WorkspaceMember.create(
                 workspace.getId(), principal.userId(), WorkspaceRole.OWNER, defaultTeam.getId()
         ));
+        auditService.recordSuccess(
+                principal,
+                AuditAction.CREATE_WORKSPACE,
+                "WORKSPACE",
+                workspace.getId(),
+                workspace.getName(),
+                workspace.getId(),
+                "워크스페이스 생성"
+        );
         return toResponse(workspace, WorkspaceRole.OWNER);
     }
 

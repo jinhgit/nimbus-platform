@@ -1,5 +1,7 @@
 package io.nimbus.platform.github.service;
 
+import io.nimbus.platform.audit.domain.AuditAction;
+import io.nimbus.platform.audit.service.AuditService;
 import io.nimbus.platform.auth.security.GithubProperties;
 import io.nimbus.platform.auth.security.NimbusPrincipal;
 import io.nimbus.platform.auth.security.TokenStore;
@@ -43,6 +45,7 @@ public class GitHubConnectionService {
     private final TokenStore tokenStore;
     private final ObjectMapper objectMapper;
     private final RestClient restClient;
+    private final AuditService auditService;
 
     public GitHubConnectionService(
             GitHubConnectionRepository connectionRepository,
@@ -50,7 +53,8 @@ public class GitHubConnectionService {
             TokenCryptoService tokenCryptoService,
             GithubProperties githubProperties,
             TokenStore tokenStore,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            AuditService auditService
     ) {
         this.connectionRepository = connectionRepository;
         this.gitProvider = gitProvider;
@@ -58,6 +62,7 @@ public class GitHubConnectionService {
         this.githubProperties = githubProperties;
         this.tokenStore = tokenStore;
         this.objectMapper = objectMapper;
+        this.auditService = auditService;
         this.restClient = RestClient.builder().build();
     }
 
@@ -120,7 +125,21 @@ public class GitHubConnectionService {
         try {
             String accessToken = exchangeCode(code, githubProperties.getScmRedirectUri());
             GitUserProfile profile = gitProvider.validateToken(accessToken);
-            saveConnection(userId, workspaceId, profile, accessToken, githubProperties.getScmScopes(), AuthMethod.OAUTH);
+            GitHubConnection connection = saveConnection(
+                    userId, workspaceId, profile, accessToken, githubProperties.getScmScopes(), AuthMethod.OAUTH
+            );
+            auditService.recordRaw(
+                    userId,
+                    null,
+                    profile.login(),
+                    AuditAction.CONNECT_GITHUB,
+                    "GITHUB_CONNECTION",
+                    connection.getId(),
+                    profile.login(),
+                    workspaceId,
+                    null,
+                    "GitHub SCM OAuth 연결"
+            );
             return frontendScmRedirect(true, null);
         } catch (BusinessException ex) {
             log.warn("SCM OAuth failed: {}", ex.getMessage());
@@ -145,6 +164,15 @@ public class GitHubConnectionService {
                 token,
                 "repo,workflow,read:user",
                 AuthMethod.PAT
+        );
+        auditService.recordSuccess(
+                principal,
+                AuditAction.CONNECT_GITHUB,
+                "GITHUB_CONNECTION",
+                connection.getId(),
+                connection.getLogin(),
+                principal.workspaceId(),
+                "GitHub PAT 연결"
         );
         return toResponse(connection);
     }
@@ -173,8 +201,19 @@ public class GitHubConnectionService {
     public void disconnect(NimbusPrincipal principal) {
         GitHubConnection connection = connectionRepository.findByUserIdAndDeletedAtIsNull(principal.userId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.GITHUB_NOT_CONNECTED));
+        String login = connection.getLogin();
+        UUID connectionId = connection.getId();
         connection.disconnect();
         connectionRepository.save(connection);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.DISCONNECT_GITHUB,
+                "GITHUB_CONNECTION",
+                connectionId,
+                login,
+                principal.workspaceId(),
+                "GitHub 연결 해제"
+        );
     }
 
     @Transactional(readOnly = true)

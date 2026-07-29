@@ -1,5 +1,7 @@
 package io.nimbus.platform.project.service;
 
+import io.nimbus.platform.audit.domain.AuditAction;
+import io.nimbus.platform.audit.service.AuditService;
 import io.nimbus.platform.auth.security.NimbusPrincipal;
 import io.nimbus.platform.common.exception.BusinessException;
 import io.nimbus.platform.common.exception.ErrorCode;
@@ -30,13 +32,16 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final AuditService auditService;
 
     public ProjectService(
             ProjectRepository projectRepository,
-            WorkspaceBootstrapService workspaceBootstrapService
+            WorkspaceBootstrapService workspaceBootstrapService,
+            AuditService auditService
     ) {
         this.projectRepository = projectRepository;
         this.workspaceBootstrapService = workspaceBootstrapService;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -56,6 +61,15 @@ public class ProjectService {
                 request.visibility() != null ? request.visibility() : Visibility.PRIVATE,
                 principal.userId()
         ));
+        auditService.recordSuccess(
+                principal,
+                AuditAction.CREATE_PROJECT,
+                "PROJECT",
+                project.getId(),
+                project.getName(),
+                project.getWorkspaceId(),
+                "프로젝트 생성"
+        );
         return toResponse(project);
     }
 
@@ -96,7 +110,17 @@ public class ProjectService {
             throw new BusinessException(ErrorCode.PROJECT_NAME_DUPLICATE);
         }
         project.update(request.name(), request.description(), request.teamId(), request.visibility());
-        return toResponse(projectRepository.save(project));
+        Project saved = projectRepository.save(project);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.UPDATE_PROJECT,
+                "PROJECT",
+                saved.getId(),
+                saved.getName(),
+                saved.getWorkspaceId(),
+                "프로젝트 수정"
+        );
+        return toResponse(saved);
     }
 
     @Transactional
@@ -105,6 +129,15 @@ public class ProjectService {
         workspaceBootstrapService.requireMember(project.getWorkspaceId(), principal.userId());
         project.softDelete();
         projectRepository.save(project);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.DELETE_PROJECT,
+                "PROJECT",
+                project.getId(),
+                project.getName(),
+                project.getWorkspaceId(),
+                "프로젝트 삭제(soft)"
+        );
     }
 
     @Transactional
@@ -112,7 +145,17 @@ public class ProjectService {
         Project project = requireProject(projectId);
         workspaceBootstrapService.requireMember(project.getWorkspaceId(), principal.userId());
         project.archive();
-        return toResponse(projectRepository.save(project));
+        Project saved = projectRepository.save(project);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.ARCHIVE_PROJECT,
+                "PROJECT",
+                saved.getId(),
+                saved.getName(),
+                saved.getWorkspaceId(),
+                "프로젝트 아카이브"
+        );
+        return toResponse(saved);
     }
 
     @Transactional
@@ -120,7 +163,17 @@ public class ProjectService {
         Project project = requireProject(projectId);
         workspaceBootstrapService.requireMember(project.getWorkspaceId(), principal.userId());
         project.restore();
-        return toResponse(projectRepository.save(project));
+        Project saved = projectRepository.save(project);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.RESTORE_PROJECT,
+                "PROJECT",
+                saved.getId(),
+                saved.getName(),
+                saved.getWorkspaceId(),
+                "프로젝트 복원"
+        );
+        return toResponse(saved);
     }
 
     private Project requireProject(UUID projectId) {

@@ -14,6 +14,7 @@
 |------|------|
 | 전체 한 장 요약 | [prd/PRD-MASTER.md](prd/PRD-MASTER.md) |
 | **최종 시연 시나리오 (10~15분)** | [demo/DEMO-SCENARIO.md](demo/DEMO-SCENARIO.md) |
+| **PRD vs 구현 매트릭스** | [status/PRD-vs-Implementation.md](status/PRD-vs-Implementation.md) |
 | 설계가 쌓인 레이어 맵 | [architecture/03-Canonical-Decisions.md](architecture/03-Canonical-Decisions.md) *(Evolution Map)* |
 | 용어 | [architecture/04-Glossary.md](architecture/04-Glossary.md) |
 | 처음부터 제품 이야기 | [prd/PRD-v1.1-…](prd/PRD-v1.1-Project-Overview.md) |

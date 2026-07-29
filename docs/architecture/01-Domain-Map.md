@@ -1,6 +1,6 @@
 # Domain Map
 
-> 정본: [03-Canonical-Decisions.md](03-Canonical-Decisions.md)
+> PRD/API 도메인을 모아 그린 맵. 보강 메모: [Design Evolution Map](03-Canonical-Decisions.md)
 
 ## 1. Aggregate roots
 

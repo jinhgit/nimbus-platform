@@ -12,16 +12,17 @@ Platform Engineering Portal을 목표로 한다.
 
 ---
 
-## 문서 먼저
+## 문서
+
+설계는 **쌓아 올린 것**이다. 버전 PRD + API Spec 을 유지하고, 위에 요약/맵을 얹었다.
 
 | 문서 | 용도 |
 |------|------|
 | [docs/README.md](docs/README.md) | 문서 허브 |
-| [docs/prd/PRD-MASTER.md](docs/prd/PRD-MASTER.md) | 제품 한 장 요약 |
-| [docs/architecture/03-Canonical-Decisions.md](docs/architecture/03-Canonical-Decisions.md) | **확정 설계 결정** |
+| [docs/prd/](docs/prd/) | PRD v1.1~v1.5 + Master 요약 |
+| [docs/api/](docs/api/) | 구현용 API Spec |
+| [docs/architecture/03-Canonical-Decisions.md](docs/architecture/03-Canonical-Decisions.md) | 설계 누적 맵 (Evolution) |
 | [docs/INDEX.md](docs/INDEX.md) | 전체 목록 |
-
-초안 PRD 사이에 용어·단계 수가 달랐던 부분은 Canonical 기준으로 맞춰 두었다.
 
 ---
 
@@ -33,7 +34,7 @@ Platform Engineering Portal을 목표로 한다.
 - Spring Boot API skeleton + `/api/v1/health`
 - Next.js dark landing + dashboard placeholder
 - Docker Compose: PostgreSQL 16, Redis 7
-- PRD / API Spec / Architecture 정리본
+- PRD / API Spec / Architecture 문서 축적
 
 **아직:** OAuth, Wizard, Provision, GitHub Adapter 등 도메인 구현
 
@@ -90,13 +91,14 @@ cd apps/web && npm run dev
 
 ---
 
-## 도메인 (정본)
+## 도메인 (누적)
 
 ```text
 Workspace → Project → Service → Environment → Deployment
 ```
 
-Wizard 7 step · Provision = Saga Job · Deploy path = GitOps (ArgoCD)
+Wizard = 입력 + AI + Preview + Provision Job  
+Deploy path = GitOps (ArgoCD) 보강 · 상세는 docs/
 
 ---
 

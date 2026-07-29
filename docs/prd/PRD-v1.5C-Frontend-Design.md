@@ -7,7 +7,7 @@
 
 ---
 
-> **정본 우선:** 이 문서와 최신 결정이 다르면 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 와 [`PRD-MASTER.md`](PRD-MASTER.md) 를 따른다.
+> **이어서 보면 좋은 문서:** [PRD-MASTER](PRD-MASTER.md) · [Design Evolution Map](../architecture/03-Canonical-Decisions.md) · [Glossary](../architecture/04-Glossary.md)
 
 
 # 1. 목표
@@ -119,15 +119,17 @@ AI Summary 예: 오늘 Deployment 12건, 실패 1건, 원인 Health Check
 Table: Project · Status · Framework · Repository · Cluster · Updated  
 Action: Open · Deploy · Delete · AI Review
 
-## Create Service Wizard (7 Step · 정본)
+## Create Service Wizard
+
+기능 스펙(v1.2) 입력 단계 + Catalog/AI/Preview/Job 을 합친 화면 흐름 예:
 
 ```text
 Service Info → Template → Infrastructure → AI Review
 → Preview → Provision → Complete
 ```
 
-Progress 1–7 · 우측 상시 AI Panel (Recommendation · Architecture · Cost)  
-(초기 초안의 5~6 step 표기는 7 step 으로 통일)
+Progress · 우측 상시 AI Panel (Recommendation · Architecture · Cost)  
+단계 수는 UX 실험에 따라 늘어날 수 있고, 핵심은 **입력 → 리뷰 → 미리보기 → 비동기 실행** 이다.
 
 ## Project Detail Tabs
 
@@ -253,7 +255,7 @@ Deployment Timeline · Pipeline Status · Cluster Health Card · Service Catalog
 
 ### Service Wizard
 
-- 7단계 플로우 완료
+- 다단계 플로우 완료 (입력 → 리뷰 → 미리보기 → Provision)
 - 입력 자동 저장 · 이전 단계 복원
 - AI 추천 실시간 표시
 - Provision 진행률 (Job) 표시

@@ -1,6 +1,6 @@
 # System Overview
 
-> 정본: [03-Canonical-Decisions.md](03-Canonical-Decisions.md)
+> 원본 PRD와 함께 보면 좋은 누적 맵: [Design Evolution Map](03-Canonical-Decisions.md)
 
 ## 1. Product
 

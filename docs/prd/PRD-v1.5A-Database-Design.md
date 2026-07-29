@@ -7,7 +7,7 @@
 
 ---
 
-> **정본 우선:** 이 문서와 최신 결정이 다르면 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 와 [`PRD-MASTER.md`](PRD-MASTER.md) 를 따른다.
+> **이어서 보면 좋은 문서:** [PRD-MASTER](PRD-MASTER.md) · [Design Evolution Map](../architecture/03-Canonical-Decisions.md) · [Glossary](../architecture/04-Glossary.md)
 
 
 # 1. 목적
@@ -36,7 +36,7 @@ User
        ├── Team
        ├── Member
        └── Project
-             ├── Service                    # 배포 단위 (정본)
+             ├── Service                    # (+ 보강) 배포 단위
              │     ├── Repository
              │     ├── Environment          # DEV / STAGE / PRODUCTION
              │     │     ├── Variable / Secret
@@ -47,7 +47,8 @@ User
              └── Metadata (label/tag/…)
 ```
 
-> 초기 스케치에 Project 직속 Deployment 만 있던 부분은 **Service → Environment → Deployment** 로 정리한다.
+> Project / Deployment 스케치 위에 **Service · Environment 세분** 을 얹은 형태.  
+> 기존 테이블 정의도 유효하고, service_id 연결이 추가 확장이다.
 
 ---
 
@@ -111,7 +112,7 @@ Framework/runtime 은 **Service** (또는 Catalog 선택 결과) 쪽에 두는 �
 
 ---
 
-# 8.1 service (배포 단위 · 정본 추가)
+# 8.1 service (배포 단위 · 보강 추가)
 
 ```text
 id · project_id · name · description · framework · language · runtime
@@ -130,7 +131,7 @@ url · default_branch · visibility · created_at
 ```
 
 State: CREATING · READY · FAILED  
-> 연결 주체: **Service** (Project 가 아님)
+> 연결 주체: Service 에 직접 붙이는 모델 권장 (Project 단위 조회는 조인/집계)
 
 ---
 
@@ -318,4 +319,4 @@ Project → Repository → Deployment → Incident → Archive → Soft Delete
 2. **service_template** — Catalog 버전 관리
 3. **gitops_manifest** — Helm Values ↔ Commit SHA ↔ Argo Revision 연결
 4. 핵심 테이블에 **cluster_id** 명시 (멀티 클러스터 대비)
-5. **service** 테이블을 Project–Environment 사이에 명시 (정본 계층, 상단 반영됨)
+5. **service** 테이블을 Project–Environment 사이에 추가 (상단 ERD 보강 반영)

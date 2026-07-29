@@ -1,68 +1,83 @@
-# Canonical Decisions
+# Design Evolution Map
 
-초기 PRD를 쓰면서 방향이 여러 번 바뀌었다.  
-이 문서는 **지금 기준으로 확정된 것**만 모은다. 다른 문서와 겹치면 여기를 우선한다.
+설계를 쌓아가며 보강된 레이어를 한곳에 모아 둔 문서다.  
+**기존 PRD/API를 대체하지 않는다.** 옆에 덧붙인 확장 메모에 가깝다.
 
-최종 정리: 2026-07-29
+누적 일자: 2026-07-29
+
+함께 보면 좋은 원본:
+
+- Vision·Epic → PRD v1.1  
+- 기능 흐름 → PRD v1.2  
+- Infra/GitOps 상세 → PRD v1.3  
+- AI 에이전트 → PRD v1.4  
+- DB → PRD v1.5A  
+- Frontend → PRD v1.5C  
+- 일정 → PRD v1.5D  
+- Endpoint 단위 → `docs/api/*`
 
 ---
 
-## 1. 제품 정체성
+## 1. 제품 정체성 (유지 + 보강)
 
-| 항목 | 결정 |
+v1.1에서 잡은 방향 그대로:
+
+| 항목 | 내용 |
 |------|------|
 | 이름 | Nimbus Platform |
 | 한 줄 | AI Native Internal Developer Platform |
-| 아님 | Backstage 단순 클론 |
-| 가까움 | Backstage(Catalog/Portal) + Port(Blueprint) + Humanitec(오케스트레이션) + GitOps + AI Ops |
+| 포지션 | Backstage + Port + Humanitec + GitHub + ArgoCD + AI Ops 를 묶는 포털 |
 | 철학 | Developer First · Zero YAML · GitOps First · AI as Platform Engineer |
 
 Mission: **Empower Developers, Automate Infrastructure.**
 
 ---
 
-## 2. 도메인 계층 (최종)
+## 2. 도메인 계층 보강
+
+v1.1~1.2의 Project 중심 설명에, 실무 Platform 관점의 **Service** 레이어를 더한다.
 
 ```text
 Workspace
-  └── Project                 # 비즈니스 컨텍스트 (예: Shopping Mall)
-        └── Service           # 실제 배포 단위 (예: payment-api)
+  └── Project                 # 비즈니스 컨텍스트 (Shopping Mall)
+        └── Service           # 배포 단위 (payment-api)  ← 보강
               └── Environment # DEV | STAGE | PRODUCTION
                     └── Deployment
 ```
 
-- **Project** = 여러 Service를 담는 컨테이너. 직접 Deploy 대상이 아님.
-- **Service** = GitHub repo, Helm, ArgoCD Application 이 붙는 단위.
-- **Environment** = 문자열 태그가 아니라 Infrastructure Context  
-  (cluster, namespace, domain, helm values, gitops branch, strategy).
+- Project 문서(API-03-01)의 비즈니스 컨텍스트 역할은 그대로.
+- Service 단위로 Repo / Helm / Argo Application 을 붙이면 MSA 확장에 유리하다.
+- Environment 는 문자열 태그뿐 아니라 cluster·namespace·domain·helm·gitops 맥락까지 포함 (API-03-02).
 
-MVP에서는 Organization 계층을 두지 않는다.
+MVP: Organization 계층은 넣지 않고 Workspace 부터.
 
 ```text
-Workspace → Team → Member → Project → Service → ...
+Workspace → Team → Member → Project → Service → …
 ```
 
 ---
 
-## 3. 배포 경로 (GitOps)
+## 3. 배포 경로 보강 (GitOps)
+
+v1.3에서 잡은 흐름을 한 줄로 다시 적으면:
 
 ```text
 Terraform (infra 코드/파일)
-    → GitOps Repository (manifest / values commit)
+    → GitOps Repository
     → ArgoCD Sync
     → Kubernetes
 ```
 
-- Terraform이 `kubectl apply` 를 직접 하지 않는다.
-- Promotion(DEV→STAGE→PROD)도 Git PR/merge → ArgoCD 흐름.
+직접 `kubectl apply` 를 메인 경로로 쓰지 않고, Git을 배포 소스로 둔다.  
+Promotion(DEV→STAGE→PROD)도 PR/merge → ArgoCD 쪽과 맞물린다.
 
 ---
 
-## 4. Service Wizard
+## 4. Service Wizard 보강
 
-Wizard는 CRUD UI가 아니라 **Workflow Engine + Job Orchestrator**.
+v1.2의 Wizard 스케치 + 프론트 단계 UX + API-04 오케스트레이션을 **합쳐** 보면:
 
-### UI Step (최종 7단계)
+### UI 흐름 (누적 7단계)
 
 1. Service Info  
 2. Template (Catalog)  
@@ -72,115 +87,116 @@ Wizard는 CRUD UI가 아니라 **Workflow Engine + Job Orchestrator**.
 6. Provision (비동기 Job)  
 7. Complete  
 
-초안 v1.2의 “5단계”, 프론트 v1.5C의 “6단계”는 **이 7단계로 통일**.
+v1.2의 Project→Framework→DB→Infra→Review 스케치와 같은 맥락이고,  
+Template / Preview / 비동기 Provision 이 더해진 형태다.
 
-### 실행 규칙
+### 실행
 
-- `execute` 는 API 스레드에서 repo/deploy 를 돌리지 않는다.
-- Queue → Worker → Provision Steps (Saga).
-- 실패 시 Step 역순 rollback (Repo 자체는 기본적으로 삭제하지 않음).
+- `execute` 는 긴 작업을 API 스레드에서 끝내지 않는다.
+- Queue → Worker → Provision Steps (Saga) — API-04-03.
+- 실패 시 Step 역순 보상 (Repo 자체 삭제는 기본적으로 하지 않음).
 
 ---
 
-## 5. AI
+## 5. AI 보강
 
-| 아님 | 임 |
-|------|----|
-| 단순 채팅봇 / YAML 생성기 | Platform Engineer Decision Engine |
+v1.4 + API-04-02 를 한 줄로:
 
 ```text
-Context Builder → AIProvider → Guardrail(JSON Schema) → Recommendation
+Context Builder → AIProvider → Guardrail → Recommendation → Wizard/Portal
 ```
 
-- 모든 추천에 reason + confidence(0~100).
-- Secret은 prompt에 넣기 전 마스킹.
-- Provider 교체 가능 (MVP: Gemini/Groq/OpenRouter/Ollama 등 어댑터).
-- Catalog 추천은 “새 템플릿 생성”이 아니라 **기존 Catalog에서 고름**.
+- 채팅만이 아니라 Platform Engineer 역할 (리뷰, 추천, 장애 분석).
+- reason + confidence.
+- Secret 마스킹, Provider 교체, Catalog 안에서의 추천.
 
 ---
 
-## 6. Configuration
+## 6. Configuration 보강
+
+v1.5A / API-03-03:
 
 ```text
 Variable  → ConfigMap 경로
 Secret    → 암호화 저장 → K8s Secret / GitHub Secret
 ```
 
-- Secret 평문 DB 저장·API 응답 금지.
-- Clone Project 시 Secret 복사 금지.
-- Crypto는 `SecretProvider` 인터페이스 (Local AES → KMS/Vault 확장).
+- Secret 평문 저장·응답 금지.
+- Project Clone 시 Secret 미복사.
+- `SecretProvider` 로 Local AES → KMS/Vault 확장 여지.
 
 ---
 
-## 7. SCM
+## 7. SCM 보강
+
+API-05-01:
 
 ```text
-GitProvider (interface)
+GitProvider
   └── GitHubAdapter (MVP)
-  └── GitLab / Bitbucket (나중)
+  └── GitLab / Bitbucket (이후 추가 여지)
 ```
 
-비즈니스 로직은 GitHub REST를 직접 호출하지 않는다.  
-권장: GitHub App (OAuth App만으로도 MVP 가능).
+비즈니스 로직은 GitHub REST 직접 호출 대신 Adapter.  
+GitHub App 권장, OAuth App 으로도 MVP 가능.
 
 ---
 
-## 8. 기술 스택 (코드 기준)
+## 8. 기술 스택 (코드 + 문서)
 
-| Layer | 확정 |
+| Layer | 내용 |
 |-------|------|
 | Web | Next.js 15, TypeScript, Tailwind (shadcn 도입 예정) |
-| API | **Java 21, Spring Boot 4.0.x** |
+| API | Java 21, Spring Boot **4.0.x** (초기 문서 3.5 표기 → 코드 생성 시 4.x로 맞춤) |
 | DB | PostgreSQL 16 |
-| Cache/Session | Redis 7 |
-| Local K8s (MVP) | k3d / kind |
-| Cloud K8s (목표) | Amazon EKS |
+| Cache | Redis 7 |
+| Local K8s | k3d / kind |
+| Cloud K8s | EKS 목표 |
 
-초기 PRD의 “Spring Boot 3.5” 표기는 **4.0.x 로 갱신**한다.  
-(start.spring.io 호환 버전에 맞춤)
-
----
-
-## 9. MVP vs 이후
-
-### MVP에 넣는다
-
-- GitHub 로그인 (또는 App 연결)
-- Workspace / Project / Service 뼈대
-- Catalog 선택 + Wizard + Provision Job
-- Repo / Actions / Helm·TF **파일** / Argo **manifest** 생성
-- k3d·kind 배포 또는 배포 요청까지
-- AI Architecture Review · YAML explain (범위 내)
-- Audit · Dashboard skeleton
-- Prometheus/Grafana/Loki **연동 링크 또는 기본 스택** (깊이 있는 FinOps는 제외)
-
-### MVP에서 뺀다 (v2+)
-
-- Multi-cloud / Multi-cluster 운영
-- Terraform apply 로 실제 AWS 풀 프로비저닝
-- FinOps 대시보드, AI Auto Healing
-- Service Mesh, 고급 Canary 운영 고도화
-- OPA / Vault 본격 연동
-- Template Marketplace, MCP multi-agent 협업
+문서의 초기 버전 숫자와 코드 버전이 조금 달라도, **의도는 동일**하고 구현 레포 버전이 실제 기준이 된다.
 
 ---
 
-## 10. API / 응답 규칙 (백엔드)
+## 9. MVP와 이후 (범위 보강)
 
-- `ApiResponse<T>` 래퍼 (`success`, `data`, `error`)
-- Entity 직접 반환 금지 · record DTO
+### MVP에 쌓아 갈 것
+
+- GitHub 로그인/연결  
+- Workspace / Project / Service  
+- Catalog + Wizard + Provision Job  
+- Repo / Actions / Helm·TF 파일 / Argo manifest  
+- 로컬·단일 클러스터 경로  
+- AI Review · Explain  
+- Audit · Dashboard  
+- Observability 기본 연동  
+
+### 이후에 더 얹을 것
+
+- Multi-cloud / Multi-cluster  
+- Terraform apply 풀 프로비저닝  
+- FinOps, AI Auto Healing  
+- OPA / Vault  
+- Marketplace, MCP multi-agent  
+
+---
+
+## 10. 백엔드 공통 규칙 (API 문서 공통 +)
+
+- `ApiResponse<T>`
+- Entity 미노출 · DTO(record)
 - Controller → Facade → Service → Repository
-- 상태 변경 시 Domain Event + Audit
-- Soft delete (`deleted_at`), Optimistic lock (`version`)
-- PK: UUID
+- Event + Audit
+- Soft delete · UUID · version lock
+
+각 API-0x 문서의 세부 endpoint·테스트·AC 는 그대로 유효하다.
 
 ---
 
-## 11. 문서 우선순위
+## 11. 이 문서의 위치
 
-1. 이 파일 (Canonical)  
-2. [PRD-MASTER](../prd/PRD-MASTER.md)  
-3. 개별 API Spec  
-4. 구버전 PRD 본문 (맥락·히스토리)
+```text
+[개별 PRD v1.1~1.5]  +  [API Spec 01~05]  +  [이 Evolution Map]  +  [PRD-MASTER 요약]
+```
 
-구버전 PRD를 수정할 때마다 여기와 어긋나면 Canonical을 먼저 고친다.
+읽는 순서 강제가 아니다.  
+깊게 파고 싶을 때 원본 PRD/API를 보고, 한눈에 누적 레이어만 보고 싶을 때 여기를 보면 된다.

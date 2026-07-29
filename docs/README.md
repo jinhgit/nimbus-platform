@@ -1,26 +1,24 @@
 # Nimbus Platform — Docs
 
-설계·구현 문서 모음이다.  
-코드는 `apps/`, 설계는 여기(`docs/`)를 기준으로 본다.
+설계가 쌓인 공간이다.  
+코드는 `apps/`, 설계·명세는 `docs/`.
+
+문서끼리 **어느 하나를 지우거나 폐기하는 구조가 아니다.**  
+버전을 쌓고, API 상세를 얹고, 요약 맵을 옆에 둔 형태다.
 
 ---
 
-## 어디부터 읽나
+## 어디부터 읽나 (취향대로)
 
 | 목적 | 문서 |
 |------|------|
-| 한 번에 전체 그림 | [prd/PRD-MASTER.md](prd/PRD-MASTER.md) |
-| 확정된 설계 결정 (모순 정리) | [architecture/03-Canonical-Decisions.md](architecture/03-Canonical-Decisions.md) |
+| 전체 한 장 요약 | [prd/PRD-MASTER.md](prd/PRD-MASTER.md) |
+| 설계가 쌓인 레이어 맵 | [architecture/03-Canonical-Decisions.md](architecture/03-Canonical-Decisions.md) *(Evolution Map)* |
 | 용어 | [architecture/04-Glossary.md](architecture/04-Glossary.md) |
-| 문서 목록 | [INDEX.md](INDEX.md) |
-| 로컬 실행 | 루트 [README.md](../README.md) |
-
-권장 순서:
-
-1. Canonical Decisions  
-2. PRD Master  
-3. 관심 도메인 API Spec  
-4. 구현
+| 처음부터 제품 이야기 | [prd/PRD-v1.1-…](prd/PRD-v1.1-Project-Overview.md) |
+| 구현 스펙 | [api/](api/) |
+| 목록 전체 | [INDEX.md](INDEX.md) |
+| 로컬 실행 | [../README.md](../README.md) |
 
 ---
 
@@ -28,32 +26,37 @@
 
 ```text
 docs/
-├── README.md          ← 지금 파일
-├── INDEX.md           ← 전체 목록
-├── prd/               ← 제품 요구사항 (v1.1 ~ Master)
-├── api/               ← Engineering API Spec (구현 단위)
-└── architecture/      ← 시스템·도메인·모노레포·용어
+├── README.md · INDEX.md
+├── prd/            # 제품 요구 (v1.1 ~ Master) — 전부 유효
+├── api/            # Engineering Spec — PRD 위에 얹힌 구현 단위
+└── architecture/   # 시스템 그림, 도메인 맵, monorepo, 용어, evolution
 ```
 
 ---
 
-## 문서 역할 구분
+## 문서가 쌓인 방식
 
-| 종류 | 쓰는 때 |
-|------|---------|
-| **PRD** | Why / What / 범위 / UX·NFR |
-| **API Spec** | How — endpoint, DTO, event, AC (코드 생성용) |
-| **Architecture** | 구조 결정, 도메인 맵, monorepo 현실 |
+```text
+PRD v1.1  Vision / Epic / IA
+   + v1.2  기능 스펙
+   + v1.3  GitOps 인프라
+   + v1.4  AI Native
+   + v1.5A DB
+   + v1.5C Frontend
+   + v1.5D Roadmap
+   + API-01~05  구현 가능 수준 명세
+   + Master / Evolution Map / Glossary  찾기 쉬운 인덱스 레이어
+```
 
-초기 초안(v1.1~)과 이후 확장(API-03~) 사이에 용어·단계 수가 달라진 부분이 있다.  
-**충돌하면 Canonical Decisions 를 따른다.**
+같은 주제가 여러 문서에 있으면 **삭제된 게 아니라 깊이가 다른 버전**이다.  
+예: Wizard 는 v1.2 스케치 + v1.5C UX + API-04 오케스트레이션이 함께 있다.
 
 ---
 
-## 현재 구현 상태 (문서 기준)
+## 구현 상태
 
 | 단계 | 상태 |
 |------|------|
-| 설계 문서 | 있음 |
-| Monorepo 뼈대 | 있음 (`apps/api`, `apps/web`, compose) |
-| Auth ~ Provision 구현 | 아직 (다음 스프린트) |
+| 설계 문서 축적 | 있음 |
+| Monorepo 뼈대 | 있음 |
+| 도메인 기능 구현 | 이어갈 예정 |

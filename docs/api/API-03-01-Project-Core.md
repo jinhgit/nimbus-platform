@@ -4,7 +4,7 @@
 
 ---
 
-> **정본 우선:** 도메인 계층·Wizard 7step·GitOps·스택은 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 기준.
+> **이어서 보면 좋은 문서:** [PRD-MASTER](../prd/PRD-MASTER.md) · [Design Evolution Map](../architecture/03-Canonical-Decisions.md) · 연관 PRD (`docs/prd/`)
 
 
 # 1. 목적 & 설계 변경

@@ -7,7 +7,7 @@
 
 ---
 
-> **정본 우선:** 이 문서와 최신 결정이 다르면 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 와 [`PRD-MASTER.md`](PRD-MASTER.md) 를 따른다.
+> **이어서 보면 좋은 문서:** [PRD-MASTER](PRD-MASTER.md) · [Design Evolution Map](../architecture/03-Canonical-Decisions.md) · [Glossary](../architecture/04-Glossary.md)
 
 
 # 1. 목적

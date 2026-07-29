@@ -1,11 +1,11 @@
 # Nimbus Platform — Master PRD
 
-**Version:** Master (v1.x 통합)  
-**Status:** Living document — Canonical Decisions 와 함께 유지  
+**Version:** Master (v1.x 위에 얹은 요약)  
+**Status:** Living document  
 **Author:** Nasuyu Yu
 
-이 문서는 v1.1~v1.5 및 API 설계에서 합의된 내용을 **한 장으로 읽히게** 정리한 것이다.  
-세부 endpoint·DTO·AC 는 `docs/api/` 를 본다.
+v1.1~v1.5 PRD 와 API 명세를 **한 장으로 훑기 위한 요약 레이어**다.  
+원본 PRD/API 를 대체하지 않는다. 디테일·endpoint·AC 는 각 문서를 그대로 보면 된다.
 
 ---
 
@@ -197,8 +197,8 @@ Spring Boot Platform API
 - Redis: session, cache, AI cache, job lock  
 - Git: 앱 배포 SoT (GitOps)  
 
-테이블 초안: [PRD-v1.5A](PRD-v1.5A-Database-Design.md)  
-※ Service 테이블·`cluster_id`·`gitops_manifest` 등은 Canonical/Domain Map 기준으로 확장한다.
+상세 테이블: [PRD-v1.5A](PRD-v1.5A-Database-Design.md)  
+(+ Service 세분, cluster_id, gitops_manifest 등 확장 메모는 Evolution Map / Domain Map 참고)
 
 ---
 
@@ -209,24 +209,26 @@ Spring Boot Platform API
 - Wizard 우측 AI 패널  
 - ⌘K 검색 (목표)  
 
-[PRD-v1.5C](PRD-v1.5C-Frontend-Design.md) — Wizard 단계 수는 **7** 로 통일.
+[PRD-v1.5C](PRD-v1.5C-Frontend-Design.md) — Wizard 는 입력·AI·Preview·Job 이 합쳐진 다단계 UX.
 
 ---
 
-## 13. 관련 문서 맵
+## 13. 관련 문서 맵 (+ 레이어)
 
-| 깊이 | 경로 |
-|------|------|
-| 정본 결정 | `docs/architecture/03-Canonical-Decisions.md` |
-| 용어 | `docs/architecture/04-Glossary.md` |
-| 개별 PRD | `docs/prd/PRD-v1.*` |
+| 레이어 | 경로 |
+|--------|------|
+| 원본 PRD | `docs/prd/PRD-v1.*` |
 | 구현 Spec | `docs/api/API-*` |
+| 누적 맵 | `docs/architecture/03-Canonical-Decisions.md` (Evolution Map) |
+| 용어 | `docs/architecture/04-Glossary.md` |
 | 코드 배치 | `docs/architecture/02-Monorepo-Layout.md` |
+| 이 요약 | `docs/prd/PRD-MASTER.md` |
 
 ---
 
-## 14. 변경 이력 (문서)
+## 14. 이력 (문서에 더해진 것)
 
 | 날짜 | 내용 |
 |------|------|
-| 2026-07-29 | Master 통합본 작성. 도메인 Service 계층, Wizard 7 step, Spring Boot 4, GitOps/Saga/AI Decision 정본 반영 |
+| 2026-07-29 | Master 요약 레이어 추가. Service 계층·GitOps·Saga·AI Decision·스택 보강을 맵으로 연결 |
+| 2026-07-29 | “삭제형 정리” 대신 원본 유지 + 덧붙이기 톤으로 허브/배너 수정 |

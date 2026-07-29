@@ -7,7 +7,7 @@
 
 ---
 
-> **정본 우선:** 이 문서와 최신 결정이 다르면 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 와 [`PRD-MASTER.md`](PRD-MASTER.md) 를 따른다.
+> **이어서 보면 좋은 문서:** [PRD-MASTER](PRD-MASTER.md) · [Design Evolution Map](../architecture/03-Canonical-Decisions.md) · [Glossary](../architecture/04-Glossary.md)
 
 
 > **이 프로젝트는 "Backstage 클론"을 만드는 것이 아닙니다.**  
@@ -273,9 +273,8 @@ Login → Dashboard → Create Service → 입력
 
 # 12. System Architecture
 
-> 스택 코드 기준: **Java 21 · Spring Boot 4.0.x · Next.js 15 · PostgreSQL 16 · Redis 7**  
-> 도메인: `Workspace → Project → Service → Environment → Deployment`  
-> 배포: `Terraform/Git → ArgoCD → Kubernetes` (직접 kubectl apply 지양)
+> **이후 문서에서 더해진 것:** Service 계층, GitOps(ArgoCD) 강조, 레포 스택(Java 21 / Spring Boot 4 / Next 15 / PG 16 / Redis 7).  
+> 상세 누적 맵: [Design Evolution Map](../architecture/03-Canonical-Decisions.md)
 
 ```text
                          Users

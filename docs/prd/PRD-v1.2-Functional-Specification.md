@@ -7,7 +7,7 @@
 
 ---
 
-> **정본 우선:** 이 문서와 최신 결정이 다르면 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 와 [`PRD-MASTER.md`](PRD-MASTER.md) 를 따른다.
+> **이어서 보면 좋은 문서:** [PRD-MASTER](PRD-MASTER.md) · [Design Evolution Map](../architecture/03-Canonical-Decisions.md) · [Glossary](../architecture/04-Glossary.md)
 
 
 # 1. Scope
@@ -126,13 +126,24 @@ Kubernetes를 몰라도 서비스 생성.
 
 ## Wizard Steps
 
-> **정본 7단계 (API-04-01):** Service Info → Template → Infrastructure → AI Review → Preview → Provision → Complete  
-> 아래 5단계 초안은 제품 초기 스케치이며, 구현은 7단계를 따른다.
+v1.2 스케치 (입력 중심):
 
 ```text
 STEP1 Project → STEP2 Framework → STEP3 Database
 → STEP4 Infrastructure → STEP5 Review → Deploy
 ```
+
+**여기에 더해진 레이어 (API-04 / Frontend):**
+
+```text
++ Template(Catalog) 선택
++ AI Review 강화
++ Blueprint Preview
++ 비동기 Provision Job / 진행률
+→ 전체 UI 흐름 예: Info → Template → Infra → AI Review → Preview → Provision → Complete
+```
+
+상세: API-04-01 Service Wizard · API-04-03 Provisioning
 
 ### STEP1 Project Information
 

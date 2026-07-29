@@ -63,7 +63,15 @@ class PlatformApiSmokeTest {
         mockMvc.perform(get("/api/v1/auth/me")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.email").value("smoke@nimbus.local"));
+                .andExpect(jsonPath("$.data.email").value("smoke@nimbus.local"))
+                .andExpect(jsonPath("$.data.canMutate").value(true));
+
+        mockMvc.perform(get("/api/v1/dashboard/overview")
+                        .param("workspaceId", workspaceId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.counts").exists())
+                .andExpect(jsonPath("$.data.canMutate").value(true));
 
         mockMvc.perform(post("/api/v1/projects")
                         .header("Authorization", "Bearer " + token)

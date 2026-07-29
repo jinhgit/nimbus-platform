@@ -10,46 +10,37 @@ import io.nimbus.platform.project.domain.ProjectStatus;
 import io.nimbus.platform.project.domain.Visibility;
 import io.nimbus.platform.project.dto.ProjectDtos;
 import io.nimbus.platform.project.repository.ProjectRepository;
-import io.nimbus.platform.workspace.domain.WorkspaceRole;
 import io.nimbus.platform.workspace.service.WorkspaceBootstrapService;
+import io.nimbus.platform.workspace.service.WorkspacePermissionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class ProjectService {
 
-    private static final Set<WorkspaceRole> CAN_CREATE = EnumSet.of(
-            WorkspaceRole.OWNER,
-            WorkspaceRole.ADMIN,
-            WorkspaceRole.PLATFORM_ENGINEER,
-            WorkspaceRole.DEVELOPER
-    );
-
     private final ProjectRepository projectRepository;
     private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final WorkspacePermissionService workspacePermissionService;
     private final AuditService auditService;
 
     public ProjectService(
             ProjectRepository projectRepository,
             WorkspaceBootstrapService workspaceBootstrapService,
+            WorkspacePermissionService workspacePermissionService,
             AuditService auditService
     ) {
         this.projectRepository = projectRepository;
         this.workspaceBootstrapService = workspaceBootstrapService;
+        this.workspacePermissionService = workspacePermissionService;
         this.auditService = auditService;
     }
 
     @Transactional
     public ProjectDtos.ProjectResponse create(NimbusPrincipal principal, ProjectDtos.CreateProjectRequest request) {
-        var member = workspaceBootstrapService.requireMember(request.workspaceId(), principal.userId());
-        if (!CAN_CREATE.contains(member.getRole())) {
-            throw new BusinessException(ErrorCode.PROJECT_PERMISSION);
-        }
+        workspacePermissionService.requireMutator(request.workspaceId(), principal.userId());
         if (projectRepository.existsByWorkspaceIdAndNameAndDeletedAtIsNull(request.workspaceId(), request.name())) {
             throw new BusinessException(ErrorCode.PROJECT_NAME_DUPLICATE);
         }
@@ -100,7 +91,7 @@ public class ProjectService {
             ProjectDtos.UpdateProjectRequest request
     ) {
         Project project = requireProject(projectId);
-        workspaceBootstrapService.requireMember(project.getWorkspaceId(), principal.userId());
+        workspacePermissionService.requireMutator(project.getWorkspaceId(), principal.userId());
         if (project.getStatus() == ProjectStatus.ARCHIVED) {
             throw new BusinessException(ErrorCode.PROJECT_ARCHIVED);
         }
@@ -126,7 +117,7 @@ public class ProjectService {
     @Transactional
     public void delete(NimbusPrincipal principal, UUID projectId) {
         Project project = requireProject(projectId);
-        workspaceBootstrapService.requireMember(project.getWorkspaceId(), principal.userId());
+        workspacePermissionService.requireMutator(project.getWorkspaceId(), principal.userId());
         project.softDelete();
         projectRepository.save(project);
         auditService.recordSuccess(
@@ -143,7 +134,7 @@ public class ProjectService {
     @Transactional
     public ProjectDtos.ProjectResponse archive(NimbusPrincipal principal, UUID projectId) {
         Project project = requireProject(projectId);
-        workspaceBootstrapService.requireMember(project.getWorkspaceId(), principal.userId());
+        workspacePermissionService.requireMutator(project.getWorkspaceId(), principal.userId());
         project.archive();
         Project saved = projectRepository.save(project);
         auditService.recordSuccess(
@@ -161,7 +152,7 @@ public class ProjectService {
     @Transactional
     public ProjectDtos.ProjectResponse restore(NimbusPrincipal principal, UUID projectId) {
         Project project = requireProject(projectId);
-        workspaceBootstrapService.requireMember(project.getWorkspaceId(), principal.userId());
+        workspacePermissionService.requireMutator(project.getWorkspaceId(), principal.userId());
         project.restore();
         Project saved = projectRepository.save(project);
         auditService.recordSuccess(

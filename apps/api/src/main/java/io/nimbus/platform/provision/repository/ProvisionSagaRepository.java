@@ -22,4 +22,19 @@ public interface ProvisionSagaRepository extends JpaRepository<ProvisionSaga, UU
     int maxAttempt(@Param("wizardId") UUID wizardId);
 
     long countByWizardIdAndStatusAndDeletedAtIsNull(UUID wizardId, SagaStatus status);
+
+    long countByWorkspaceIdAndStatusAndDeletedAtIsNull(UUID workspaceId, SagaStatus status);
+
+    @Query("""
+            SELECT s FROM ProvisionSaga s
+            WHERE s.workspaceId = :workspaceId
+              AND s.deletedAt IS NULL
+              AND (s.status = io.nimbus.platform.provision.domain.SagaStatus.FAILED
+                   OR s.status = io.nimbus.platform.provision.domain.SagaStatus.ROLLED_BACK)
+            ORDER BY s.createdAt DESC
+            """)
+    List<ProvisionSaga> findFailedByWorkspace(
+            @Param("workspaceId") UUID workspaceId,
+            org.springframework.data.domain.Pageable pageable
+    );
 }

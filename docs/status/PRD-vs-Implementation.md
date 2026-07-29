@@ -45,7 +45,7 @@
 | Helm Chart 생성 | ✅ | 파일 생성 중심 |
 | ArgoCD 연동 | 🔶 | Manifest 생성 수준, 실 Sync UI 약함 |
 | AI YAML / Explain | 🔶 | Recommend + Architecture Review 위주 |
-| Dashboard | ✅ | |
+| Dashboard | ✅ | overview API: Env·Promote·Saga·Audit 위젯 |
 | Monitoring 링크 | 🔶 | demo 메트릭 + 선택적 Prom/Grafana |
 | Audit Log | ✅ | 도메인·API·mutation 기록·UI (`/audit`) |
 | Multi-cloud / Mesh / FinOps | ⏸ | PRD 제외(v2) |
@@ -55,9 +55,9 @@
 | 기능 | 상태 | 비고 |
 |------|:----:|------|
 | Auth / JWT / Refresh | ✅ | |
-| RBAC (역할 매트릭스 전체) | 🔶 | 기본 역할; 세밀 권한 검사 부족 |
+| RBAC (역할 매트릭스 전체) | 🔶 | WorkspaceRole + `requireMutator`; VIEWER는 Promote/Secret/Retry/Project 생성 차단 (UI+API) |
 | Workspace / Team / Member | 🔶 | 핵심 CRUD; Invite 풀 플로우 얇음 |
-| Dashboard widgets | 🔶 | 기본 집계 |
+| Dashboard widgets | ✅ | `GET /api/v1/dashboard/overview` — counts + recent promote/saga/audit |
 | Service Wizard 7단계 | ✅ | |
 | GitHub Integration | 🔶 | OAuth SCM + PAT + Adapter |
 | CI/CD Pipeline | 🔶 | Job 시뮬 + workflow 파일 |

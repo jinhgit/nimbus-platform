@@ -148,6 +148,106 @@ export function EmptyState({
   );
 }
 
+/** Full-page or section loading — use instead of ad-hoc "로딩 중…" */
+export function LoadingBlock({
+  label = "불러오는 중…",
+  className = "",
+}: {
+  label?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex min-h-[32vh] flex-col items-center justify-center gap-3 text-sm text-[var(--muted)] ${className}`}
+      role="status"
+      aria-live="polite"
+    >
+      <span
+        className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--primary)]"
+        aria-hidden
+      />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+/** Inline/section loading (tables, cards) */
+export function LoadingInline({ label = "불러오는 중…" }: { label?: string }) {
+  return (
+    <div className="flex items-center gap-2 px-1 py-3 text-sm text-[var(--muted)]" role="status">
+      <span
+        className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--primary)]"
+        aria-hidden
+      />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+export function ErrorBanner({
+  message,
+  onRetry,
+  className = "",
+}: {
+  message: string;
+  onRetry?: () => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`mb-4 flex flex-wrap items-start justify-between gap-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200 ${className}`}
+      role="alert"
+    >
+      <p className="min-w-0 flex-1 leading-relaxed">{message}</p>
+      {onRetry ? (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="shrink-0 rounded-md border border-rose-400/30 px-2.5 py-1 text-xs text-rose-100 hover:bg-rose-500/15"
+        >
+          다시 시도
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+export function SuccessBanner({
+  message,
+  className = "",
+}: {
+  message: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200 ${className}`}
+      role="status"
+    >
+      {message}
+    </div>
+  );
+}
+
+/** Soft notice when role cannot mutate (VIEWER 등) */
+export function ReadOnlyBanner({
+  role,
+  className = "",
+}: {
+  role?: string | null;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`mb-4 rounded-lg border border-amber-500/25 bg-amber-500/10 px-4 py-2.5 text-xs leading-relaxed text-amber-100/90 ${className}`}
+    >
+      읽기 전용 권한
+      {role ? ` (${role})` : ""}
+      입니다. Promote · Secret · 재시도 등 변경 작업은 사용할 수 없습니다.
+    </div>
+  );
+}
+
 export function StatCard({
   label,
   value,

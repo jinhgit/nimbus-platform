@@ -80,6 +80,7 @@ public class WizardService {
     @Transactional
     public WizardDtos.WizardResponse create(NimbusPrincipal principal, WizardDtos.CreateWizardRequest request) {
         Project project = requireProjectMember(principal, request.projectId());
+        workspacePermissionService.requireMutator(project.getWorkspaceId(), principal.userId());
         if (project.getStatus() == ProjectStatus.ARCHIVED) {
             throw new BusinessException(ErrorCode.PROJECT_ARCHIVED);
         }
@@ -142,6 +143,7 @@ public class WizardService {
             WizardDtos.UpdateWizardRequest request
     ) {
         ServiceWizard wizard = requireWizardAccess(principal, wizardId);
+        workspacePermissionService.requireMutator(wizard.getWorkspaceId(), principal.userId());
         if (wizard.getStatus() != WizardStatus.DRAFT) {
             throw new BusinessException(ErrorCode.WIZARD_INVALID_STATE, "DRAFT 상태에서만 수정 가능합니다");
         }
@@ -168,6 +170,7 @@ public class WizardService {
     @Transactional
     public AiDtos.RecommendationResponse recommend(NimbusPrincipal principal, UUID wizardId) {
         ServiceWizard wizard = requireWizardAccess(principal, wizardId);
+        workspacePermissionService.requireMutator(wizard.getWorkspaceId(), principal.userId());
         if (wizard.getStatus() != WizardStatus.DRAFT) {
             throw new BusinessException(ErrorCode.WIZARD_INVALID_STATE);
         }
@@ -239,6 +242,7 @@ public class WizardService {
     @Transactional
     public WizardDtos.PreviewResponse preview(NimbusPrincipal principal, UUID wizardId) {
         ServiceWizard wizard = requireWizardAccess(principal, wizardId);
+        workspacePermissionService.requireMutator(wizard.getWorkspaceId(), principal.userId());
         WizardDtos.PreviewResponse preview = buildPreview(wizard);
         try {
             wizard.setPreviewJson(objectMapper.writeValueAsString(preview));
@@ -351,6 +355,7 @@ public class WizardService {
     @Transactional
     public WizardDtos.WizardResponse cancel(NimbusPrincipal principal, UUID wizardId) {
         ServiceWizard wizard = requireWizardAccess(principal, wizardId);
+        workspacePermissionService.requireMutator(wizard.getWorkspaceId(), principal.userId());
         if (wizard.getStatus() != WizardStatus.DRAFT
                 && wizard.getStatus() != WizardStatus.PROVISIONING
                 && wizard.getStatus() != WizardStatus.VALIDATING) {

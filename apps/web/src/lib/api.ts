@@ -29,6 +29,53 @@ export type MeResponse = {
   avatarUrl?: string;
   role: string;
   workspace?: { id: string; name: string; slug: string };
+  workspaceRole?: string | null;
+  canMutate?: boolean;
+};
+
+export type PermissionsResponse = {
+  permissions: string[];
+  workspaceRole?: string | null;
+  canMutate: boolean;
+};
+
+export type DashboardOverview = {
+  workspaceId: string;
+  workspaceRole: string;
+  canMutate: boolean;
+  counts: {
+    projects: number;
+    services: number;
+    environments: number;
+    readyServices: number;
+    failedSagas: number;
+    auditEvents: number;
+  };
+  recentPromotes: {
+    id: string;
+    serviceId: string;
+    sourceType: string;
+    targetType: string;
+    status: string;
+    message?: string;
+    at?: string;
+  }[];
+  failedSagas: {
+    id: string;
+    wizardId: string;
+    attempt: number;
+    status: string;
+    failureReason?: string;
+    at?: string;
+  }[];
+  recentAudits: {
+    id: string;
+    action: string;
+    resourceType?: string;
+    resourceName?: string;
+    actorName?: string;
+    at?: string;
+  }[];
 };
 
 export type WorkspaceSummary = {
@@ -325,6 +372,22 @@ export async function devLogin(name: string, email: string) {
 
 export async function fetchMe() {
   return apiGet<MeResponse>("/api/v1/auth/me");
+}
+
+export async function fetchPermissions() {
+  return apiGet<PermissionsResponse>("/api/v1/auth/permissions");
+}
+
+export async function fetchDashboardOverview(workspaceId?: string) {
+  const q = workspaceId ? `?workspaceId=${workspaceId}` : "";
+  return apiGet<DashboardOverview>(`/api/v1/dashboard/overview${q}`);
+}
+
+/** Resolve canMutate from me/permissions — default true only when role is unknown (legacy). */
+export function resolveCanMutate(me?: MeResponse | null, perms?: PermissionsResponse | null): boolean {
+  if (perms && typeof perms.canMutate === "boolean") return perms.canMutate;
+  if (me && typeof me.canMutate === "boolean") return me.canMutate;
+  return true;
 }
 
 export async function fetchWorkspaces() {

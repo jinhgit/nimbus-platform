@@ -27,6 +27,7 @@ import {
   type WizardPreview,
   type YamlExplainResult,
 } from "@/lib/api";
+import { ErrorBanner, ReadOnlyBanner } from "@/components/ui";
 
 const STEPS = [
   "서비스 정보",
@@ -68,9 +69,13 @@ export default function WizardPage() {
   const [k8sAvailable, setK8sAvailable] = useState(false);
   const [createdService, setCreatedService] = useState<AppService | null>(null);
   const [saga, setSaga] = useState<ProvisionSaga | null>(null);
+  const [canMutate, setCanMutate] = useState(true);
+  const [workspaceRole, setWorkspaceRole] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMe().then(async (me) => {
+      setCanMutate(me.data?.canMutate !== false);
+      setWorkspaceRole(me.data?.workspaceRole ?? null);
       const ws = me.data?.workspace?.id;
       if (!ws) return;
       const [p, c, g, k] = await Promise.all([
@@ -127,6 +132,10 @@ export default function WizardPage() {
 
   async function ensureWizard() {
     if (wizard) return wizard;
+    if (!canMutate) {
+      setError("읽기 전용 권한으로는 Wizard를 시작할 수 없습니다.");
+      return null;
+    }
     if (!projectId) {
       setError("프로젝트를 먼저 생성하세요.");
       return null;
@@ -145,6 +154,10 @@ export default function WizardPage() {
   }
 
   async function goNext() {
+    if (!canMutate) {
+      setError("읽기 전용 권한으로는 이 단계를 진행할 수 없습니다.");
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -334,11 +347,8 @@ export default function WizardPage() {
         ))}
       </ol>
 
-      {error && (
-        <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          {error}
-        </p>
-      )}
+      {!canMutate ? <ReadOnlyBanner role={workspaceRole} /> : null}
+      {error ? <ErrorBanner message={error} /> : null}
 
       <div className="nimbus-card p-6">
         {step === 0 && (
@@ -671,26 +681,32 @@ export default function WizardPage() {
                     {saga.compensationLog}
                   </pre>
                 )}
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={async () => {
-                    setLoading(true);
-                    setError(null);
-                    const res = await retryWizard(wizard.id);
-                    setLoading(false);
-                    if (!res.success) {
-                      setError(res.error?.message ?? "재시도에 실패했습니다.");
-                      return;
-                    }
-                    const refreshed = await getWizard(wizard.id);
-                    if (refreshed.data) setWizard(refreshed.data);
-                    setSaga(null);
-                  }}
-                  className="mt-3 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-medium text-white"
-                >
-                  프로비저닝 재시도
-                </button>
+                {canMutate ? (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={async () => {
+                      setLoading(true);
+                      setError(null);
+                      const res = await retryWizard(wizard.id);
+                      setLoading(false);
+                      if (!res.success) {
+                        setError(res.error?.message ?? "재시도에 실패했습니다.");
+                        return;
+                      }
+                      const refreshed = await getWizard(wizard.id);
+                      if (refreshed.data) setWizard(refreshed.data);
+                      setSaga(null);
+                    }}
+                    className="mt-3 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-medium text-white"
+                  >
+                    프로비저닝 재시도
+                  </button>
+                ) : (
+                  <p className="mt-3 text-xs text-[var(--muted)]">
+                    재시도는 mutator 역할만 가능합니다.
+                  </p>
+                )}
               </div>
             )}
           </div>

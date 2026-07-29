@@ -25,6 +25,7 @@ import {
   fetchServiceMetrics,
   fetchServicePromotions,
   fetchServiceTimeline,
+  fetchMe,
   getWizard,
   promoteEnvironment,
   restoreServiceEnvironment,
@@ -44,40 +45,19 @@ import {
   type TimelineItem,
   type YamlExplainResult,
 } from "@/lib/api";
+import {
+  EmptyState,
+  ErrorBanner,
+  LoadingBlock,
+  ReadOnlyBanner,
+  StatusBadge,
+  SuccessBanner,
+} from "@/components/ui";
 
 function nextPromoteTarget(type: string): string | null {
   if (type === "DEV") return "STAGE";
   if (type === "STAGE") return "PRODUCTION";
   return null;
-}
-
-function StatusBadge({ value }: { value?: string | null }) {
-  if (!value) {
-    return (
-      <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--muted)]">
-        —
-      </span>
-    );
-  }
-  const ok =
-    value === "READY" ||
-    value === "RUNNING" ||
-    value === "SUCCESS" ||
-    value === "SIMULATED";
-  const bad = value === "FAILED" || value === "ERROR";
-  return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-xs ${
-        ok
-          ? "bg-emerald-500/15 text-emerald-400"
-          : bad
-            ? "bg-red-500/15 text-red-300"
-            : "bg-amber-500/15 text-amber-300"
-      }`}
-    >
-      {value}
-    </span>
-  );
 }
 
 export default function ServiceDetailPage() {
@@ -112,6 +92,8 @@ export default function ServiceDetailPage() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [envBusy, setEnvBusy] = useState(false);
   const [newEnvType, setNewEnvType] = useState("STAGE");
+  const [canMutate, setCanMutate] = useState(true);
+  const [workspaceRole, setWorkspaceRole] = useState<string | null>(null);
 
   const loadConfig = useCallback(async (envId: string) => {
     const [v, s] = await Promise.all([
@@ -128,7 +110,8 @@ export default function ServiceDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [s, d, m, p, l, envs, promo, deps, tl] = await Promise.all([
+      const [me, s, d, m, p, l, envs, promo, deps, tl] = await Promise.all([
+        fetchMe(),
         fetchService(serviceId),
         fetchK8sDeploymentByService(serviceId),
         fetchServiceMetrics(serviceId),
@@ -139,6 +122,8 @@ export default function ServiceDetailPage() {
         fetchServiceDeployments(serviceId),
         fetchServiceTimeline(serviceId),
       ]);
+      setCanMutate(me.data?.canMutate !== false);
+      setWorkspaceRole(me.data?.workspaceRole ?? null);
       if (!s.success || !s.data) {
         setError(s.error?.message ?? "서비스를 찾을 수 없습니다.");
         setService(null);
@@ -386,20 +371,22 @@ export default function ServiceDetailPage() {
     environments.find((e) => e.id === selectedEnvId) ?? null;
 
   if (loading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center text-sm text-[var(--muted)]">
-        로딩 중…
-      </div>
-    );
+    return <LoadingBlock label="서비스 상세를 불러오는 중…" />;
   }
 
   if (!service) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-16 text-center">
-        <p className="text-[var(--muted)]">{error ?? "서비스 없음"}</p>
-        <Link href="/services" className="mt-4 inline-block text-[var(--primary)] hover:underline">
-          서비스 목록으로
-        </Link>
+      <div className="mx-auto max-w-3xl px-6 py-16">
+        {error ? <ErrorBanner message={error} onRetry={load} /> : null}
+        <EmptyState
+          title="서비스를 찾을 수 없습니다"
+          description="목록으로 돌아가 다시 선택해 주세요."
+          action={
+            <Link href="/services" className="nimbus-btn-primary">
+              서비스 목록
+            </Link>
+          }
+        />
       </div>
     );
   }
@@ -462,16 +449,9 @@ export default function ServiceDetailPage() {
         </div>
       </div>
 
-      {error && (
-        <p className="mb-4 rounded-lg border border-red-900/50 bg-red-950/40 px-3 py-2 text-sm text-red-300">
-          {error}
-        </p>
-      )}
-      {message && (
-        <p className="mb-4 rounded-lg border border-emerald-900/40 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-300">
-          {message}
-        </p>
-      )}
+      {error ? <ErrorBanner message={error} /> : null}
+      {message ? <SuccessBanner message={message} /> : null}
+      {!canMutate ? <ReadOnlyBanner role={workspaceRole} /> : null}
 
       {/* Environments — Sprint A + B */}
       <section className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
@@ -482,7 +462,7 @@ export default function ServiceDetailPage() {
               DEV → STAGE → PRODUCTION · 변수/시크릿 · 승격(Promote)
             </p>
           </div>
-          {missingEnvTypes.length > 0 && (
+          {canMutate && missingEnvTypes.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               <select
                 className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
@@ -507,9 +487,10 @@ export default function ServiceDetailPage() {
           )}
         </div>
         {environments.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">
-            아직 환경이 없습니다. 프로비저닝 후 다시 열거나, 위에서 추가하세요.
-          </p>
+          <EmptyState
+            title="아직 환경이 없습니다"
+            description="프로비저닝 후 다시 열거나, 위에서 환경을 추가하세요."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
@@ -577,7 +558,7 @@ export default function ServiceDetailPage() {
                           >
                             설정
                           </button>
-                          {target && env.status !== "ARCHIVED" && (
+                          {canMutate && target && env.status !== "ARCHIVED" && (
                             <button
                               type="button"
                               disabled={envBusy}
@@ -595,14 +576,16 @@ export default function ServiceDetailPage() {
                           >
                             헬스
                           </button>
-                          <button
-                            type="button"
-                            disabled={envBusy}
-                            onClick={() => toggleArchive(env)}
-                            className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
-                          >
-                            {env.status === "ARCHIVED" ? "복원" : "보관"}
-                          </button>
+                          {canMutate ? (
+                            <button
+                              type="button"
+                              disabled={envBusy}
+                              onClick={() => toggleArchive(env)}
+                              className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
+                            >
+                              {env.status === "ARCHIVED" ? "복원" : "보관"}
+                            </button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -620,28 +603,30 @@ export default function ServiceDetailPage() {
               <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
                 변수 · {selectedEnv.type}
               </h3>
-              <div className="mb-2 flex flex-wrap gap-2">
-                <input
-                  className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 font-mono text-xs"
-                  placeholder="KEY"
-                  value={varKey}
-                  onChange={(e) => setVarKey(e.target.value)}
-                />
-                <input
-                  className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
-                  placeholder="값"
-                  value={varValue}
-                  onChange={(e) => setVarValue(e.target.value)}
-                />
-                <button
-                  type="button"
-                  disabled={envBusy}
-                  onClick={addVariable}
-                  className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs text-white disabled:opacity-60"
-                >
-                  추가
-                </button>
-              </div>
+              {canMutate ? (
+                <div className="mb-2 flex flex-wrap gap-2">
+                  <input
+                    className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 font-mono text-xs"
+                    placeholder="KEY"
+                    value={varKey}
+                    onChange={(e) => setVarKey(e.target.value)}
+                  />
+                  <input
+                    className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
+                    placeholder="값"
+                    value={varValue}
+                    onChange={(e) => setVarValue(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    disabled={envBusy}
+                    onClick={addVariable}
+                    className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs text-white disabled:opacity-60"
+                  >
+                    추가
+                  </button>
+                </div>
+              ) : null}
               <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] text-xs">
                 {variables.length === 0 ? (
                   <li className="px-3 py-3 text-[var(--muted)]">변수가 없습니다</li>
@@ -653,13 +638,15 @@ export default function ServiceDetailPage() {
                         <span className="mx-2 text-[var(--muted)]">=</span>
                         <span>{v.value}</span>
                       </span>
-                      <button
-                        type="button"
-                        className="text-[var(--muted)] hover:text-red-300"
-                        onClick={() => onDeleteVariable(v.id)}
-                      >
-                        삭제
-                      </button>
+                      {canMutate ? (
+                        <button
+                          type="button"
+                          className="text-[var(--muted)] hover:text-red-300"
+                          onClick={() => onDeleteVariable(v.id)}
+                        >
+                          삭제
+                        </button>
+                      ) : null}
                     </li>
                   ))
                 )}
@@ -669,29 +656,31 @@ export default function ServiceDetailPage() {
               <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
                 시크릿 · {selectedEnv.type}
               </h3>
-              <div className="mb-2 flex flex-wrap gap-2">
-                <input
-                  className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 font-mono text-xs"
-                  placeholder="SECRET_KEY"
-                  value={secretKey}
-                  onChange={(e) => setSecretKey(e.target.value)}
-                />
-                <input
-                  type="password"
-                  className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
-                  placeholder="값"
-                  value={secretValue}
-                  onChange={(e) => setSecretValue(e.target.value)}
-                />
-                <button
-                  type="button"
-                  disabled={envBusy}
-                  onClick={addSecret}
-                  className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs text-white disabled:opacity-60"
-                >
-                  추가
-                </button>
-              </div>
+              {canMutate ? (
+                <div className="mb-2 flex flex-wrap gap-2">
+                  <input
+                    className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 font-mono text-xs"
+                    placeholder="SECRET_KEY"
+                    value={secretKey}
+                    onChange={(e) => setSecretKey(e.target.value)}
+                  />
+                  <input
+                    type="password"
+                    className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
+                    placeholder="값"
+                    value={secretValue}
+                    onChange={(e) => setSecretValue(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    disabled={envBusy}
+                    onClick={addSecret}
+                    className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs text-white disabled:opacity-60"
+                  >
+                    추가
+                  </button>
+                </div>
+              ) : null}
               <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] text-xs">
                 {secrets.length === 0 ? (
                   <li className="px-3 py-3 text-[var(--muted)]">시크릿이 없습니다</li>
@@ -705,24 +694,26 @@ export default function ServiceDetailPage() {
                           {revealMap[s.id] ?? s.maskedValue}
                         </span>
                       </span>
-                      <span className="flex gap-2">
-                        {!revealMap[s.id] && (
+                      {canMutate ? (
+                        <span className="flex gap-2">
+                          {!revealMap[s.id] && (
+                            <button
+                              type="button"
+                              className="text-[var(--muted)] hover:text-white"
+                              onClick={() => onRevealSecret(s.id)}
+                            >
+                              보기
+                            </button>
+                          )}
                           <button
                             type="button"
-                            className="text-[var(--muted)] hover:text-white"
-                            onClick={() => onRevealSecret(s.id)}
+                            className="text-[var(--muted)] hover:text-red-300"
+                            onClick={() => onDeleteSecret(s.id)}
                           >
-                            보기
+                            삭제
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          className="text-[var(--muted)] hover:text-red-300"
-                          onClick={() => onDeleteSecret(s.id)}
-                        >
-                          삭제
-                        </button>
-                      </span>
+                        </span>
+                      ) : null}
                     </li>
                   ))
                 )}
@@ -731,14 +722,16 @@ export default function ServiceDetailPage() {
                 <p className="text-[10px] text-[var(--muted)]">
                   AES 저장 · 마스킹 목록 · 보기 시 감사 기록
                 </p>
-                <button
-                  type="button"
-                  disabled={envBusy || secrets.length === 0}
-                  onClick={onSyncGitHubSecrets}
-                  className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
-                >
-                  GitHub Secret 동기화
-                </button>
+                {canMutate ? (
+                  <button
+                    type="button"
+                    disabled={envBusy || secrets.length === 0}
+                    onClick={onSyncGitHubSecrets}
+                    className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
+                  >
+                    GitHub Secret 동기화
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>

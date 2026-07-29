@@ -1,6 +1,7 @@
 package io.nimbus.platform.auth.dto;
 
 import io.nimbus.platform.auth.domain.GlobalRole;
+import io.nimbus.platform.workspace.domain.WorkspaceRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -55,7 +56,9 @@ public final class AuthDtos {
             String email,
             String avatarUrl,
             GlobalRole role,
-            WorkspaceSummary workspace
+            WorkspaceSummary workspace,
+            WorkspaceRole workspaceRole,
+            boolean canMutate
     ) {
     }
 
@@ -66,7 +69,9 @@ public final class AuthDtos {
     }
 
     public record PermissionsResponse(
-            List<String> permissions
+            List<String> permissions,
+            WorkspaceRole workspaceRole,
+            boolean canMutate
     ) {
     }
 

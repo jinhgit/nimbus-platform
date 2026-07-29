@@ -19,4 +19,6 @@ public interface ServiceEnvironmentRepository extends JpaRepository<ServiceEnvir
     boolean existsByServiceIdAndTypeAndDeletedAtIsNull(UUID serviceId, EnvironmentType type);
 
     long countByServiceIdAndDeletedAtIsNull(UUID serviceId);
+
+    long countByWorkspaceIdAndDeletedAtIsNull(UUID workspaceId);
 }

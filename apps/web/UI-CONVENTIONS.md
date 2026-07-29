@@ -45,9 +45,31 @@
 
 ---
 
-## 4. 관련 파일
+## 4. 상태 UI (Loading / Empty / Error)
+
+전 화면에서 **동일 컴포넌트**를 쓴다. 페이지마다 다른 빨간 박스·“로딩 중…” 문자열을 새로 만들지 않는다.
+
+| 상태 | 컴포넌트 | 카피 (한국어 body) |
+|------|----------|-------------------|
+| 로딩 (페이지/섹션) | `LoadingBlock` | 불러오는 중… / 대시보드를 불러오는 중… |
+| 로딩 (인라인) | `LoadingInline` | 불러오는 중… |
+| 에러 | `ErrorBanner` + 선택 `onRetry` | API `error.message` 우선, 없으면 한국어 fallback |
+| 성공 토스트성 | `SuccessBanner` | 짧은 확인 문구 |
+| 데이터 없음 | `EmptyState` | 제목 + 설명 + (권한 있을 때만) action |
+| VIEWER 등 읽기 전용 | `ReadOnlyBanner` | Promote · Secret · 재시도 불가 안내 |
+
+### 권한 (RBAC UI)
+
+- `me.canMutate` / `permissions.canMutate` / dashboard `canMutate` 로 버튼 노출.
+- VIEWER: Promote · Secret 추가/보기 · Env 생성 · Project 생성 · Wizard 실행/재시도 버튼 **숨김 또는 비활성**.
+- API도 `WorkspacePermissionService.requireMutator` 로 동일 차단 (UI만 숨기지 않음).
+
+---
+
+## 5. 관련 파일
 
 - `src/app/globals.css` — 토큰 · `nimbus-*`
 - `src/components/AppShell.tsx` — 내비 영어
-- `src/components/ui.tsx` — PageHeader 등
+- `src/components/ui.tsx` — PageHeader · LoadingBlock · ErrorBanner · EmptyState
 - `src/components/icons.tsx` — linear SVG
+- `src/lib/api.ts` — `fetchDashboardOverview` · `fetchPermissions` · `canMutate`

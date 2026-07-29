@@ -15,6 +15,7 @@ import io.nimbus.platform.serviceapp.domain.AppService;
 import io.nimbus.platform.serviceapp.domain.EnvironmentType;
 import io.nimbus.platform.serviceapp.repository.AppServiceRepository;
 import io.nimbus.platform.workspace.service.WorkspaceBootstrapService;
+import io.nimbus.platform.workspace.service.WorkspacePermissionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,17 +37,20 @@ public class EnvironmentService {
     private final ServiceEnvironmentRepository environmentRepository;
     private final AppServiceRepository appServiceRepository;
     private final WorkspaceBootstrapService workspaceBootstrapService;
+    private final WorkspacePermissionService workspacePermissionService;
     private final AuditService auditService;
 
     public EnvironmentService(
             ServiceEnvironmentRepository environmentRepository,
             AppServiceRepository appServiceRepository,
             WorkspaceBootstrapService workspaceBootstrapService,
+            WorkspacePermissionService workspacePermissionService,
             AuditService auditService
     ) {
         this.environmentRepository = environmentRepository;
         this.appServiceRepository = appServiceRepository;
         this.workspaceBootstrapService = workspaceBootstrapService;
+        this.workspacePermissionService = workspacePermissionService;
         this.auditService = auditService;
     }
 
@@ -108,7 +112,7 @@ public class EnvironmentService {
             UUID serviceId,
             EnvironmentDtos.CreateEnvironmentRequest request
     ) {
-        AppService service = requireServiceMember(principal, serviceId);
+        AppService service = requireServiceMutator(principal, serviceId);
         if (environmentRepository.existsByServiceIdAndTypeAndDeletedAtIsNull(serviceId, request.type())) {
             throw new BusinessException(ErrorCode.ENVIRONMENT_TYPE_DUPLICATE,
                     request.type() + " environment already exists for this service");
@@ -180,7 +184,7 @@ public class EnvironmentService {
             UUID environmentId,
             EnvironmentDtos.UpdateEnvironmentRequest request
     ) {
-        ServiceEnvironment env = requireEnvMember(principal, environmentId);
+        ServiceEnvironment env = requireEnvMutator(principal, environmentId);
         if (env.getStatus() == EnvironmentStatus.ARCHIVED) {
             throw new BusinessException(ErrorCode.ENVIRONMENT_ARCHIVED);
         }
@@ -211,7 +215,7 @@ public class EnvironmentService {
 
     @Transactional
     public void delete(NimbusPrincipal principal, UUID environmentId) {
-        ServiceEnvironment env = requireEnvMember(principal, environmentId);
+        ServiceEnvironment env = requireEnvMutator(principal, environmentId);
         // Sprint A: Deployment 엔티티 미연결 — 항상 soft delete 허용
         env.softDelete();
         environmentRepository.save(env);
@@ -228,7 +232,7 @@ public class EnvironmentService {
 
     @Transactional
     public EnvironmentDtos.EnvironmentResponse archive(NimbusPrincipal principal, UUID environmentId) {
-        ServiceEnvironment env = requireEnvMember(principal, environmentId);
+        ServiceEnvironment env = requireEnvMutator(principal, environmentId);
         if (env.getStatus() == EnvironmentStatus.ARCHIVED) {
             return toResponse(env);
         }
@@ -248,7 +252,7 @@ public class EnvironmentService {
 
     @Transactional
     public EnvironmentDtos.EnvironmentResponse restore(NimbusPrincipal principal, UUID environmentId) {
-        ServiceEnvironment env = requireEnvMember(principal, environmentId);
+        ServiceEnvironment env = requireEnvMutator(principal, environmentId);
         if (env.getStatus() != EnvironmentStatus.ARCHIVED) {
             throw new BusinessException(ErrorCode.ENVIRONMENT_INVALID_STATE, "Only ARCHIVED environments can be restored");
         }
@@ -312,10 +316,22 @@ public class EnvironmentService {
         return service;
     }
 
+    private AppService requireServiceMutator(NimbusPrincipal principal, UUID serviceId) {
+        AppService service = requireServiceMember(principal, serviceId);
+        workspacePermissionService.requireMutator(service.getWorkspaceId(), principal.userId());
+        return service;
+    }
+
     private ServiceEnvironment requireEnvMember(NimbusPrincipal principal, UUID environmentId) {
         ServiceEnvironment env = environmentRepository.findByIdAndDeletedAtIsNull(environmentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENVIRONMENT_NOT_FOUND));
         workspaceBootstrapService.requireMember(env.getWorkspaceId(), principal.userId());
+        return env;
+    }
+
+    private ServiceEnvironment requireEnvMutator(NimbusPrincipal principal, UUID environmentId) {
+        ServiceEnvironment env = requireEnvMember(principal, environmentId);
+        workspacePermissionService.requireMutator(env.getWorkspaceId(), principal.userId());
         return env;
     }
 

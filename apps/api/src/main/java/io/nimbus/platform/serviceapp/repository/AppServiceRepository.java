@@ -1,6 +1,7 @@
 package io.nimbus.platform.serviceapp.repository;
 
 import io.nimbus.platform.serviceapp.domain.AppService;
+import io.nimbus.platform.serviceapp.domain.ServiceStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -17,6 +18,8 @@ public interface AppServiceRepository extends JpaRepository<AppService, UUID> {
     boolean existsByProjectIdAndNameAndDeletedAtIsNull(UUID projectId, String name);
 
     long countByWorkspaceIdAndDeletedAtIsNull(UUID workspaceId);
+
+    long countByWorkspaceIdAndStatusAndDeletedAtIsNull(UUID workspaceId, ServiceStatus status);
 
     long countByProjectIdAndDeletedAtIsNull(UUID projectId);
 }

@@ -183,13 +183,14 @@ public class EnvironmentConfigService {
     }
 
     /**
-     * 평문 공개 — 운영에서는 추가 권한 필요. MVP: 멤버면 가능 + Audit.
+     * 평문 공개 — mutator 역할만 허용 (VIEWER 차단) + Audit.
      */
     @Transactional(readOnly = true)
     public ConfigDtos.SecretRevealResponse revealSecret(NimbusPrincipal principal, UUID secretId) {
         EnvSecret secret = secretRepository.findByIdAndDeletedAtIsNull(secretId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SECRET_NOT_FOUND));
-        requireEnvMember(principal, secret.getEnvironmentId());
+        ServiceEnvironment env = requireEnvMember(principal, secret.getEnvironmentId());
+        workspacePermissionService.requireMutator(env.getWorkspaceId(), principal.userId());
         auditService.recordSuccess(
                 principal, AuditAction.REVEAL_SECRET, "SECRET",
                 secret.getId(), secret.getKey(), secret.getWorkspaceId(),

@@ -17,8 +17,11 @@ import io.nimbus.platform.auth.security.TokenStore;
 import io.nimbus.platform.common.exception.BusinessException;
 import io.nimbus.platform.common.exception.ErrorCode;
 import io.nimbus.platform.workspace.domain.Workspace;
+import io.nimbus.platform.workspace.domain.WorkspaceMember;
+import io.nimbus.platform.workspace.domain.WorkspaceRole;
 import io.nimbus.platform.workspace.repository.WorkspaceRepository;
 import io.nimbus.platform.workspace.service.WorkspaceBootstrapService;
+import io.nimbus.platform.workspace.service.WorkspacePermissionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -215,10 +218,22 @@ public class AuthService {
         User user = userRepository.findByIdAndDeletedAtIsNull(principal.userId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
         AuthDtos.WorkspaceSummary workspace = null;
+        WorkspaceRole workspaceRole = null;
+        boolean canMutate = false;
         if (user.getCurrentWorkspaceId() != null) {
             workspace = workspaceRepository.findByIdAndDeletedAtIsNull(user.getCurrentWorkspaceId())
                     .map(w -> new AuthDtos.WorkspaceSummary(w.getId(), w.getName(), w.getSlug()))
                     .orElse(null);
+            if (workspace != null) {
+                try {
+                    WorkspaceMember member = workspaceBootstrapService.requireMember(
+                            user.getCurrentWorkspaceId(), user.getId());
+                    workspaceRole = member.getRole();
+                    canMutate = WorkspacePermissionService.CAN_MUTATE.contains(workspaceRole);
+                } catch (BusinessException ignored) {
+                    // not a member of current workspace — leave defaults
+                }
+            }
         }
         return new AuthDtos.MeResponse(
                 user.getId(),
@@ -226,7 +241,9 @@ public class AuthService {
                 user.getEmail(),
                 user.getAvatarUrl(),
                 user.getRole(),
-                workspace
+                workspace,
+                workspaceRole,
+                canMutate
         );
     }
 
@@ -254,22 +271,54 @@ public class AuthService {
         return new AuthDtos.TokenValidateResponse(true, jwtTokenService.getAccessTokenTtlSeconds());
     }
 
+    @Transactional(readOnly = true)
     public AuthDtos.PermissionsResponse permissions(NimbusPrincipal principal) {
         List<String> permissions = new ArrayList<>();
         permissions.add("PROJECT_READ");
-        if (principal.role() != GlobalRole.VIEWER) {
+        permissions.add("SERVICE_READ");
+        permissions.add("AUDIT_READ");
+
+        WorkspaceRole workspaceRole = null;
+        boolean canMutate = false;
+        UUID workspaceId = principal.workspaceId();
+        if (workspaceId != null) {
+            try {
+                WorkspaceMember member = workspaceBootstrapService.requireMember(workspaceId, principal.userId());
+                workspaceRole = member.getRole();
+                canMutate = WorkspacePermissionService.CAN_MUTATE.contains(workspaceRole);
+            } catch (BusinessException ignored) {
+                // not a member
+            }
+        }
+
+        if (canMutate) {
+            permissions.add("WORKSPACE_MUTATE");
             permissions.add("PROJECT_CREATE");
+            permissions.add("PROJECT_UPDATE");
+            permissions.add("PROJECT_DELETE");
+            permissions.add("ENVIRONMENT_MUTATE");
+            permissions.add("PROMOTE");
+            permissions.add("SECRET_MUTATE");
+            permissions.add("SECRET_REVEAL");
+            permissions.add("WIZARD_EXECUTE");
+            permissions.add("WIZARD_RETRY");
             permissions.add("DEPLOY");
             permissions.add("AI_REVIEW");
         }
-        if (principal.role() == GlobalRole.ADMIN || principal.role() == GlobalRole.PLATFORM_ENGINEER) {
-            permissions.add("PROJECT_DELETE");
+
+        if (workspaceRole == WorkspaceRole.OWNER
+                || workspaceRole == WorkspaceRole.ADMIN
+                || workspaceRole == WorkspaceRole.PLATFORM_ENGINEER
+                || principal.role() == GlobalRole.ADMIN
+                || principal.role() == GlobalRole.PLATFORM_ENGINEER) {
             permissions.add("INFRA_MANAGE");
         }
-        if (principal.role() == GlobalRole.ADMIN) {
+        if (workspaceRole == WorkspaceRole.OWNER
+                || workspaceRole == WorkspaceRole.ADMIN
+                || principal.role() == GlobalRole.ADMIN) {
             permissions.add("WORKSPACE_ADMIN");
         }
-        return new AuthDtos.PermissionsResponse(permissions);
+        return new AuthDtos.PermissionsResponse(permissions, workspaceRole, canMutate);
     }
 
     private void ensureWorkspace(User user) {

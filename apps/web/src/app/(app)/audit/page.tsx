@@ -6,6 +6,13 @@ import {
   fetchMe,
   type AuditLogItem,
 } from "@/lib/api";
+import {
+  EmptyState,
+  ErrorBanner,
+  LoadingInline,
+  Page,
+  PageHeader,
+} from "@/components/ui";
 
 const ACTION_OPTIONS = [
   "",
@@ -104,13 +111,12 @@ export default function AuditPage() {
   }, [workspaceId, load]);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Audit</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          워크스페이스의 mutation·로그인 등 운영 이벤트를 기록합니다.
-        </p>
-      </div>
+    <Page>
+      <PageHeader
+        eyebrow="Workspace"
+        title="Audit"
+        description="워크스페이스의 mutation·로그인 등 운영 이벤트를 기록합니다."
+      />
 
       <div className="mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
         <label className="block text-sm">
@@ -155,21 +161,17 @@ export default function AuditPage() {
           type="button"
           onClick={load}
           disabled={loading || !workspaceId}
-          className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-hover)] disabled:opacity-60"
+          className="nimbus-btn-primary"
         >
           {loading ? "조회 중…" : "새로고침"}
         </button>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-          {error}
-        </div>
-      )}
+      {error ? <ErrorBanner message={error} onRetry={load} /> : null}
 
-      {!workspaceId && (
-        <p className="text-sm text-[var(--muted)]">워크스페이스를 불러오는 중…</p>
-      )}
+      {!workspaceId ? (
+        <LoadingInline label="워크스페이스를 불러오는 중…" />
+      ) : null}
 
       <div className="overflow-hidden rounded-xl border border-[var(--border)]">
         <table className="w-full text-left text-sm">
@@ -184,10 +186,19 @@ export default function AuditPage() {
             </tr>
           </thead>
           <tbody>
-            {items.length === 0 && !loading ? (
+            {loading && items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-[var(--muted)]">
-                  감사 로그가 없습니다. 로그인·프로젝트 생성 후 다시 확인하세요.
+                <td colSpan={6} className="px-4 py-6">
+                  <LoadingInline label="감사 로그를 불러오는 중…" />
+                </td>
+              </tr>
+            ) : items.length === 0 ? (
+              <tr>
+                <td colSpan={6}>
+                  <EmptyState
+                    title="감사 로그가 없습니다"
+                    description="로그인·프로젝트 생성 후 다시 확인하세요."
+                  />
                 </td>
               </tr>
             ) : (
@@ -210,7 +221,7 @@ export default function AuditPage() {
                     <div className="text-xs text-[var(--muted)]">
                       {row.resourceType ?? "—"}
                     </div>
-                    <div className="truncate max-w-[160px]">
+                    <div className="max-w-[160px] truncate">
                       {row.resourceName ?? row.resourceId ?? "—"}
                     </div>
                   </td>
@@ -226,8 +237,9 @@ export default function AuditPage() {
       </div>
 
       <p className="mt-3 text-xs text-[var(--muted)]">
-        표시 {items.length}건 · API <code className="text-[var(--foreground)]">GET /api/v1/audit</code>
+        표시 {items.length}건 · API{" "}
+        <code className="text-[var(--foreground)]">GET /api/v1/audit</code>
       </p>
-    </div>
+    </Page>
   );
 }

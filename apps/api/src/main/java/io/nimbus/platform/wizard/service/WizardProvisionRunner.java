@@ -8,6 +8,7 @@ import io.nimbus.platform.github.service.GitHubConnectionService;
 import io.nimbus.platform.github.service.GitHubProvisionService;
 import io.nimbus.platform.k8s.domain.K8sDeploymentRecord;
 import io.nimbus.platform.k8s.service.K8sDeployService;
+import io.nimbus.platform.environment.service.EnvironmentService;
 import io.nimbus.platform.pipeline.service.BuildPipelineService;
 import io.nimbus.platform.serviceapp.domain.AppService;
 import io.nimbus.platform.serviceapp.repository.AppServiceRepository;
@@ -43,6 +44,7 @@ public class WizardProvisionRunner {
     private final GitRepositoryRecordRepository gitRepositoryRecordRepository;
     private final K8sDeployService k8sDeployService;
     private final BuildPipelineService buildPipelineService;
+    private final EnvironmentService environmentService;
     private final WizardService wizardService;
     private final ObjectMapper objectMapper;
     private final boolean autoPipelineOnWizard;
@@ -55,6 +57,7 @@ public class WizardProvisionRunner {
             GitRepositoryRecordRepository gitRepositoryRecordRepository,
             K8sDeployService k8sDeployService,
             BuildPipelineService buildPipelineService,
+            EnvironmentService environmentService,
             @Lazy WizardService wizardService,
             ObjectMapper objectMapper,
             @Value("${nimbus.pipeline.auto-on-wizard:true}") boolean autoPipelineOnWizard
@@ -66,6 +69,7 @@ public class WizardProvisionRunner {
         this.gitRepositoryRecordRepository = gitRepositoryRecordRepository;
         this.k8sDeployService = k8sDeployService;
         this.buildPipelineService = buildPipelineService;
+        this.environmentService = environmentService;
         this.wizardService = wizardService;
         this.objectMapper = objectMapper;
         this.autoPipelineOnWizard = autoPipelineOnWizard;
@@ -232,6 +236,14 @@ public class WizardProvisionRunner {
         }
         service.markReady();
         service = appServiceRepository.save(service);
+
+        // Sprint A: 기본 Environment (Wizard 선택 type) 생성
+        try {
+            var env = environmentService.ensureDefaultForService(service, wizard.getCreatedBy());
+            wizard.appendLogPublic("Environment: " + env.getType() + " ns=" + env.getNamespaceName());
+        } catch (Exception e) {
+            log.warn("Failed to ensure default environment: {}", e.getMessage());
+        }
 
         if (repo != null) {
             repo.bindService(service.getId());

@@ -64,7 +64,8 @@
 | Background Job Queue | 🔶 | `@Async` (Rabbit/Kafka 아님) |
 | Notification (Realtime) | ❌ | |
 | Audit Log 검색 | ✅ | `GET /api/v1/audit` 필터 (action/resource/actor) |
-| Environment Promote | ❌ → **실운영 P1** | |
+| Environment 도메인 | ✅ | Sprint A — DEV/STAGE/PROD 엔티티·API·UI |
+| Environment Promote | ❌ → **실운영 P1 (Sprint B)** | |
 
 ### 2.3 PRD v1.3 — Infrastructure
 
@@ -137,7 +138,7 @@
 | API-01 Auth | OAuth, JWT, RBAC | 🔶~✅ |
 | API-02 Workspace | Team, Invite, Member | 🔶 |
 | API-03-01 Project | CRUD, Archive, Clone | 🔶 (Clone 등 일부 약함) |
-| API-03-02 Environment | Promote, Health | ❌~🔶 |
+| API-03-02 Environment | CRUD, Health, Archive | 🔶 (Promote → Sprint B) |
 | API-03-03 Variable/Secret | Config, Rotation | ❌ |
 | API-03-04 Metadata | Label, Tag | ❌ |
 | API-03-05 Catalog | Template, Blueprint | 🔶 (시드+조회 중심) |
@@ -175,10 +176,10 @@ DEMO-SCENARIO 기준 핵심 플로우는 **구현됨**.
 
 ### P1 — 배포 운영 본선
 
-4. **Environment 도메인** — DEV/STAGE/PROD 엔티티, Health  
-5. **Environment Promote** — GitOps 브랜치/PR 트리거 설계·구현  
-6. **Variable / Secret** — AES 저장, 마스킹, GitHub Secret Sync  
-7. **Provision Saga 강화** — Step 상태 DB, 실패 시 보상 로그, Retry API  
+4. **Environment 도메인** — DEV/STAGE/PROD 엔티티, Health → **✅ Sprint A**  
+5. **Environment Promote** — GitOps 브랜치/PR 트리거 설계·구현 → **Sprint B**  
+6. **Variable / Secret** — AES 저장, 마스킹, GitHub Secret Sync → **Sprint B**  
+7. **Provision Saga 강화** — Step 상태 DB, 실패 시 보상 로그, Retry API → **Sprint C**  
 8. **ArgoCD Application 실연동** (클러스터에 Argo 있는 환경 전제)
 
 ### P2 — 품질·관측·AI
@@ -198,16 +199,15 @@ DEMO-SCENARIO 기준 핵심 플로우는 **구현됨**.
 
 ---
 
-## 6. 이번 스프린트에서 완료한 실운영 작업
+## 6. 스프린트 완료 기록
 
 | 작업 | 상태 |
 |------|------|
-| 본 매트릭스 문서화 | ✅ |
-| Audit Log 도메인·API·핵심 mutation 기록 | ✅ |
-| Audit UI (`/audit`) | ✅ |
-| application-prod.yml | ✅ |
+| 매트릭스 문서화 | ✅ |
+| Audit Log · UI · application-prod | ✅ |
+| **Sprint A: Environment 도메인·API·Service Detail·Audit** | ✅ |
 
-**다음 (P1):** Environment 도메인 · Promote · Variable/Secret · Saga 강화 · ArgoCD 실연동
+**다음 (Sprint B):** Variable/Secret + Promote (상태 전이 + 기록)
 
 ---
 

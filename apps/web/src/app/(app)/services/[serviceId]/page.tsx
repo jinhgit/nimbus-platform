@@ -4,17 +4,23 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
+  archiveServiceEnvironment,
+  createServiceEnvironment,
   fetchArchitectureReview,
+  fetchEnvironmentHealth,
   fetchK8sDeploymentByService,
   fetchPipelines,
   fetchService,
+  fetchServiceEnvironments,
   fetchServiceLogs,
   fetchServiceMetrics,
+  restoreServiceEnvironment,
   type AppService,
   type ArchitectureReview,
   type K8sDeployment,
   type LogLine,
   type Pipeline,
+  type ServiceEnvironment,
   type ServiceMetrics,
 } from "@/lib/api";
 
@@ -57,21 +63,25 @@ export default function ServiceDetailPage() {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [review, setReview] = useState<ArchitectureReview | null>(null);
+  const [environments, setEnvironments] = useState<ServiceEnvironment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [envBusy, setEnvBusy] = useState(false);
+  const [newEnvType, setNewEnvType] = useState("STAGE");
 
   const load = useCallback(async () => {
     if (!serviceId) return;
     setLoading(true);
     setError(null);
     try {
-      const [s, d, m, p, l] = await Promise.all([
+      const [s, d, m, p, l, envs] = await Promise.all([
         fetchService(serviceId),
         fetchK8sDeploymentByService(serviceId),
         fetchServiceMetrics(serviceId),
         fetchPipelines({ serviceId }),
         fetchServiceLogs(serviceId, 30),
+        fetchServiceEnvironments(serviceId),
       ]);
       if (!s.success || !s.data) {
         setError(s.error?.message ?? "서비스를 찾을 수 없습니다.");
@@ -83,6 +93,9 @@ export default function ServiceDetailPage() {
       setMetrics(m.success ? (m.data ?? null) : null);
       setPipelines(p.success && p.data ? p.data : []);
       setLogs(l.success && l.data ? l.data.lines : []);
+      setEnvironments(
+        envs.success && envs.data ? envs.data.items : [],
+      );
     } catch {
       setError("서비스 정보를 불러오지 못했습니다.");
     } finally {
@@ -109,6 +122,53 @@ export default function ServiceDetailPage() {
     }
     setReview(res.data);
   }
+
+  async function addEnvironment() {
+    if (!serviceId) return;
+    setEnvBusy(true);
+    setError(null);
+    const res = await createServiceEnvironment(serviceId, { type: envTypeToCreate });
+    setEnvBusy(false);
+    if (!res.success) {
+      setError(res.error?.message ?? "Environment 생성 실패");
+      return;
+    }
+    await load();
+  }
+
+  async function checkEnvHealth(envId: string) {
+    setEnvBusy(true);
+    setError(null);
+    const res = await fetchEnvironmentHealth(envId);
+    setEnvBusy(false);
+    if (!res.success) {
+      setError(res.error?.message ?? "Health check 실패");
+      return;
+    }
+    await load();
+  }
+
+  async function toggleArchive(env: ServiceEnvironment) {
+    setEnvBusy(true);
+    setError(null);
+    const res =
+      env.status === "ARCHIVED"
+        ? await restoreServiceEnvironment(env.id)
+        : await archiveServiceEnvironment(env.id);
+    setEnvBusy(false);
+    if (!res.success) {
+      setError(res.error?.message ?? "상태 변경 실패");
+      return;
+    }
+    await load();
+  }
+
+  const missingEnvTypes = ["DEV", "STAGE", "PRODUCTION"].filter(
+    (t) => !environments.some((e) => e.type === t && e.status !== "ARCHIVED"),
+  );
+  const envTypeToCreate = missingEnvTypes.includes(newEnvType)
+    ? newEnvType
+    : (missingEnvTypes[0] ?? "STAGE");
 
   if (loading) {
     return (
@@ -192,6 +252,120 @@ export default function ServiceDetailPage() {
           {error}
         </p>
       )}
+
+      {/* Environments — Sprint A */}
+      <section className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-medium">Environments</h2>
+            <p className="mt-0.5 text-xs text-[var(--muted)]">
+              Service infrastructure contexts (DEV → STAGE → PRODUCTION). Promote is Sprint B.
+            </p>
+          </div>
+          {missingEnvTypes.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
+                value={envTypeToCreate}
+                onChange={(e) => setNewEnvType(e.target.value)}
+              >
+                {missingEnvTypes.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={envBusy}
+                onClick={addEnvironment}
+                className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--primary-hover)] disabled:opacity-60"
+              >
+                Add environment
+              </button>
+            </div>
+          )}
+        </div>
+        {environments.length === 0 ? (
+          <p className="text-sm text-[var(--muted)]">
+            No environments yet. Open this page again after provision, or add one above.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="border-b border-[var(--border)] text-xs uppercase tracking-wide text-[var(--muted)]">
+                <tr>
+                  <th className="px-2 py-2 font-medium">Type</th>
+                  <th className="px-2 py-2 font-medium">Status</th>
+                  <th className="px-2 py-2 font-medium">Namespace</th>
+                  <th className="px-2 py-2 font-medium">Branch</th>
+                  <th className="px-2 py-2 font-medium">Replicas</th>
+                  <th className="px-2 py-2 font-medium">Health</th>
+                  <th className="px-2 py-2 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {environments.map((env) => (
+                  <tr
+                    key={env.id}
+                    className="border-b border-[var(--border)]/50 last:border-0"
+                  >
+                    <td className="px-2 py-2.5 font-medium">{env.type}</td>
+                    <td className="px-2 py-2.5">
+                      <StatusBadge value={env.status} />
+                    </td>
+                    <td className="px-2 py-2.5 font-mono text-xs">
+                      {env.namespace}
+                      {env.clusterLabel ? (
+                        <span className="mt-0.5 block text-[var(--muted)]">
+                          {env.clusterLabel}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="px-2 py-2.5 text-xs text-[var(--muted)]">
+                      {env.gitOpsBranch ?? "—"}
+                    </td>
+                    <td className="px-2 py-2.5 tabular-nums">
+                      {env.replicaCount ?? 1}
+                      {env.hpaEnabled ? (
+                        <span className="ml-1 text-xs text-[var(--muted)]">HPA</span>
+                      ) : null}
+                    </td>
+                    <td className="px-2 py-2.5">
+                      <StatusBadge value={env.healthStatus} />
+                      {env.healthMessage ? (
+                        <span className="mt-0.5 block max-w-[160px] truncate text-[10px] text-[var(--muted)]">
+                          {env.healthMessage}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="px-2 py-2.5">
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          disabled={envBusy}
+                          onClick={() => checkEnvHealth(env.id)}
+                          className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
+                        >
+                          Health
+                        </button>
+                        <button
+                          type="button"
+                          disabled={envBusy}
+                          onClick={() => toggleArchive(env)}
+                          className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
+                        >
+                          {env.status === "ARCHIVED" ? "Restore" : "Archive"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {/* Summary cards */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

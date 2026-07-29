@@ -695,4 +695,109 @@ export async function fetchAuditLogs(params?: {
   return apiGet<AuditListResponse>(`/api/v1/audit${q ? `?${q}` : ""}`);
 }
 
+export type ServiceEnvironment = {
+  id: string;
+  serviceId: string;
+  projectId: string;
+  workspaceId: string;
+  type: string;
+  status: string;
+  namespace: string;
+  domain?: string;
+  clusterLabel?: string;
+  deploymentStrategy: string;
+  replicaCount?: number;
+  cpu?: string;
+  memory?: string;
+  hpaEnabled?: boolean;
+  gitOpsBranch?: string;
+  healthStatus: string;
+  healthMessage?: string;
+  lastHealthAt?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  archivedAt?: string;
+};
+
+export type EnvironmentListResponse = {
+  serviceId: string;
+  items: ServiceEnvironment[];
+  count: number;
+};
+
+export type EnvironmentHealth = {
+  environmentId: string;
+  type: string;
+  status: string;
+  healthStatus: string;
+  message?: string;
+  checkedAt?: string;
+  namespace?: string;
+  clusterLabel?: string;
+};
+
+export async function fetchServiceEnvironments(serviceId: string) {
+  return apiGet<EnvironmentListResponse>(
+    `/api/v1/services/${serviceId}/environments`,
+  );
+}
+
+export async function createServiceEnvironment(
+  serviceId: string,
+  body: {
+    type: string;
+    namespace?: string;
+    domain?: string;
+    clusterLabel?: string;
+    deploymentStrategy?: string;
+    replicaCount?: number;
+    cpu?: string;
+    memory?: string;
+    hpaEnabled?: boolean;
+    gitOpsBranch?: string;
+  },
+) {
+  return apiPost<ServiceEnvironment>(
+    `/api/v1/services/${serviceId}/environments`,
+    body,
+  );
+}
+
+export async function updateServiceEnvironment(
+  environmentId: string,
+  body: {
+    domain?: string;
+    deploymentStrategy?: string;
+    replicaCount?: number;
+    cpu?: string;
+    memory?: string;
+    hpaEnabled?: boolean;
+    gitOpsBranch?: string;
+  },
+) {
+  return apiPatch<ServiceEnvironment>(
+    `/api/v1/environments/${environmentId}`,
+    body,
+  );
+}
+
+export async function archiveServiceEnvironment(environmentId: string) {
+  return apiPost<ServiceEnvironment>(
+    `/api/v1/environments/${environmentId}/archive`,
+  );
+}
+
+export async function restoreServiceEnvironment(environmentId: string) {
+  return apiPost<ServiceEnvironment>(
+    `/api/v1/environments/${environmentId}/restore`,
+  );
+}
+
+export async function fetchEnvironmentHealth(environmentId: string) {
+  return apiGet<EnvironmentHealth>(
+    `/api/v1/environments/${environmentId}/health`,
+  );
+}
+
 export { API_BASE };

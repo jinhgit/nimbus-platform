@@ -52,6 +52,13 @@ public enum ErrorCode {
     SERVICE_NAME_DUPLICATE("SERVICE002", "Service name already exists", HttpStatus.CONFLICT),
     SERVICE_PERMISSION("SERVICE003", "Service permission denied", HttpStatus.FORBIDDEN),
 
+    // Environment
+    ENVIRONMENT_NOT_FOUND("ENV001", "Environment not found", HttpStatus.NOT_FOUND),
+    ENVIRONMENT_TYPE_DUPLICATE("ENV002", "Environment type already exists", HttpStatus.CONFLICT),
+    ENVIRONMENT_ARCHIVED("ENV003", "Environment is archived", HttpStatus.BAD_REQUEST),
+    ENVIRONMENT_INVALID_STATE("ENV004", "Environment is not in a valid state", HttpStatus.BAD_REQUEST),
+    ENVIRONMENT_DELETE_BLOCKED("ENV005", "Environment cannot be deleted", HttpStatus.BAD_REQUEST),
+
     // Wizard
     WIZARD_NOT_FOUND("WIZARD001", "Wizard not found", HttpStatus.NOT_FOUND),
     WIZARD_INVALID_STATE("WIZARD002", "Wizard is not in a valid state", HttpStatus.BAD_REQUEST),

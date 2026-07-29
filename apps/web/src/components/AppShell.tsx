@@ -35,18 +35,18 @@ type NavItem = {
 };
 
 const nav: NavItem[] = [
-  { href: "/dashboard", label: "대시보드", Icon: IconDashboard },
-  { href: "/projects", label: "프로젝트", Icon: IconProjects },
-  { href: "/services", label: "서비스", Icon: IconServices },
-  { href: "/catalog", label: "카탈로그", Icon: IconCatalog },
-  { href: "/wizard", label: "서비스 생성", Icon: IconWizard },
-  { href: "/pipelines", label: "파이프라인", Icon: IconPipelines },
-  { href: "/monitoring", label: "모니터링", Icon: IconMonitoring },
-  { href: "/logs", label: "로그", Icon: IconLogs },
-  { href: "/audit", label: "감사 로그", Icon: IconAudit },
-  { href: "/workspaces", label: "워크스페이스", Icon: IconWorkspaces },
-  { href: "/infrastructure", label: "인프라", Icon: IconInfrastructure },
-  { href: "/settings", label: "설정", Icon: IconSettings },
+  { href: "/dashboard", label: "Dashboard", Icon: IconDashboard },
+  { href: "/projects", label: "Projects", Icon: IconProjects },
+  { href: "/services", label: "Services", Icon: IconServices },
+  { href: "/catalog", label: "Catalog", Icon: IconCatalog },
+  { href: "/wizard", label: "Create Service", Icon: IconWizard },
+  { href: "/pipelines", label: "Pipelines", Icon: IconPipelines },
+  { href: "/monitoring", label: "Monitoring", Icon: IconMonitoring },
+  { href: "/logs", label: "Logs", Icon: IconLogs },
+  { href: "/audit", label: "Audit", Icon: IconAudit },
+  { href: "/workspaces", label: "Workspaces", Icon: IconWorkspaces },
+  { href: "/infrastructure", label: "Infrastructure", Icon: IconInfrastructure },
+  { href: "/settings", label: "Settings", Icon: IconSettings },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-[var(--muted)]">
-        로딩 중…
+        Loading…
       </div>
     );
   }
@@ -93,7 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/dashboard" className="text-sm font-semibold tracking-wide">
             NIMBUS
           </Link>
-          <p className="mt-1 text-xs text-[var(--muted)]">플랫폼 포털</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">Platform Portal</p>
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
           {nav.map((item) => {
@@ -127,7 +127,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="mt-3 inline-flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-white"
           >
             <IconLogout size={14} />
-            로그아웃
+            Log out
           </button>
         </div>
       </aside>

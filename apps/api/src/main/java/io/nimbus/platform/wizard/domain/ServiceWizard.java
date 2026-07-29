@@ -230,6 +230,10 @@ public class ServiceWizard extends BaseEntity {
         this.logs = existing + "[" + java.time.Instant.now() + "] " + line + "\n";
     }
 
+    public void appendLogPublic(String line) {
+        appendLog(line);
+    }
+
     public UUID getProjectId() {
         return projectId;
     }

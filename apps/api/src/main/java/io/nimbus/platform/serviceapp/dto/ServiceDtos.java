@@ -27,6 +27,9 @@ public final class ServiceDtos {
             UUID workspaceId,
             UUID templateId,
             UUID wizardId,
+            String githubRepoUrl,
+            String githubOwner,
+            String githubRepoName,
             Instant createdAt,
             Instant updatedAt
     ) {

@@ -6,6 +6,7 @@ import {
   createWizard,
   executeWizard,
   fetchCatalog,
+  fetchGitHubStatus,
   fetchProjects,
   fetchMe,
   getWizard,
@@ -53,12 +54,17 @@ export default function WizardPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [previewTab, setPreviewTab] = useState<(typeof PREVIEW_TABS)[number]["id"]>("structure");
+  const [githubConnected, setGithubConnected] = useState(false);
 
   useEffect(() => {
     fetchMe().then(async (me) => {
       const ws = me.data?.workspace?.id;
       if (!ws) return;
-      const [p, c] = await Promise.all([fetchProjects(ws), fetchCatalog()]);
+      const [p, c, g] = await Promise.all([
+        fetchProjects(ws),
+        fetchCatalog(),
+        fetchGitHubStatus(),
+      ]);
       if (p.success && p.data) {
         setProjects(p.data);
         if (p.data[0]) setProjectId(p.data[0].id);
@@ -68,6 +74,7 @@ export default function WizardPage() {
         const spring = c.data.find((t) => t.runtime === "SPRING_BOOT") ?? c.data[0];
         if (spring) setTemplateId(spring.id);
       }
+      if (g.success && g.data) setGithubConnected(g.data.connected);
     });
   }, []);
 
@@ -204,11 +211,23 @@ export default function WizardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Service Wizard</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          카탈로그 → AI 추천 → 미리보기 → 프로비저닝 · 시연 메인 플로우
-        </p>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Service Wizard</h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            카탈로그 → AI 추천 → 미리보기 → 프로비저닝 · 시연 메인 플로우
+          </p>
+        </div>
+        <Link
+          href="/settings"
+          className={`rounded-full px-3 py-1 text-xs ${
+            githubConnected
+              ? "bg-emerald-500/15 text-emerald-400"
+              : "border border-[var(--border)] text-[var(--muted)]"
+          }`}
+        >
+          {githubConnected ? "GitHub 연결됨" : "GitHub 미연결 · 시뮬레이션"}
+        </Link>
       </div>
 
       <ol className="mb-8 flex flex-wrap gap-2">
@@ -412,7 +431,10 @@ export default function WizardPage() {
               {previewTab === "argo" && preview.argoApplication}
             </pre>
             <p className="text-xs text-[var(--muted)]">
-              배포 시작을 누르면 Provision Job이 비동기로 실행됩니다. (시연용 진행률)
+              배포 시작을 누르면 Provision Job이 비동기로 실행됩니다.
+              {githubConnected
+                ? " GitHub에 Private Repository가 실제로 생성됩니다."
+                : " GitHub 미연결 시 시뮬레이션만 수행됩니다. (설정에서 PAT 연결)"}
             </p>
           </div>
         )}

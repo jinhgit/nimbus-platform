@@ -79,6 +79,41 @@ export type AppService = {
   workspaceId: string;
   templateId?: string;
   wizardId?: string;
+  githubRepoUrl?: string;
+  githubOwner?: string;
+  githubRepoName?: string;
+};
+
+export type GitHubConnection = {
+  id: string;
+  login: string;
+  avatarUrl?: string;
+  status: string;
+  scopes?: string;
+  lastValidatedAt?: string;
+  connectedAt?: string;
+};
+
+export type GitHubHealth = {
+  provider: string;
+  status: string;
+  login?: string;
+  rateLimitRemaining?: number;
+  rateLimitLimit?: number;
+  connected: boolean;
+};
+
+export type GitHubRepo = {
+  id: string;
+  owner: string;
+  repoName: string;
+  htmlUrl?: string;
+  cloneUrl?: string;
+  defaultBranch?: string;
+  visibility?: string;
+  status: string;
+  serviceId?: string;
+  wizardId?: string;
 };
 
 export type AiRecommendation = {
@@ -328,6 +363,32 @@ export async function logout() {
   } finally {
     clearAuthSession();
   }
+}
+
+export async function connectGitHub(personalAccessToken: string) {
+  return apiPost<GitHubConnection>("/api/v1/github/connect", {
+    personalAccessToken,
+  });
+}
+
+export async function fetchGitHubStatus() {
+  return apiGet<{ connected: boolean; provider: string }>("/api/v1/github/status");
+}
+
+export async function fetchGitHubConnection() {
+  return apiGet<GitHubConnection>("/api/v1/github/connection");
+}
+
+export async function disconnectGitHub() {
+  return apiDelete<null>("/api/v1/github/connection");
+}
+
+export async function fetchGitHubHealth() {
+  return apiGet<GitHubHealth>("/api/v1/github/health");
+}
+
+export async function fetchGitHubRepositories() {
+  return apiGet<GitHubRepo[]>("/api/v1/github/repositories");
 }
 
 export { API_BASE };

@@ -279,7 +279,7 @@ public class WizardService {
         );
     }
 
-    WizardDtos.PreviewResponse buildPreview(ServiceWizard wizard) {
+    public WizardDtos.PreviewResponse buildPreview(ServiceWizard wizard) {
         ServiceTemplate template = wizard.getTemplateId() != null
                 ? catalogService.require(wizard.getTemplateId())
                 : null;

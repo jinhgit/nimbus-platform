@@ -56,6 +56,16 @@ export default function ServicesPage() {
                     {s.databaseType ? ` · ${s.databaseType}` : ""}
                     {s.cacheType ? ` · ${s.cacheType}` : ""}
                   </p>
+                  {s.githubRepoUrl && (
+                    <a
+                      href={s.githubRepoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-block text-xs text-[var(--primary)] hover:underline"
+                    >
+                      {s.githubOwner}/{s.githubRepoName}
+                    </a>
+                  )}
                 </div>
                 <div className="text-right text-xs text-[var(--muted)]">
                   <p className="font-medium text-emerald-400">{s.status}</p>

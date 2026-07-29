@@ -60,7 +60,16 @@ public enum ErrorCode {
     WIZARD_CANCEL_DENIED("WIZARD005", "Wizard cannot be cancelled", HttpStatus.BAD_REQUEST),
 
     // AI
-    AI_RECOMMENDATION_FAILED("AI001", "AI recommendation failed", HttpStatus.BAD_GATEWAY);
+    AI_RECOMMENDATION_FAILED("AI001", "AI recommendation failed", HttpStatus.BAD_GATEWAY),
+
+    // GitHub / SCM
+    GITHUB_NOT_CONNECTED("GITHUB001", "GitHub is not connected", HttpStatus.BAD_REQUEST),
+    GITHUB_REPO_EXISTS("GITHUB002", "Repository already exists", HttpStatus.CONFLICT),
+    GITHUB_API_FAILED("GITHUB003", "GitHub API call failed", HttpStatus.BAD_GATEWAY),
+    GITHUB_INVALID_TOKEN("GITHUB004", "Invalid GitHub token", HttpStatus.UNAUTHORIZED),
+    GITHUB_RATE_LIMIT("GITHUB005", "GitHub rate limit exceeded", HttpStatus.TOO_MANY_REQUESTS),
+    GITHUB_WORKFLOW_FAILED("GITHUB006", "Workflow generation failed", HttpStatus.BAD_GATEWAY),
+    GITHUB_ALREADY_CONNECTED("GITHUB007", "GitHub already connected", HttpStatus.CONFLICT);
 
     private final String code;
     private final String defaultMessage;

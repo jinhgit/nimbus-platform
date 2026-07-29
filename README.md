@@ -48,7 +48,8 @@ Platform Engineering Portal을 목표로 한다.
 - Provision Progress 시뮬레이션 (async job)
 - Next.js: Login · Dashboard · Projects · Services · Catalog · Wizard
 
-**다음:** GitHub Adapter 실연동 · k3d 배포 · Monitoring 링크
+**GitHub Adapter:** Settings에서 PAT 연결 → Wizard Deploy 시 실제 Private Repo + 파일 생성  
+**다음:** k3d 배포 · Monitoring 링크 · OAuth App SCM 연결
 
 ---
 

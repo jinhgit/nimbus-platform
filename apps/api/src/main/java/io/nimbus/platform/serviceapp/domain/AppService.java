@@ -63,6 +63,15 @@ public class AppService extends BaseEntity {
     @Column(name = "owner_id", nullable = false)
     private UUID ownerId;
 
+    @Column(name = "github_repo_url", length = 500)
+    private String githubRepoUrl;
+
+    @Column(name = "github_owner", length = 100)
+    private String githubOwner;
+
+    @Column(name = "github_repo_name", length = 100)
+    private String githubRepoName;
+
     protected AppService() {
     }
 
@@ -105,6 +114,12 @@ public class AppService extends BaseEntity {
 
     public void markFailed() {
         this.status = ServiceStatus.FAILED;
+    }
+
+    public void bindGitHub(String owner, String repoName, String htmlUrl) {
+        this.githubOwner = owner;
+        this.githubRepoName = repoName;
+        this.githubRepoUrl = htmlUrl;
     }
 
     public UUID getProjectId() {
@@ -161,5 +176,17 @@ public class AppService extends BaseEntity {
 
     public UUID getOwnerId() {
         return ownerId;
+    }
+
+    public String getGithubRepoUrl() {
+        return githubRepoUrl;
+    }
+
+    public String getGithubOwner() {
+        return githubOwner;
+    }
+
+    public String getGithubRepoName() {
+        return githubRepoName;
     }
 }

@@ -89,7 +89,7 @@ export default function PipelinesPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">파이프라인</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Pipelines</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
           이미지 빌드 파이프라인 (Checkout → Docker build → Tag → Push 시뮬)
         </p>

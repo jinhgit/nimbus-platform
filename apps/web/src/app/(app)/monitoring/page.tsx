@@ -24,18 +24,18 @@ export default function MonitoringPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">모니터링</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Monitoring</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Prometheus · Grafana (free-only 로컬) · 미기동 시 demo 메트릭
+          Prometheus · Grafana (free-only 로컬). 스택 미기동 시 demo 메트릭을 표시합니다.
         </p>
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "서비스", value: overview?.serviceCount ?? "—" },
-          { label: "Running Deploy", value: overview?.runningDeployments ?? "—" },
+          { label: "실행 중 배포", value: overview?.runningDeployments ?? "—" },
           { label: "평균 CPU", value: overview ? `${overview.avgCpu}%` : "—" },
-          { label: "평균 Memory", value: overview ? `${overview.avgMemory}%` : "—" },
+          { label: "평균 메모리", value: overview ? `${overview.avgMemory}%` : "—" },
         ].map((w) => (
           <div
             key={w.label}

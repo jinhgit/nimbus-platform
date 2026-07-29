@@ -113,9 +113,9 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">설정</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          GitHub SCM 연결 · OAuth 정식 연결 (권장) · PAT 보조
+          GitHub SCM 연결 — OAuth 정식 연결(권장) 또는 PAT 보조 연결
         </p>
       </div>
 

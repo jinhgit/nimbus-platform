@@ -44,7 +44,7 @@ export default function ProjectsPage() {
     });
     setLoading(false);
     if (!res.success || !res.data) {
-      setError(res.error?.message ?? "Failed to create project.");
+      setError(res.error?.message ?? "프로젝트 생성에 실패했습니다.");
       return;
     }
     setName("");
@@ -59,21 +59,21 @@ export default function ProjectsPage() {
         title="Projects"
         description={
           <>
-            Business context unit. Create services with the{" "}
+            비즈니스 컨텍스트 단위입니다. 서비스는{" "}
             <Link href="/wizard" className="text-[var(--primary)] hover:underline">
               Service Wizard
             </Link>
-            .
+            에서 생성합니다.
           </>
         }
       />
 
       <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
         <Card className="h-fit">
-          <h2 className="mb-4 text-sm font-medium">New project</h2>
+          <h2 className="mb-4 text-sm font-medium">새 프로젝트</h2>
           <form onSubmit={onCreate} className="space-y-3">
             <label className="block text-sm">
-              <span className="mb-1 block text-xs text-[var(--muted)]">Name</span>
+              <span className="mb-1 block text-xs text-[var(--muted)]">이름</span>
               <input
                 className="nimbus-input"
                 value={name}
@@ -85,14 +85,12 @@ export default function ProjectsPage() {
               />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block text-xs text-[var(--muted)]">
-                Description
-              </span>
+              <span className="mb-1 block text-xs text-[var(--muted)]">설명</span>
               <textarea
                 className="nimbus-input min-h-[80px] resize-y"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional"
+                placeholder="선택 사항"
               />
             </label>
             {error && (
@@ -105,7 +103,7 @@ export default function ProjectsPage() {
               disabled={loading || !workspaceId}
               className="nimbus-btn-primary w-full"
             >
-              {loading ? "Creating…" : "Create project"}
+              {loading ? "생성 중…" : "프로젝트 만들기"}
             </button>
           </form>
         </Card>
@@ -113,8 +111,8 @@ export default function ProjectsPage() {
         <Card padding={false}>
           {projects.length === 0 ? (
             <EmptyState
-              title="No projects yet"
-              description="Create a project to group services under a business context."
+              title="프로젝트가 없습니다"
+              description="서비스를 묶을 비즈니스 컨텍스트로 프로젝트를 먼저 만들어 보세요."
             />
           ) : (
             <ul className="divide-y divide-[var(--border)]">

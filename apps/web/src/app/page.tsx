@@ -3,19 +3,19 @@ import Link from "next/link";
 const features = [
   {
     title: "Service Wizard",
-    desc: "Catalog → AI recommend → Preview → Provision in one flow.",
+    desc: "카탈로그 → AI 추천 → 미리보기 → 프로비저닝까지 한 흐름으로.",
   },
   {
     title: "GitOps path",
-    desc: "Helm, Terraform, Actions, Argo manifests generated for you.",
+    desc: "Helm, Terraform, Actions, Argo 매니페스트를 자동 생성합니다.",
   },
   {
     title: "AI Decision Engine",
-    desc: "Runtime / DB / Cache recommendations with confidence & reason.",
+    desc: "Runtime / DB / Cache 추천과 Confidence · Reason을 제공합니다.",
   },
   {
     title: "Environments",
-    desc: "DEV → STAGE → PRODUCTION with variables, secrets, and promote.",
+    desc: "DEV → STAGE → PRODUCTION, 변수·시크릿·Promote를 지원합니다.",
   },
 ];
 
@@ -39,12 +39,12 @@ export default function HomePage() {
           Developer Platform
         </h1>
         <p className="max-w-2xl text-base leading-relaxed text-[var(--muted)] sm:text-lg">
-          Ship services without living in YAML. Catalog, Wizard, AI review,
-          GitHub, environments, and audit — free-only by default.
+          YAML 없이도 서비스를 만들 수 있습니다. Catalog, Wizard, AI 리뷰, GitHub,
+          환경 승격, 감사 로그까지 — 기본 경로는 free-only 입니다.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link href="/login" className="nimbus-btn-primary px-5 py-2.5">
-            Get started
+            시작하기
           </Link>
           <Link href="/dashboard" className="nimbus-btn-ghost px-5 py-2.5">
             Dashboard
@@ -55,7 +55,7 @@ export default function HomePage() {
             target="_blank"
             rel="noreferrer"
           >
-            API health
+            API 상태
           </a>
         </div>
       </header>
@@ -72,7 +72,7 @@ export default function HomePage() {
       </section>
 
       <footer className="relative mt-auto pt-16 text-center text-xs text-[var(--muted-soft)]">
-        Design the platform, not just the deployment.
+        앱만 만들지 말고, 플랫폼을 설계하세요.
       </footer>
     </main>
   );

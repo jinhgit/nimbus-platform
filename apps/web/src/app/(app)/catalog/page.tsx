@@ -23,9 +23,9 @@ export default function CatalogPage() {
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">서비스 카탈로그</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Catalog</h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Golden Path 템플릿입니다. Wizard에서는 게시(Published)된 템플릿만
+            Golden Path 템플릿 목록입니다. Wizard에서는 게시(Published)된 템플릿만
             선택할 수 있습니다.
           </p>
         </div>

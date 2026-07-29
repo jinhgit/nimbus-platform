@@ -243,7 +243,7 @@ export default function WizardPage() {
             Service Wizard
           </h1>
           <p className="mt-1.5 text-sm text-[var(--muted)]">
-            Catalog → AI recommend → Preview → Provision saga
+            카탈로그 → AI 추천 → 미리보기 → 프로비저닝(Saga)
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -474,7 +474,7 @@ export default function WizardPage() {
               배포 시작을 누르면 Provision Job이 비동기로 실행됩니다.
               {githubConnected
                 ? " GitHub에 Private Repository가 실제로 생성됩니다."
-                : " GitHub 미연결 시 시뮬레이션만 수행됩니다. (설정에서 PAT 연결)"}
+                : " GitHub 미연결 시 시뮬레이션만 수행됩니다. (Settings에서 OAuth/PAT 연결)"}
             </p>
           </div>
         )}
@@ -485,7 +485,7 @@ export default function WizardPage() {
               <h2 className="text-lg font-medium">프로비저닝 (Saga)</h2>
               {saga && (
                 <span className="text-xs text-[var(--muted)]">
-                  attempt {saga.attempt} · {saga.status}
+                  시도 {saga.attempt}회 · {saga.status}
                 </span>
               )}
             </div>
@@ -532,7 +532,7 @@ export default function WizardPage() {
                       ) : null}
                       {s.compensationMessage ? (
                         <span className="mt-0.5 block text-[11px] text-amber-300/80">
-                          compensate: {s.compensationMessage}
+                          보상: {s.compensationMessage}
                         </span>
                       ) : null}
                     </li>
@@ -540,12 +540,12 @@ export default function WizardPage() {
                 })}
               </ul>
             ) : (
-              <p className="text-sm text-[var(--muted)]">Loading saga steps…</p>
+              <p className="text-sm text-[var(--muted)]">Saga 단계를 불러오는 중…</p>
             )}
             {wizard.status === "FAILED" && (
               <div className="rounded-lg border border-red-900/40 bg-red-950/30 p-3">
                 <p className="text-sm text-red-200">
-                  Provision failed
+                  프로비저닝 실패
                   {saga?.failureReason ? `: ${saga.failureReason}` : ""}
                 </p>
                 {saga?.compensationLog && (
@@ -562,7 +562,7 @@ export default function WizardPage() {
                     const res = await retryWizard(wizard.id);
                     setLoading(false);
                     if (!res.success) {
-                      setError(res.error?.message ?? "Retry failed");
+                      setError(res.error?.message ?? "재시도에 실패했습니다.");
                       return;
                     }
                     const refreshed = await getWizard(wizard.id);
@@ -571,7 +571,7 @@ export default function WizardPage() {
                   }}
                   className="mt-3 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-medium text-white"
                 >
-                  Retry provision
+                  프로비저닝 재시도
                 </button>
               </div>
             )}

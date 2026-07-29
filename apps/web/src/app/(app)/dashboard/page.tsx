@@ -38,9 +38,9 @@ function healthTone(value: string): "ok" | "warn" | "bad" | "default" {
 }
 
 function healthLabel(value: string) {
-  if (value === "UP" || value === "up") return "Healthy";
-  if (value === "checking") return "Checking…";
-  if (value === "down") return "Down";
+  if (value === "UP" || value === "up") return "정상";
+  if (value === "checking") return "확인 중…";
+  if (value === "down") return "중단";
   return value;
 }
 
@@ -89,13 +89,13 @@ export default function DashboardPage() {
         title="Dashboard"
         description={
           me
-            ? `${me.name} · ${me.workspace?.name ?? "No workspace"}`
-            : "Loading workspace…"
+            ? `${me.name} · ${me.workspace?.name ?? "워크스페이스 없음"}`
+            : "워크스페이스를 불러오는 중…"
         }
         actions={
           <Link href="/wizard" className="nimbus-btn-primary">
             <IconWizard size={15} />
-            Create Service
+            서비스 생성
           </Link>
         }
       />
@@ -105,25 +105,25 @@ export default function DashboardPage() {
           label="API"
           value={healthLabel(health)}
           tone={healthTone(health)}
-          hint="Platform health"
+          hint="플랫폼 헬스"
         />
         <StatCard
           label="Projects"
           value={projects.length}
           tone="info"
-          hint="Business contexts"
+          hint="비즈니스 컨텍스트"
         />
         <StatCard
           label="Services"
           value={services.length}
           tone="default"
-          hint="Deploy units"
+          hint="배포 단위"
         />
         <StatCard
           label="Ready"
           value={readyServices}
           tone={readyServices > 0 ? "ok" : "default"}
-          hint="Status READY"
+          hint="READY 상태"
         />
       </div>
 
@@ -135,17 +135,17 @@ export default function DashboardPage() {
                 href="/services"
                 className="text-xs text-[var(--primary)] hover:underline"
               >
-                View all
+                전체 보기
               </Link>
             }
           >
-            Recent services
+            최근 서비스
           </CardTitle>
           {services.length === 0 ? (
             <p className="text-sm text-[var(--muted)]">
-              No services yet.{" "}
+              아직 서비스가 없습니다.{" "}
               <Link href="/wizard" className="text-[var(--primary)] hover:underline">
-                Start the Wizard
+                Wizard 시작하기
               </Link>
             </p>
           ) : (
@@ -173,10 +173,10 @@ export default function DashboardPage() {
         </Card>
 
         <Card>
-          <CardTitle>Platform status</CardTitle>
+          <CardTitle>플랫폼 현황</CardTitle>
           <ul className="space-y-3 text-sm">
             <li className="flex items-start justify-between gap-3">
-              <span className="text-[var(--muted)]">Cluster</span>
+              <span className="text-[var(--muted)]">클러스터</span>
               <span className="text-right text-zinc-200">
                 {cluster?.available ? (
                   <>
@@ -197,26 +197,26 @@ export default function DashboardPage() {
             </li>
             <li className="flex justify-between gap-3 text-[var(--muted)]">
               <span>AI</span>
-              <span className="text-zinc-300">Rule engine · Ollama-ready</span>
+              <span className="text-zinc-300">Rule engine · Ollama 확장 가능</span>
             </li>
             <li className="flex justify-between gap-3 text-[var(--muted)]">
               <span>Catalog</span>
-              <span className="text-zinc-300">Golden Path templates</span>
+              <span className="text-zinc-300">Golden Path 템플릿</span>
             </li>
           </ul>
 
           <div className="mt-5 flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
             <Link href="/infrastructure" className="nimbus-btn-ghost !px-3 !py-1.5 text-xs">
               <IconInfrastructure size={14} />
-              Infra
+              인프라
             </Link>
             <Link href="/catalog" className="nimbus-btn-ghost !px-3 !py-1.5 text-xs">
               <IconCatalog size={14} />
-              Catalog
+              카탈로그
             </Link>
             <Link href="/projects" className="nimbus-btn-ghost !px-3 !py-1.5 text-xs">
               <IconProjects size={14} />
-              Projects
+              프로젝트
             </Link>
           </div>
         </Card>

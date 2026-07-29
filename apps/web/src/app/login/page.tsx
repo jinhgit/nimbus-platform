@@ -19,13 +19,13 @@ export default function LoginPage() {
     try {
       const res = await devLogin(name, email);
       if (!res.success || !res.data) {
-        setError(res.error?.message ?? "Login failed.");
+        setError(res.error?.message ?? "로그인에 실패했습니다.");
         return;
       }
       setAuthSession(res.data);
       router.replace("/dashboard");
     } catch {
-      setError("Cannot reach API. Is the backend running?");
+      setError("API에 연결할 수 없습니다. 백엔드가 실행 중인지 확인하세요.");
     } finally {
       setLoading(false);
     }
@@ -46,14 +46,15 @@ export default function LoginPage() {
             Welcome back
           </h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Dev Login for local free-only path. GitHub OAuth when configured.
+            로컬 free-only 경로용 Dev Login입니다. GitHub OAuth는 설정 시 사용할 수
+            있습니다.
           </p>
         </div>
 
         <div className="nimbus-card p-7">
           <form onSubmit={onSubmit} className="space-y-4">
             <label className="block text-sm">
-              <span className="mb-1.5 block text-xs text-[var(--muted)]">Name</span>
+              <span className="mb-1.5 block text-xs text-[var(--muted)]">이름</span>
               <input
                 className="nimbus-input"
                 value={name}
@@ -62,7 +63,7 @@ export default function LoginPage() {
               />
             </label>
             <label className="block text-sm">
-              <span className="mb-1.5 block text-xs text-[var(--muted)]">Email</span>
+              <span className="mb-1.5 block text-xs text-[var(--muted)]">이메일</span>
               <input
                 type="email"
                 className="nimbus-input"
@@ -83,7 +84,7 @@ export default function LoginPage() {
               disabled={loading}
               className="nimbus-btn-primary w-full py-2.5"
             >
-              {loading ? "Signing in…" : "Continue with Dev Login"}
+              {loading ? "로그인 중…" : "Dev Login으로 시작"}
             </button>
           </form>
 
@@ -93,7 +94,7 @@ export default function LoginPage() {
               href="/"
               className="mt-3 inline-block text-[var(--primary)] hover:underline"
             >
-              ← Back to landing
+              ← 랜딩 페이지로
             </Link>
           </div>
         </div>

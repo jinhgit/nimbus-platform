@@ -15,7 +15,7 @@ export default function WorkspacesPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">워크스페이스</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Workspaces</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
           로그인 시 개인 워크스페이스가 자동으로 생성됩니다.
         </p>

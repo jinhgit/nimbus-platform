@@ -29,11 +29,11 @@ export default function ServicesPage() {
       <PageHeader
         eyebrow="Deploy"
         title="Services"
-        description="Deploy units created via Wizard. Open a card for environments, pipelines, and detail."
+        description="Wizard로 생성된 배포 단위입니다. 카드를 열어 환경·파이프라인·상세를 확인하세요."
         actions={
           <Link href="/wizard" className="nimbus-btn-primary">
             <IconWizard size={15} />
-            Create Service
+            서비스 생성
           </Link>
         }
       />
@@ -41,11 +41,11 @@ export default function ServicesPage() {
       <Card padding={false}>
         {services.length === 0 ? (
           <EmptyState
-            title="No services yet"
-            description="Use Service Wizard to provision a service with GitHub, K8s, and environments."
+            title="서비스가 없습니다"
+            description="Service Wizard로 GitHub · K8s · Environment까지 한 번에 프로비저닝할 수 있습니다."
             action={
               <Link href="/wizard" className="nimbus-btn-primary">
-                Open Wizard
+                Wizard 열기
               </Link>
             }
           />

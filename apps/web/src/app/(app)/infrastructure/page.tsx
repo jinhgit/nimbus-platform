@@ -36,9 +36,9 @@ export default function InfrastructurePage() {
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">인프라</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Infrastructure</h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            로컬 Kubernetes (k3d / kind) · free-only · EKS 등 과금 컨텍스트 차단
+            로컬 Kubernetes (k3d / kind) · free-only · EKS 등 과금 컨텍스트는 차단됩니다.
           </p>
         </div>
         <button

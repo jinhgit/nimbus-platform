@@ -183,7 +183,7 @@ export default function ServiceDetailPage() {
     const res = await createServiceEnvironment(serviceId, { type: envTypeToCreate });
     setEnvBusy(false);
     if (!res.success) {
-      setError(res.error?.message ?? "Environment 생성 실패");
+      setError(res.error?.message ?? "환경 생성에 실패했습니다.");
       return;
     }
     await load();
@@ -195,7 +195,7 @@ export default function ServiceDetailPage() {
     const res = await fetchEnvironmentHealth(envId);
     setEnvBusy(false);
     if (!res.success) {
-      setError(res.error?.message ?? "Health check 실패");
+      setError(res.error?.message ?? "헬스 체크에 실패했습니다.");
       return;
     }
     await load();
@@ -210,7 +210,7 @@ export default function ServiceDetailPage() {
         : await archiveServiceEnvironment(env.id);
     setEnvBusy(false);
     if (!res.success) {
-      setError(res.error?.message ?? "상태 변경 실패");
+      setError(res.error?.message ?? "상태 변경에 실패했습니다.");
       return;
     }
     await load();
@@ -225,11 +225,11 @@ export default function ServiceDetailPage() {
     const res = await promoteEnvironment(env.id, target);
     setEnvBusy(false);
     if (!res.success || !res.data) {
-      setError(res.error?.message ?? "Promote 실패");
+      setError(res.error?.message ?? "환경 승격에 실패했습니다.");
       return;
     }
     setMessage(
-      `Promoted ${res.data.sourceType} → ${res.data.targetType} (vars ${res.data.variablesCopied}, secrets ${res.data.secretsCopied})`,
+      `${res.data.sourceType} → ${res.data.targetType} 승격 완료 (변수 ${res.data.variablesCopied}, 시크릿 ${res.data.secretsCopied})`,
     );
     await load();
   }
@@ -244,7 +244,7 @@ export default function ServiceDetailPage() {
     });
     setEnvBusy(false);
     if (!res.success) {
-      setError(res.error?.message ?? "Variable 생성 실패");
+      setError(res.error?.message ?? "변수 생성에 실패했습니다.");
       return;
     }
     setVarKey("");
@@ -262,7 +262,7 @@ export default function ServiceDetailPage() {
     });
     setEnvBusy(false);
     if (!res.success) {
-      setError(res.error?.message ?? "Secret 생성 실패");
+      setError(res.error?.message ?? "시크릿 생성에 실패했습니다.");
       return;
     }
     setSecretKey("");
@@ -276,7 +276,7 @@ export default function ServiceDetailPage() {
     const res = await revealEnvSecret(id);
     setEnvBusy(false);
     if (!res.success || !res.data) {
-      setError(res.error?.message ?? "Reveal 실패");
+      setError(res.error?.message ?? "시크릿 조회에 실패했습니다.");
       return;
     }
     setRevealMap((prev) => ({ ...prev, [id]: res.data!.value }));
@@ -401,7 +401,7 @@ export default function ServiceDetailPage() {
           <div>
             <h2 className="text-sm font-medium">Environments</h2>
             <p className="mt-0.5 text-xs text-[var(--muted)]">
-              DEV → STAGE → PRODUCTION · Variables / Secrets · Promote
+              DEV → STAGE → PRODUCTION · 변수/시크릿 · 승격(Promote)
             </p>
           </div>
           {missingEnvTypes.length > 0 && (
@@ -423,27 +423,27 @@ export default function ServiceDetailPage() {
                 onClick={addEnvironment}
                 className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--primary-hover)] disabled:opacity-60"
               >
-                Add environment
+                환경 추가
               </button>
             </div>
           )}
         </div>
         {environments.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">
-            No environments yet. Open this page again after provision, or add one above.
+            아직 환경이 없습니다. 프로비저닝 후 다시 열거나, 위에서 추가하세요.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead className="border-b border-[var(--border)] text-xs uppercase tracking-wide text-[var(--muted)]">
                 <tr>
-                  <th className="px-2 py-2 font-medium">Type</th>
-                  <th className="px-2 py-2 font-medium">Status</th>
-                  <th className="px-2 py-2 font-medium">Namespace</th>
-                  <th className="px-2 py-2 font-medium">Branch</th>
-                  <th className="px-2 py-2 font-medium">Replicas</th>
-                  <th className="px-2 py-2 font-medium">Health</th>
-                  <th className="px-2 py-2 font-medium">Actions</th>
+                  <th className="px-2 py-2 font-medium">유형</th>
+                  <th className="px-2 py-2 font-medium">상태</th>
+                  <th className="px-2 py-2 font-medium">네임스페이스</th>
+                  <th className="px-2 py-2 font-medium">브랜치</th>
+                  <th className="px-2 py-2 font-medium">레플리카</th>
+                  <th className="px-2 py-2 font-medium">헬스</th>
+                  <th className="px-2 py-2 font-medium">작업</th>
                 </tr>
               </thead>
               <tbody>
@@ -497,7 +497,7 @@ export default function ServiceDetailPage() {
                             onClick={() => setSelectedEnvId(env.id)}
                             className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5"
                           >
-                            Config
+                            설정
                           </button>
                           {target && env.status !== "ARCHIVED" && (
                             <button
@@ -506,7 +506,7 @@ export default function ServiceDetailPage() {
                               onClick={() => onPromote(env)}
                               className="rounded border border-sky-500/40 px-2 py-0.5 text-[11px] text-sky-300 hover:bg-sky-500/10 disabled:opacity-50"
                             >
-                              Promote → {target}
+                              승격 → {target}
                             </button>
                           )}
                           <button
@@ -515,7 +515,7 @@ export default function ServiceDetailPage() {
                             onClick={() => checkEnvHealth(env.id)}
                             className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
                           >
-                            Health
+                            헬스
                           </button>
                           <button
                             type="button"
@@ -523,7 +523,7 @@ export default function ServiceDetailPage() {
                             onClick={() => toggleArchive(env)}
                             className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
                           >
-                            {env.status === "ARCHIVED" ? "Restore" : "Archive"}
+                            {env.status === "ARCHIVED" ? "복원" : "보관"}
                           </button>
                         </div>
                       </td>
@@ -540,7 +540,7 @@ export default function ServiceDetailPage() {
           <div className="mt-5 grid gap-4 border-t border-[var(--border)] pt-5 lg:grid-cols-2">
             <div>
               <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                Variables · {selectedEnv.type}
+                변수 · {selectedEnv.type}
               </h3>
               <div className="mb-2 flex flex-wrap gap-2">
                 <input
@@ -551,7 +551,7 @@ export default function ServiceDetailPage() {
                 />
                 <input
                   className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
-                  placeholder="value"
+                  placeholder="값"
                   value={varValue}
                   onChange={(e) => setVarValue(e.target.value)}
                 />
@@ -561,12 +561,12 @@ export default function ServiceDetailPage() {
                   onClick={addVariable}
                   className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs text-white disabled:opacity-60"
                 >
-                  Add
+                  추가
                 </button>
               </div>
               <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] text-xs">
                 {variables.length === 0 ? (
-                  <li className="px-3 py-3 text-[var(--muted)]">No variables</li>
+                  <li className="px-3 py-3 text-[var(--muted)]">변수가 없습니다</li>
                 ) : (
                   variables.map((v) => (
                     <li key={v.id} className="flex items-center justify-between gap-2 px-3 py-2">
@@ -580,7 +580,7 @@ export default function ServiceDetailPage() {
                         className="text-[var(--muted)] hover:text-red-300"
                         onClick={() => onDeleteVariable(v.id)}
                       >
-                        Delete
+                        삭제
                       </button>
                     </li>
                   ))
@@ -589,7 +589,7 @@ export default function ServiceDetailPage() {
             </div>
             <div>
               <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                Secrets · {selectedEnv.type}
+                시크릿 · {selectedEnv.type}
               </h3>
               <div className="mb-2 flex flex-wrap gap-2">
                 <input
@@ -601,7 +601,7 @@ export default function ServiceDetailPage() {
                 <input
                   type="password"
                   className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
-                  placeholder="value"
+                  placeholder="값"
                   value={secretValue}
                   onChange={(e) => setSecretValue(e.target.value)}
                 />
@@ -611,12 +611,12 @@ export default function ServiceDetailPage() {
                   onClick={addSecret}
                   className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs text-white disabled:opacity-60"
                 >
-                  Add
+                  추가
                 </button>
               </div>
               <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] text-xs">
                 {secrets.length === 0 ? (
-                  <li className="px-3 py-3 text-[var(--muted)]">No secrets</li>
+                  <li className="px-3 py-3 text-[var(--muted)]">시크릿이 없습니다</li>
                 ) : (
                   secrets.map((s) => (
                     <li key={s.id} className="flex items-center justify-between gap-2 px-3 py-2">
@@ -634,7 +634,7 @@ export default function ServiceDetailPage() {
                             className="text-[var(--muted)] hover:text-white"
                             onClick={() => onRevealSecret(s.id)}
                           >
-                            Reveal
+                            보기
                           </button>
                         )}
                         <button
@@ -642,7 +642,7 @@ export default function ServiceDetailPage() {
                           className="text-[var(--muted)] hover:text-red-300"
                           onClick={() => onDeleteSecret(s.id)}
                         >
-                          Delete
+                          삭제
                         </button>
                       </span>
                     </li>
@@ -650,7 +650,7 @@ export default function ServiceDetailPage() {
                 )}
               </ul>
               <p className="mt-2 text-[10px] text-[var(--muted)]">
-                Secrets stored AES-encrypted · list always masked · Reveal is audited
+                시크릿은 AES로 암호화 저장됩니다. 목록은 항상 마스킹되며, 보기 작업은 감사 로그에 남습니다.
               </p>
             </div>
           </div>
@@ -659,7 +659,7 @@ export default function ServiceDetailPage() {
         {promotions.length > 0 && (
           <div className="mt-5 border-t border-[var(--border)] pt-4">
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-              Promotion history
+              승격 이력
             </h3>
             <ul className="space-y-1 text-xs text-[var(--muted)]">
               {promotions.slice(0, 5).map((p) => (
@@ -869,12 +869,12 @@ export default function ServiceDetailPage() {
               disabled={reviewLoading || !service.wizardId}
               className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--primary-hover)] disabled:opacity-60"
             >
-              {reviewLoading ? "분석 중…" : "Analyze"}
+              {reviewLoading ? "분석 중…" : "분석 실행"}
             </button>
           </div>
           {!review ? (
             <p className="text-sm text-[var(--muted)]">
-              Analyze를 눌러 Architecture Score와 권장 사항을 확인하세요.
+              분석을 실행하면 Architecture Score와 권장 사항을 확인할 수 있습니다.
             </p>
           ) : (
             <div className="space-y-3 text-sm">

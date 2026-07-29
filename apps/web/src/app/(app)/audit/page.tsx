@@ -106,9 +106,9 @@ export default function AuditPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">감사 로그</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Audit</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          워크스페이스 내 mutation·로그인 등 운영 이벤트 기록 (실운영 P0)
+          워크스페이스의 mutation·로그인 등 운영 이벤트를 기록합니다.
         </p>
       </div>
 

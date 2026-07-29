@@ -22,6 +22,7 @@
 | 목록 전체 | [INDEX.md](INDEX.md) |
 | **완전 무료 제약** | [architecture/05-Free-Only-Constraints.md](architecture/05-Free-Only-Constraints.md) |
 | 로컬 실행 | [../README.md](../README.md) |
+| **Web UI 카피·형식 규칙** | [../apps/web/UI-CONVENTIONS.md](../apps/web/UI-CONVENTIONS.md) |
 
 ---
 

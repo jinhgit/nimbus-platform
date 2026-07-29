@@ -1,5 +1,7 @@
 "use client";
 
+// UI language: sidebar + page titles EN; body copy KO — see apps/web/UI-CONVENTIONS.md
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";

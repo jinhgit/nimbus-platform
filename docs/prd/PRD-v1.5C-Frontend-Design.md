@@ -7,6 +7,9 @@
 
 ---
 
+> **정본 우선:** 이 문서와 최신 결정이 다르면 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 와 [`PRD-MASTER.md`](PRD-MASTER.md) 를 따른다.
+
+
 # 1. 목표
 
 Frontend는 Terraform · Kubernetes · GitHub · Helm · ArgoCD 복잡성을 **숨긴다**.
@@ -116,13 +119,15 @@ AI Summary 예: 오늘 Deployment 12건, 실패 1건, 원인 Health Check
 Table: Project · Status · Framework · Repository · Cluster · Updated  
 Action: Open · Deploy · Delete · AI Review
 
-## Create Project Wizard (6 Step)
+## Create Service Wizard (7 Step · 정본)
 
 ```text
-Project → Framework → Database → Infrastructure → AI Review → Deploy
+Service Info → Template → Infrastructure → AI Review
+→ Preview → Provision → Complete
 ```
 
-Progress 1–6 · 우측 상시 AI Panel (Recommendation · Architecture · Cost)
+Progress 1–7 · 우측 상시 AI Panel (Recommendation · Architecture · Cost)  
+(초기 초안의 5~6 step 표기는 7 step 으로 통일)
 
 ## Project Detail Tabs
 
@@ -246,11 +251,12 @@ Deployment Timeline · Pipeline Status · Cluster Health Card · Service Catalog
 - Widget 독립 로딩
 - WebSocket/SSE 실시간 갱신
 
-### Project Wizard
+### Service Wizard
 
-- 6단계 이내 완료
+- 7단계 플로우 완료
 - 입력 자동 저장 · 이전 단계 복원
 - AI 추천 실시간 표시
+- Provision 진행률 (Job) 표시
 
 ### Deployment
 

@@ -7,6 +7,9 @@
 
 ---
 
+> **정본 우선:** 이 문서와 최신 결정이 다르면 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 와 [`PRD-MASTER.md`](PRD-MASTER.md) 를 따른다.
+
+
 > **이 프로젝트는 "Backstage 클론"을 만드는 것이 아닙니다.**  
 > **"AI Native Platform Engineering Portal"** 을 만드는 것이 목표입니다.  
 > Spotify Backstage + Port + Humanitec + GitHub + ArgoCD + AI Ops 를 하나의 플랫폼으로 통합합니다.
@@ -270,6 +273,10 @@ Login → Dashboard → Create Service → 입력
 
 # 12. System Architecture
 
+> 스택 코드 기준: **Java 21 · Spring Boot 4.0.x · Next.js 15 · PostgreSQL 16 · Redis 7**  
+> 도메인: `Workspace → Project → Service → Environment → Deployment`  
+> 배포: `Terraform/Git → ArgoCD → Kubernetes` (직접 kubectl apply 지양)
+
 ```text
                          Users
                            │
@@ -282,11 +289,11 @@ Login → Dashboard → Create Service → 입력
  ┌───────────────┬───────────────┬─────────────────┐
 GitHub API   Kubernetes API   AI Engine      Auth Server
 Terraform     Helm        Prompt Engine      OAuth2
-ArgoCD        Kubectl     YAML Builder       RBAC
+ArgoCD        (GitOps)    YAML Builder       RBAC
                            │
                     PostgreSQL / Redis / Job Queue
                            │
-                    Amazon EKS / NCP
+                    Amazon EKS / NCP (MVP: k3d/kind)
                     Prometheus / Grafana / Loki
 ```
 

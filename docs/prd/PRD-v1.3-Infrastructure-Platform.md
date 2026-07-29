@@ -7,6 +7,9 @@
 
 ---
 
+> **정본 우선:** 이 문서와 최신 결정이 다르면 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 와 [`PRD-MASTER.md`](PRD-MASTER.md) 를 따른다.
+
+
 # 1. 목적
 
 Nimbus는 단순 Kubernetes 배포 플랫폼이 아니다.

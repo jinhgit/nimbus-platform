@@ -1,18 +1,20 @@
-# Nimbus Platform — Domain Map
+# Domain Map
 
-## 1. Aggregate Roots
+> 정본: [03-Canonical-Decisions.md](03-Canonical-Decisions.md)
 
-| Aggregate | Parent | Responsibility |
-|-----------|--------|----------------|
-| User | — | Identity, Role |
+## 1. Aggregate roots
+
+| Aggregate | Parent | Notes |
+|-----------|--------|--------|
+| User | — | Identity, global role |
 | Workspace | — | Collaboration root |
 | Team | Workspace | Sub-group |
 | Project | Workspace | Business context |
-| Service | Project | Deployable unit |
-| Environment | Service | Runtime / Infra context |
-| Template (Catalog) | Workspace/Global | Golden Path asset |
-| Wizard | Project | Orchestration session |
-| ProvisionJob | Wizard | Saga execution |
+| Service | Project | **Deployable unit** |
+| Environment | Service | Runtime / infra context |
+| Template | Catalog | Golden Path asset |
+| Wizard | Project/Service | Orchestration session |
+| ProvisionJob | Wizard | Saga run |
 | GitHubConnection | Workspace/User | SCM link |
 
 ---
@@ -20,31 +22,32 @@
 ## 2. Hierarchy
 
 ```text
-User
-  └── Workspace (member)
-        ├── Team
-        │     └── Member
-        ├── Project
-        │     ├── Metadata (Label, Tag, Annotation, Favorite)
-        │     └── Service
-        │           ├── Environment (DEV / STAGE / PRODUCTION)
-        │           │     ├── Variable / Secret
-        │           │     ├── Deployment
-        │           │     └── Incident
-        │           └── Repository (GitHub)
-        ├── Catalog / Template
-        └── AI Review / Prompt History
+User ──member──► Workspace
+                   ├── Team / Member / Invitation
+                   ├── Project
+                   │     ├── Metadata (label, tag, annotation, favorite)
+                   │     └── Service
+                   │           ├── Repository (GitHub)
+                   │           └── Environment
+                   │                 ├── Variable / Secret
+                   │                 ├── Deployment / Pipeline ref
+                   │                 └── Incident
+                   └── Catalog (templates)
 
 Wizard ──► ProvisionJob ──► Steps (Saga)
 ```
 
 ---
 
-## 3. Status Machines (요약)
+## 3. Status machines
 
 ### Project
 
-`CREATING → READY → ARCHIVED → (RESTORED→READY) → DELETING · FAILED`
+`CREATING → READY → ARCHIVED ⇄ READY → DELETING` · `FAILED`
+
+### Service (목표 모델)
+
+`CREATING → READY → FAILED · ARCHIVED`
 
 ### Environment
 
@@ -60,20 +63,21 @@ Wizard ──► ProvisionJob ──► Steps (Saga)
 
 ### Provision Job
 
-`QUEUED → VALIDATING → GENERATING → PROVISIONING → DEPLOYING → VERIFYING → COMPLETED · FAILED · ROLLING_BACK · ROLLED_BACK · CANCELLED`
+`QUEUED → VALIDATING → GENERATING → PROVISIONING → DEPLOYING → VERIFYING → COMPLETED`  
+· `FAILED · ROLLING_BACK · ROLLED_BACK · CANCELLED`
 
 ---
 
-## 4. Major Domain Events
+## 4. Domain events (주요)
 
 ```text
-user.logged_in / user.logged_out / workspace.changed
+user.logged_in / logged_out
 workspace.created / member.invited / member.joined
-project.created / project.archived / project.cloned
-environment.created / environment.promoted
+project.created / archived / cloned
+environment.created / promoted
 variable.created / secret.rotated / github.secret.synced
-template.created / template.published
-wizard.created / wizard.executed / wizard.completed
+template.created / published
+wizard.created / executed / completed / failed
 provision.started / repository.created / helm.generated
 argocd.created / deployment.completed / rollback.completed
 recommendation.generated / architecture.reviewed
@@ -81,39 +85,38 @@ recommendation.generated / architecture.reviewed
 
 ---
 
-## 5. Role Matrix (Workspace)
+## 5. Workspace roles
 
-| Capability | Owner | Admin | Platform Engineer | Developer | Viewer |
-|------------|:-----:|:-----:|:-----------------:|:---------:|:------:|
-| Workspace edit | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Invite member | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Role change | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Project create | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Deploy | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Capability | Owner | Admin | PE | Developer | Viewer |
+|------------|:-----:|:-----:|:--:|:---------:|:------:|
+| Workspace edit | ✅ | | | | |
+| Invite | ✅ | ✅ | ✅ | | |
+| Role change | ✅ | ✅ | | | |
+| Project/Service create | ✅ | ✅ | ✅ | ✅ | |
+| Deploy | ✅ | ✅ | ✅ | ✅ | |
 | Monitoring | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-Global roles (Auth): `ADMIN · PLATFORM_ENGINEER · DEVELOPER · VIEWER`
+Global auth roles: `ADMIN · PLATFORM_ENGINEER · DEVELOPER · VIEWER`
 
 ---
 
-## 6. Integration Boundaries
+## 6. Integrations
 
-| System | Access Pattern | Abstraction |
-|--------|----------------|-------------|
-| GitHub | Adapter + Retry + Rate Limit | `GitProvider` |
-| Terraform | Generate files (MVP) / apply (v2) | Provision Step |
-| Helm | Template + values | Provision Step |
-| ArgoCD | Manifest + Sync | Provision Step |
-| Kubernetes | API / GitOps | Env + Deploy |
-| LLM | AIProvider + Guardrail | Decision Engine |
+| System | Pattern |
+|--------|---------|
+| GitHub | `GitProvider` + retry + rate limit |
+| Terraform | generate (MVP) / apply (v2) |
+| Helm | template + values |
+| ArgoCD | manifest + sync |
+| LLM | `AIProvider` + Context + Guardrail |
 
 ---
 
-## 7. Data Stores
+## 7. Stores
 
-| Store | Use |
-|-------|-----|
-| PostgreSQL 16 | Platform metadata (not live K8s objects as SoT) |
-| Redis | Session, AI cache, job locks, OAuth state |
-| S3 + DynamoDB | Terraform remote state (infra track) |
-| Git | GitOps source of truth for app deploy |
+| Store | Role |
+|-------|------|
+| PostgreSQL | Platform metadata |
+| Redis | Session, cache, AI cache, locks |
+| Git | App deploy source of truth |
+| S3 + DynamoDB | TF remote state (cloud track) |

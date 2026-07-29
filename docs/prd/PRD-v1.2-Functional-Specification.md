@@ -7,6 +7,9 @@
 
 ---
 
+> **정본 우선:** 이 문서와 최신 결정이 다르면 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 와 [`PRD-MASTER.md`](PRD-MASTER.md) 를 따른다.
+
+
 # 1. Scope
 
 - Developer Portal
@@ -122,6 +125,9 @@ Deploy Success · Pipeline Failed · GitHub Connected · Incident · Alert
 Kubernetes를 몰라도 서비스 생성.
 
 ## Wizard Steps
+
+> **정본 7단계 (API-04-01):** Service Info → Template → Infrastructure → AI Review → Preview → Provision → Complete  
+> 아래 5단계 초안은 제품 초기 스케치이며, 구현은 7단계를 따른다.
 
 ```text
 STEP1 Project → STEP2 Framework → STEP3 Database

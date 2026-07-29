@@ -1,21 +1,26 @@
 # Monorepo Layout
 
-Phase 0 에서 잡힌 실제 코드 배치.
+Phase 0 에서 잡힌 실제 코드 배치.  
+설계 문서 진입: [docs/README.md](../README.md)
 
 ```text
-Nimbus Platform/
+.
 ├── apps/
-│   ├── api/                 # Backend
+│   ├── api/                 # Spring Boot 4 / Java 21
 │   │   └── src/main/java/io/nimbus/platform/
-│   │         common/ api, config, domain, exception
+│   │         common/        # ApiResponse, exception, config, BaseTimeEntity
 │   │         health/
 │   │         auth/ workspace/ project/ catalog/
 │   │         wizard/ ai/ provision/ github/
-│   └── web/                 # Frontend
-│         src/app/           # App Router
-│         src/lib/api.ts     # API client stub
-├── docs/                    # PRD + API specs
-├── docker-compose.yml       # postgres, redis
+│   └── web/                 # Next.js 15
+│         src/app/           # App Router (/, /dashboard)
+│         src/lib/api.ts
+├── docs/
+│   ├── README.md · INDEX.md
+│   ├── prd/                 # Master + v1.x
+│   ├── api/                 # Engineering specs
+│   └── architecture/        # 구조 · 정본 · 용어
+├── docker-compose.yml
 ├── Makefile
 └── .env.example
 ```
@@ -31,6 +36,6 @@ Nimbus Platform/
 
 ## 다음 작업
 
-1. `auth` — GitHub OAuth + JWT
-2. `workspace` / `project` entity + migration
-3. web layout (sidebar, dark shell)
+1. `auth` — GitHub OAuth + JWT  
+2. `workspace` / `project` / `service` entity  
+3. web shell (sidebar)

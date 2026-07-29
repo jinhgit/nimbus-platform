@@ -1,152 +1,100 @@
-# Nimbus Platform — System Overview
+# System Overview
 
-## 1. Product Identity
+> 정본: [03-Canonical-Decisions.md](03-Canonical-Decisions.md)
 
-**Nimbus Platform** = AI Native Internal Developer Platform
+## 1. Product
 
-통합 대상:
+**Nimbus Platform** — AI Native Internal Developer Platform.
 
-- Spotify Backstage (Developer Portal / Catalog)
-- Port (Blueprint / Software Catalog UX)
-- Humanitec (Platform orchestration / Score 개념)
-- GitHub (Source of Truth)
-- ArgoCD (GitOps)
-- AI Ops (Platform Engineer Agent)
+참고 제품 조합:
+
+- Backstage — Portal / Catalog 감성
+- Port — Blueprint / 소프트웨어 카탈로그 UX
+- Humanitec — 플랫폼 오케스트레이션
+- GitHub + ArgoCD — Source of Truth + GitOps
+- AI Ops — Platform Engineer Agent
 
 ---
 
-## 2. End-to-End Flow
+## 2. End-to-end
 
 ```text
 Developer
     │
-    ▼
 Next.js Portal (Developer Workspace)
     │
-    ▼
 Spring Boot Platform API
     │
     ├── Auth / Workspace / Project / Service
     ├── Environment / Config / Metadata / Catalog
-    ├── Service Wizard (Workflow Engine)
+    ├── Service Wizard (Workflow)
     ├── AI Decision Engine
     └── Provisioning Engine (Saga)
             │
             ├── GitHub (SCM Provider)
-            ├── Terraform (modules / tfvars)
-            ├── Helm (values / charts)
+            ├── Terraform (modules / files)
+            ├── Helm (charts / values)
             ├── ArgoCD (Application / Sync)
             └── Kubernetes (EKS or k3d/kind)
                     │
-                    ▼
             Prometheus / Grafana / Loki
 ```
 
 ---
 
-## 3. Critical Architectural Decisions
+## 3. Critical decisions (short)
 
-### 3.1 GitOps First
-
-```text
-Terraform  →  GitOps Repository  →  ArgoCD  →  Sync  →  Kubernetes
-```
-
-Terraform 이 직접 `kubectl apply` 하지 않는다.
-
-### 3.2 Project vs Service
-
-```text
-Project  = Business Context (예: Shopping Mall)
-Service  = Deployable Unit (예: Payment API)
-```
-
-### 3.3 Environment = Infrastructure Context
-
-```text
-Service → Environment → Namespace → Cluster → Helm Values → ArgoCD → Deployment
-```
-
-### 3.4 Wizard = Workflow Engine
-
-Service Wizard 는 CRUD 가 아니라 **Job 기반 Orchestrator** 이다.
-
-### 3.5 AI = Decision Engine
-
-LLM 채팅이 아니라 Context Builder + Guardrail + Multi-Advisor 구조.
-
-### 3.6 SCM Abstraction
-
-```text
-GitProvider
-  ├── GitHubAdapter (MVP)
-  ├── GitLabAdapter (v2)
-  └── BitbucketAdapter (v2)
-```
+| 주제 | 결정 |
+|------|------|
+| Deploy path | TF → Git → ArgoCD → K8s (직접 kubectl apply 지양) |
+| Deploy unit | **Service** (Project는 컨텍스트) |
+| Wizard | 비동기 Job + Step rollback |
+| AI | Context + Guardrail + multi-advisor |
+| SCM | `GitProvider` 추상화, MVP GitHub |
 
 ---
 
-## 4. Technology Stack
+## 4. Stack (as implemented / target)
 
 | Layer | Stack |
 |-------|-------|
-| Web | Next.js 15 App Router, TypeScript, shadcn/ui, Tailwind, Zustand, TanStack Query, RHF + Zod |
-| API | Java 21, Spring Boot 3.5, Security 6, OAuth2, JWT RS256, JPA, MapStruct, SpringDoc |
-| Data | PostgreSQL 16, Redis (session/cache/queue/AI) |
-| Jobs | Spring Async (MVP) → RabbitMQ → Kafka (v2) |
-| Infra | Terraform modules, Helm, ArgoCD |
-| Cluster | MVP: k3d/kind · Prod: Amazon EKS · v2: NCP/AKS/GKE |
-| AI | Gemini / Groq / OpenRouter / Ollama · AIProvider interface |
-| Observability | Prometheus, Grafana, Loki, Alertmanager |
+| Web | Next.js 15, TypeScript, Tailwind |
+| API | Java 21, **Spring Boot 4.0.x**, Security, JPA |
+| Data | PostgreSQL 16, Redis 7 |
+| Jobs | Spring Async (MVP) → RabbitMQ → Kafka (later) |
+| Infra code | Terraform modules, Helm, ArgoCD |
+| Cluster | MVP: k3d/kind · Target: EKS |
+| AI | AIProvider adapters (Gemini/Groq/…), Guardrail |
+| Observability | Prometheus, Grafana, Loki |
 
 ---
 
-## 5. Security Baseline
+## 5. Security baseline
 
 - OAuth2 + JWT + RBAC
-- Secret: AES-256 (MVP) → KMS/Vault (v2)
-- Prompt 내 Secret 마스킹
-- GitHub Webhook HMAC 검증
-- IRSA / Least Privilege (infra)
-- Soft Delete + Audit Log 전 영역
+- Secret: AES (MVP) → KMS/Vault (v2)
+- Prompt secret masking
+- Webhook HMAC
+- Soft delete + Audit
 
 ---
 
-## 6. MVP Boundary
+## 6. MVP boundary
 
-### Included
+**In:** Auth 연결, Workspace/Project/Service, Wizard+Provision Job, Repo/Actions/파일 생성, 로컬·단일 클러스터 경로, AI Review 일부, Audit, Dashboard skeleton  
 
-- GitHub OAuth / App 연동
-- Workspace · Project · Service · Environment
-- Service Wizard + Provision Job
-- Repo / Actions / Helm / Argo Manifest 생성
-- k3d/kind 배포
-- AI Review / YAML / Incident (범위 내)
-- Dashboard · Audit · Observability 링크
-
-### Excluded (v2+)
-
-- Multi-cluster / Multi-cloud 실운영
-- FinOps full dashboard
-- AI Auto Healing
-- Service Mesh / Canary/BG 고급 배포 (설계상 전략 enum 은 존재)
-- OPA / Vault production integration
+**Out:** Multi-cloud 운영, FinOps full, Auto Healing, OPA/Vault 본격, Marketplace
 
 ---
 
-## 7. Package / Service Boundaries (Backend)
-
-권장 도메인 패키지:
+## 7. Backend package map
 
 ```text
-auth · workspace · project · environment · configuration
-metadata · catalog · wizard · ai · provision · github
+io.nimbus.platform
+  common · health
+  auth · workspace · project · catalog
+  wizard · ai · provision · github
 ```
 
-공통:
-
-```text
-Controller → Facade → Service → Repository
-DTO (record) only · ApiResponse<T>
-Domain Events + Audit on every mutation
-```
+패턴: `Controller → Facade → Service → Repository`  
+응답: `ApiResponse<T>` · DTO only

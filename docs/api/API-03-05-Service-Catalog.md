@@ -7,6 +7,9 @@ Self-Service Platform의 핵심 자산 관리 시스템. 단순 템플릿 폴더
 
 ---
 
+> **정본 우선:** 도메인 계층·Wizard 7step·GitOps·스택은 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 기준.
+
+
 # 1. Domain Overview
 
 관리 대상:

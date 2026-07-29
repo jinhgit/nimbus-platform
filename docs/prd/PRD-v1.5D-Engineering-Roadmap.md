@@ -8,6 +8,9 @@
 
 ---
 
+> **정본 우선:** 이 문서와 최신 결정이 다르면 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 와 [`PRD-MASTER.md`](PRD-MASTER.md) 를 따른다.
+
+
 # 1. 목표
 
 개발자가 Kubernetes를 몰라도 서비스를 배포할 수 있는 **AI Native Internal Developer Platform** 구축
@@ -61,8 +64,8 @@ Planning → Architecture → Backend → Infrastructure
 
 # 5. Phase 1 — Foundation (Week 2–4)
 
-**Backend:** Spring Boot · Security · JWT · OAuth2 · PostgreSQL · Redis  
-**Frontend:** Next.js · Layout · Dashboard · Sidebar · Theme  
+**Backend:** Java 21 · Spring Boot **4.0.x** · Security · JWT · OAuth2 · PostgreSQL · Redis  
+**Frontend:** Next.js 15 · Layout · Dashboard · Sidebar · Theme  
 **Infra:** Docker · Compose · Local K8s (k3d/Kind) · GitHub Actions  
 
 완료: 로그인 · Dashboard · Project CRUD

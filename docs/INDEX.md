@@ -1,66 +1,89 @@
-# Nimbus Platform — Document Index
+# Document Index
 
-학습·설계된 전체 문서의 단일 인덱스입니다.  
-구현 시 Cursor / Claude Code / Copilot 에 **해당 MD를 직접 입력**할 수 있는 수준으로 작성되어 있습니다.
+전체 설계 문서 목록.  
+**충돌 시:** [architecture/03-Canonical-Decisions.md](architecture/03-Canonical-Decisions.md) 우선.
 
----
-
-## Reading Order (권장)
-
-1. PRD v1.1 → Vision & Scope  
-2. PRD v1.2 → Functional Spec  
-3. PRD v1.3 → GitOps Infrastructure  
-4. PRD v1.4 → AI Layer  
-5. PRD v1.5A → Database  
-6. PRD v1.5C → Frontend  
-7. PRD v1.5D → Roadmap  
-8. API-01 → API-05 순서로 구현  
+시작점: [docs/README.md](README.md) · 한 장 요약: [prd/PRD-MASTER.md](prd/PRD-MASTER.md)
 
 ---
 
-## PRD
+## Reading order
 
-| File | Version | Topic |
-|------|---------|-------|
-| [PRD-v1.1-Project-Overview.md](prd/PRD-v1.1-Project-Overview.md) | 1.1 | Overview, Vision, Persona, Epic, IA, Architecture, MVP |
-| [PRD-v1.2-Functional-Specification.md](prd/PRD-v1.2-Functional-Specification.md) | 1.2 | Portal, Auth, Dashboard, Wizard, GitHub, CI/CD, Job, Audit |
-| [PRD-v1.3-Infrastructure-Platform.md](prd/PRD-v1.3-Infrastructure-Platform.md) | 1.3 | Terraform, Helm, ArgoCD, GitOps, Monitoring |
-| [PRD-v1.4-AI-Native-Platform.md](prd/PRD-v1.4-AI-Native-Platform.md) | 1.4 | AI Agents, Prompt, Context, Cache, Fallback |
-| [PRD-v1.5A-Database-Design.md](prd/PRD-v1.5A-Database-Design.md) | 1.5A | ERD, UUID, Tables, Redis, Indexes |
-| [PRD-v1.5C-Frontend-Design.md](prd/PRD-v1.5C-Frontend-Design.md) | 1.5C | DX, Stack, Screens, AC |
-| [PRD-v1.5D-Engineering-Roadmap.md](prd/PRD-v1.5D-Engineering-Roadmap.md) | 1.5D | 16 weeks, Sprint, KPI, DoD |
+1. [Canonical Decisions](architecture/03-Canonical-Decisions.md)  
+2. [PRD Master](prd/PRD-MASTER.md)  
+3. [Glossary](architecture/04-Glossary.md)  
+4. 필요 시 개별 PRD / API Spec  
+5. [Monorepo Layout](architecture/02-Monorepo-Layout.md) → 구현  
 
-## API Specs
-
-| File | APIs (approx) | Topic |
-|------|---------------|-------|
-| [API-01-Authentication.md](api/API-01-Authentication.md) | 9 | OAuth, JWT, RBAC |
-| [API-02-Workspace.md](api/API-02-Workspace.md) | 16 | Workspace, Team, Member |
-| [API-03-01-Project-Core.md](api/API-03-01-Project-Core.md) | 10 | Project Aggregate |
-| [API-03-02-Environment.md](api/API-03-02-Environment.md) | 12 | Env, Promote, Health |
-| [API-03-03-Variable-Secret.md](api/API-03-03-Variable-Secret.md) | 14 | Config, Secret, Rotation |
-| [API-03-04-Project-Metadata.md](api/API-03-04-Project-Metadata.md) | 14 | Label, Tag, Annotation |
-| [API-03-05-Service-Catalog.md](api/API-03-05-Service-Catalog.md) | 14 | Catalog, Blueprint |
-| [API-04-01-Service-Wizard-Core.md](api/API-04-01-Service-Wizard-Core.md) | 10 | Wizard Workflow |
-| [API-04-02-AI-Recommendation.md](api/API-04-02-AI-Recommendation.md) | 14 | AI Decision Engine |
-| [API-04-03-Provisioning-Orchestration.md](api/API-04-03-Provisioning-Orchestration.md) | 12 | Saga, Job, Rollback |
-| [API-05-01-GitHub-Integration.md](api/API-05-01-GitHub-Integration.md) | 16 | SCM Provider |
+---
 
 ## Architecture
 
 | File | Topic |
 |------|-------|
-| [00-System-Overview.md](architecture/00-System-Overview.md) | End-to-end system |
-| [01-Domain-Map.md](architecture/01-Domain-Map.md) | Domains & Aggregates |
-| [02-Monorepo-Layout.md](architecture/02-Monorepo-Layout.md) | 실제 monorepo 코드 배치 |
+| [00-System-Overview](architecture/00-System-Overview.md) | E2E 구조, 스택, MVP 경계 |
+| [01-Domain-Map](architecture/01-Domain-Map.md) | Aggregate, status, events, roles |
+| [02-Monorepo-Layout](architecture/02-Monorepo-Layout.md) | 실제 코드 트리 |
+| [03-Canonical-Decisions](architecture/03-Canonical-Decisions.md) | **정본 결정** |
+| [04-Glossary](architecture/04-Glossary.md) | 용어 |
 
 ---
 
-## Document Count
+## PRD
 
-- PRD: **7**
-- API Specs: **11**
-- Architecture: **2**
-- Root README + this INDEX
+| File | Topic |
+|------|-------|
+| [**PRD-MASTER**](prd/PRD-MASTER.md) | **통합 개요 (권장 진입)** |
+| [v1.1 Overview](prd/PRD-v1.1-Project-Overview.md) | Vision, persona, epic, IA |
+| [v1.2 Functional](prd/PRD-v1.2-Functional-Specification.md) | Portal, auth, wizard, CI/CD |
+| [v1.3 Infrastructure](prd/PRD-v1.3-Infrastructure-Platform.md) | TF, Helm, GitOps, observability |
+| [v1.4 AI](prd/PRD-v1.4-AI-Native-Platform.md) | Agents, context, guardrail |
+| [v1.5A Database](prd/PRD-v1.5A-Database-Design.md) | ERD, tables, Redis |
+| [v1.5C Frontend](prd/PRD-v1.5C-Frontend-Design.md) | DX, screens, AC |
+| [v1.5D Roadmap](prd/PRD-v1.5D-Engineering-Roadmap.md) | 16주, KPI, DoD |
 
-**Total core design docs: 20+**
+> v1.5B 는 API Engineering Spec 묶음으로 분리되어 `docs/api/` 에 있다.
+
+---
+
+## API Specs (구현 단위)
+
+| File | APIs | Topic |
+|------|------|-------|
+| [API-01 Authentication](api/API-01-Authentication.md) | 9 | OAuth, JWT, RBAC |
+| [API-02 Workspace](api/API-02-Workspace.md) | 16 | Team, Member, Invite |
+| [API-03-01 Project Core](api/API-03-01-Project-Core.md) | 10 | Project aggregate |
+| [API-03-02 Environment](api/API-03-02-Environment.md) | 12 | Env, Promote, Health |
+| [API-03-03 Variable & Secret](api/API-03-03-Variable-Secret.md) | 14 | Config, encryption |
+| [API-03-04 Metadata](api/API-03-04-Project-Metadata.md) | 14 | Label, Tag, Annotation |
+| [API-03-05 Service Catalog](api/API-03-05-Service-Catalog.md) | 14 | Template, Blueprint |
+| [API-04-01 Service Wizard](api/API-04-01-Service-Wizard-Core.md) | 10 | Workflow engine |
+| [API-04-02 AI Recommendation](api/API-04-02-AI-Recommendation.md) | 14 | Decision engine |
+| [API-04-03 Provisioning](api/API-04-03-Provisioning-Orchestration.md) | 12 | Saga, job, rollback |
+| [API-05-01 GitHub](api/API-05-01-GitHub-Integration.md) | 16 | SCM provider |
+
+구현 순서 권장: 01 → 02 → 03-01 → 03-05 → 04-01 → 04-03 → 05-01 → 03-02/03 → 04-02
+
+---
+
+## Counts
+
+| 구분 | 개수 |
+|------|------|
+| Architecture | 5 |
+| PRD (+ Master) | 8 |
+| API Spec | 11 |
+| Docs hub | README + INDEX |
+
+---
+
+## Note on revisions
+
+초안 작성 중 바뀐 것 (정본 반영 완료):
+
+- Project-only → **Project → Service → Environment**
+- 직접 apply 뉘앙스 → **GitOps (ArgoCD)**
+- Wizard CRUD → **Job + Saga**
+- AI 챗 → **Decision Engine**
+- Spring Boot 3.5 표기 → **4.0.x (코드)**
+- Wizard 5/6 step → **7 step**

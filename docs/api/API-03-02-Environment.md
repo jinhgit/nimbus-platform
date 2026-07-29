@@ -4,6 +4,9 @@
 
 ---
 
+> **정본 우선:** 도메인 계층·Wizard 7step·GitOps·스택은 [`docs/architecture/03-Canonical-Decisions.md`](../architecture/03-Canonical-Decisions.md) 기준.
+
+
 # 1. Domain Overview
 
 Environment = Service의 **Infrastructure Context** (문자열이 아님)

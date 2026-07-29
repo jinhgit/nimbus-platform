@@ -1,4 +1,4 @@
-.PHONY: up down logs api web install
+.PHONY: up down logs api web install test-api
 
 up:
 	docker compose up -d
@@ -17,3 +17,6 @@ web:
 
 install:
 	cd apps/web && npm install
+
+test-api:
+	cd apps/api && ./gradlew test

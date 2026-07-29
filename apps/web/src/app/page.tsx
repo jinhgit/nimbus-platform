@@ -25,10 +25,16 @@ export default function HomePage() {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
-            href="/dashboard"
+            href="/login"
             className="rounded-lg bg-[var(--primary)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--primary-hover)]"
           >
-            Dashboard (skeleton)
+            로그인 / 시작하기
+          </Link>
+          <Link
+            href="/dashboard"
+            className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm font-medium transition hover:border-zinc-500"
+          >
+            Dashboard
           </Link>
           <a
             href="http://localhost:8080/api/v1/health"
@@ -54,7 +60,7 @@ export default function HomePage() {
       </section>
 
       <footer className="mt-auto pt-16 text-sm text-[var(--muted)]">
-        Phase 0 — Foundation · docs 는 <code className="text-zinc-300">/docs</code> 참고
+        Phase 1 — Auth · Workspace · Project · docs 는 <code className="text-zinc-300">/docs</code> 참고
       </footer>
     </main>
   );

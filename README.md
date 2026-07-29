@@ -35,15 +35,18 @@ Platform Engineering Portal을 목표로 한다.
 
 ## 현재 상태
 
-**Phase 0 — Foundation**
+**Phase 1 — Foundation (Auth / Workspace / Project)**
 
 - monorepo: `apps/api`, `apps/web`, `docs`
-- Spring Boot API skeleton + `/api/v1/health`
-- Next.js dark landing + dashboard placeholder
-- Docker Compose: PostgreSQL 16, Redis 7
-- PRD / API Spec / Architecture 문서 축적
+- **Dev Login** (free-only 로컬) + GitHub OAuth 훅 (Client ID 설정 시)
+- JWT Access Token + Refresh Token
+- Workspace / Team / Member API
+- Project CRUD (Archive/Restore)
+- Next.js: Login · App Shell · Dashboard · Projects · Workspaces
+- 로컬 API: H2 파일 DB (`--spring.profiles.active=local`, Docker 불필요)
+- Docker Compose: PostgreSQL 16, Redis 7 (선택)
 
-**아직:** OAuth, Wizard, Provision, GitHub Adapter 등 도메인 구현
+**다음:** Service Catalog · Service Wizard · Provision Saga · GitHub Adapter
 
 ---
 
@@ -74,16 +77,29 @@ auth · workspace · project · catalog · wizard · ai · provision · github
 ## 빠른 시작
 
 ```bash
-docker compose up -d
-
+# API (H2 local profile — Docker 없이 기동)
 cd apps/api && ./gradlew bootRun --args='--spring.profiles.active=local'
 # http://localhost:8080/api/v1/health
 
-cd apps/web && npm run dev
-# http://localhost:3000
+# Web
+cd apps/web && npm install && npm run dev
+# http://localhost:3000/login  → Dev Login → Dashboard
+
+# (선택) Postgres/Redis
+docker compose up -d
 ```
 
-`make up` / `make api` / `make web` 도 가능.
+`make api` / `make web` / `make test-api` 도 가능.
+
+### Dev Login
+
+로컬 기본 활성. 프론트 `/login` 또는:
+
+```bash
+curl -s -X POST http://localhost:8080/api/v1/auth/dev-login \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Dev","email":"dev@nimbus.local"}'
+```
 
 ---
 

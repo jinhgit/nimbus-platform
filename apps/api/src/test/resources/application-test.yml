@@ -1,20 +1,23 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:nimbus;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:nimbus;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
     username: sa
     password:
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
       ddl-auto: create-drop
-  data:
-    redis:
-      host: localhost
-      port: 6379
   autoconfigure:
     exclude:
       - org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+
+nimbus:
+  auth:
+    dev-login-enabled: true
+    jwt-secret: test-secret-key-for-nimbus-platform-jwt-32b
+  cors:
+    allowed-origins: http://localhost:3000
 
 logging:
   level:

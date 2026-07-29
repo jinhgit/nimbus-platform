@@ -26,3 +26,9 @@ kind-up:
 
 k3d-up:
 	bash scripts/k3d-up.sh
+
+obs-up:
+	docker compose --profile observability up -d prometheus grafana
+
+obs-down:
+	docker compose --profile observability stop prometheus grafana

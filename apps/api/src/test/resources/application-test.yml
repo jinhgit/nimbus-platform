@@ -21,6 +21,9 @@ nimbus:
   k8s:
     # 테스트는 클러스터 없이 시뮬레이션 경로
     enabled: false
+  pipeline:
+    # 테스트 종료 후 비동기 파이프라인 H2 레이스 방지
+    auto-on-wizard: false
 
 logging:
   level:

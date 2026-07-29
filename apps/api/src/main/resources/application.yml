@@ -32,10 +32,12 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: when_authorized
+    prometheus:
+      enabled: true
 
 nimbus:
   cors:
@@ -59,6 +61,13 @@ nimbus:
     strict-local: ${K8S_STRICT_LOCAL:true}
     demo-image: ${K8S_DEMO_IMAGE:nginx:1.27-alpine}
     deploy-timeout-seconds: ${K8S_DEPLOY_TIMEOUT:90}
+  observability:
+    prometheus-url: ${PROMETHEUS_URL:http://localhost:9090}
+    grafana-url: ${GRAFANA_URL:http://localhost:3001}
+    loki-url: ${LOKI_URL:http://localhost:3100}
+    demo-metrics-when-unavailable: true
+  pipeline:
+    auto-on-wizard: ${PIPELINE_AUTO_ON_WIZARD:true}
 
 logging:
   level:

@@ -443,4 +443,166 @@ export async function fetchK8sDeployments(workspaceId?: string) {
   return apiGet<K8sDeployment[]>(`/api/v1/k8s/deployments${q}`);
 }
 
+export type MonitoringLinks = {
+  prometheusUrl: string;
+  grafanaUrl: string;
+  lokiUrl: string;
+  prometheusUp: boolean;
+  grafanaUp: boolean;
+  mode: string;
+};
+
+export type MetricPoint = { name: string; value: number; unit: string };
+
+export type ServiceMetrics = {
+  serviceId: string;
+  serviceName: string;
+  source: string;
+  metrics: MetricPoint[];
+  collectedAt: string;
+};
+
+export type MonitoringOverview = {
+  links: MonitoringLinks;
+  serviceCount: number;
+  runningDeployments: number;
+  avgCpu: number;
+  avgMemory: number;
+  topServices: ServiceMetrics[];
+};
+
+export type LogLine = {
+  timestamp: string;
+  level: string;
+  pod: string;
+  message: string;
+};
+
+export type LogSnapshot = {
+  serviceId: string;
+  serviceName: string;
+  source: string;
+  lines: LogLine[];
+};
+
+export type Pipeline = {
+  id: string;
+  serviceId?: string;
+  projectId?: string;
+  workspaceId?: string;
+  serviceName: string;
+  name: string;
+  status: string;
+  progress?: number;
+  currentStep?: string;
+  imageTag?: string;
+  dockerfilePath?: string;
+  startedAt?: string;
+  finishedAt?: string;
+  createdAt?: string;
+};
+
+export type PipelineLogs = {
+  id: string;
+  status: string;
+  progress?: number;
+  currentStep?: string;
+  logs?: string;
+};
+
+export async function fetchMonitoringOverview(workspaceId?: string) {
+  const q = workspaceId ? `?workspaceId=${workspaceId}` : "";
+  return apiGet<MonitoringOverview>(`/api/v1/monitoring/overview${q}`);
+}
+
+export async function fetchMonitoringLinks() {
+  return apiGet<MonitoringLinks>("/api/v1/monitoring/links");
+}
+
+export async function fetchServiceMetrics(serviceId: string) {
+  return apiGet<ServiceMetrics>(`/api/v1/monitoring/services/${serviceId}/metrics`);
+}
+
+export async function fetchServiceLogs(serviceId: string, limit = 100) {
+  return apiGet<LogSnapshot>(`/api/v1/logs/services/${serviceId}?limit=${limit}`);
+}
+
+export function openLogStream(serviceId: string): EventSource {
+  const token = getToken();
+  // EventSource cannot set Authorization header — use query token fallback not implemented.
+  // Snapshot + polling is primary; for SSE we rely on cookie session if any.
+  // JWT is bearer-only: stream via fetch + ReadableStream on UI instead when needed.
+  const url = `${API_BASE}/api/v1/logs/services/${serviceId}/stream`;
+  // Note: browser EventSource without auth will 401. UI uses fetchLogStream.
+  return new EventSource(url + (token ? `?access_token=${encodeURIComponent(token)}` : ""));
+}
+
+/** Auth-aware log stream using fetch + SSE parse */
+export async function* iterateLogStream(
+  serviceId: string,
+  signal?: AbortSignal,
+): AsyncGenerator<LogLine> {
+  const token = getToken();
+  const res = await fetch(`${API_BASE}/api/v1/logs/services/${serviceId}/stream`, {
+    headers: {
+      Accept: "text/event-stream",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    signal,
+    credentials: "include",
+  });
+  if (!res.ok || !res.body) {
+    throw new Error(`log stream failed: ${res.status}`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const chunks = buffer.split("\n\n");
+    buffer = chunks.pop() ?? "";
+    for (const chunk of chunks) {
+      const dataLine = chunk
+        .split("\n")
+        .find((l) => l.startsWith("data:"));
+      if (!dataLine) continue;
+      const json = dataLine.replace(/^data:\s?/, "");
+      try {
+        yield JSON.parse(json) as LogLine;
+      } catch {
+        // ignore
+      }
+    }
+  }
+}
+
+export async function fetchPipelines(params?: {
+  workspaceId?: string;
+  serviceId?: string;
+}) {
+  const sp = new URLSearchParams();
+  if (params?.workspaceId) sp.set("workspaceId", params.workspaceId);
+  if (params?.serviceId) sp.set("serviceId", params.serviceId);
+  const q = sp.toString();
+  return apiGet<Pipeline[]>(`/api/v1/pipelines${q ? `?${q}` : ""}`);
+}
+
+export async function createPipeline(serviceId: string) {
+  return apiPost<Pipeline>("/api/v1/pipelines", { serviceId });
+}
+
+export async function fetchPipeline(pipelineId: string) {
+  return apiGet<Pipeline>(`/api/v1/pipelines/${pipelineId}`);
+}
+
+export async function fetchPipelineLogs(pipelineId: string) {
+  return apiGet<PipelineLogs>(`/api/v1/pipelines/${pipelineId}/logs`);
+}
+
+export async function rerunPipeline(pipelineId: string) {
+  return apiPost<Pipeline>(`/api/v1/pipelines/${pipelineId}/rerun`);
+}
+
 export { API_BASE };

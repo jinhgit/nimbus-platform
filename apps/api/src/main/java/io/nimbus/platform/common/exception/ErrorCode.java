@@ -76,7 +76,14 @@ public enum ErrorCode {
     K8S_CONTEXT_DENIED("K8S002", "Kubernetes context is not allowed (local k3d/kind only)", HttpStatus.FORBIDDEN),
     K8S_DEPLOY_FAILED("K8S003", "Kubernetes deploy failed", HttpStatus.BAD_GATEWAY),
     K8S_NAMESPACE_FAILED("K8S004", "Failed to create namespace", HttpStatus.BAD_GATEWAY),
-    K8S_NOT_FOUND("K8S005", "Kubernetes resource not found", HttpStatus.NOT_FOUND);
+    K8S_NOT_FOUND("K8S005", "Kubernetes resource not found", HttpStatus.NOT_FOUND),
+
+    // Observability
+    MONITORING_UNAVAILABLE("OBS001", "Monitoring stack is not available", HttpStatus.SERVICE_UNAVAILABLE),
+    LOG_STREAM_FAILED("OBS002", "Log stream failed", HttpStatus.BAD_GATEWAY),
+    PIPELINE_NOT_FOUND("PIPE001", "Pipeline not found", HttpStatus.NOT_FOUND),
+    PIPELINE_INVALID_STATE("PIPE002", "Pipeline is not in a valid state", HttpStatus.BAD_REQUEST),
+    PIPELINE_FAILED("PIPE003", "Pipeline failed", HttpStatus.BAD_GATEWAY);
 
     private final String code;
     private final String defaultMessage;

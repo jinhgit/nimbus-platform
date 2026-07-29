@@ -8,6 +8,7 @@ import io.nimbus.platform.github.service.GitHubConnectionService;
 import io.nimbus.platform.github.service.GitHubProvisionService;
 import io.nimbus.platform.k8s.domain.K8sDeploymentRecord;
 import io.nimbus.platform.k8s.service.K8sDeployService;
+import io.nimbus.platform.pipeline.service.BuildPipelineService;
 import io.nimbus.platform.serviceapp.domain.AppService;
 import io.nimbus.platform.serviceapp.repository.AppServiceRepository;
 import io.nimbus.platform.wizard.domain.ServiceWizard;
@@ -16,6 +17,7 @@ import io.nimbus.platform.wizard.dto.WizardDtos;
 import io.nimbus.platform.wizard.repository.ServiceWizardRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -40,8 +42,10 @@ public class WizardProvisionRunner {
     private final GitHubProvisionService gitHubProvisionService;
     private final GitRepositoryRecordRepository gitRepositoryRecordRepository;
     private final K8sDeployService k8sDeployService;
+    private final BuildPipelineService buildPipelineService;
     private final WizardService wizardService;
     private final ObjectMapper objectMapper;
+    private final boolean autoPipelineOnWizard;
 
     public WizardProvisionRunner(
             ServiceWizardRepository wizardRepository,
@@ -50,8 +54,10 @@ public class WizardProvisionRunner {
             GitHubProvisionService gitHubProvisionService,
             GitRepositoryRecordRepository gitRepositoryRecordRepository,
             K8sDeployService k8sDeployService,
+            BuildPipelineService buildPipelineService,
             @Lazy WizardService wizardService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            @Value("${nimbus.pipeline.auto-on-wizard:true}") boolean autoPipelineOnWizard
     ) {
         this.wizardRepository = wizardRepository;
         this.appServiceRepository = appServiceRepository;
@@ -59,8 +65,10 @@ public class WizardProvisionRunner {
         this.gitHubProvisionService = gitHubProvisionService;
         this.gitRepositoryRecordRepository = gitRepositoryRecordRepository;
         this.k8sDeployService = k8sDeployService;
+        this.buildPipelineService = buildPipelineService;
         this.wizardService = wizardService;
         this.objectMapper = objectMapper;
+        this.autoPipelineOnWizard = autoPipelineOnWizard;
     }
 
     @Async
@@ -243,6 +251,25 @@ public class WizardProvisionRunner {
 
         wizard.complete(service.getId());
         wizardRepository.save(wizard);
+
+        // 이미지 빌드 파이프라인 자동 트리거 (async)
+        if (autoPipelineOnWizard) {
+            try {
+                buildPipelineService.createForWizard(
+                        service.getId(),
+                        service.getProjectId(),
+                        service.getWorkspaceId(),
+                        wizard.getId(),
+                        service.getName(),
+                        wizard.getCreatedBy()
+                );
+                wizard.appendLogPublic("Image build pipeline queued");
+                wizardRepository.save(wizard);
+            } catch (Exception e) {
+                log.warn("Failed to queue build pipeline: {}", e.getMessage());
+            }
+        }
+
         log.info("Wizard {} completed → service {}", wizardId, service.getId());
     }
 

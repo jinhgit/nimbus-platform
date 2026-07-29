@@ -800,4 +800,96 @@ export async function fetchEnvironmentHealth(environmentId: string) {
   );
 }
 
+export type EnvVariable = {
+  id: string;
+  environmentId: string;
+  key: string;
+  value: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type EnvSecret = {
+  id: string;
+  environmentId: string;
+  key: string;
+  maskedValue: string;
+  version?: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type PromoteResult = {
+  promotionId: string;
+  status: string;
+  sourceEnvironmentId: string;
+  targetEnvironmentId?: string;
+  sourceType: string;
+  targetType: string;
+  variablesCopied: number;
+  secretsCopied: number;
+  message?: string;
+  finishedAt?: string;
+};
+
+export async function fetchEnvVariables(environmentId: string) {
+  return apiGet<EnvVariable[]>(
+    `/api/v1/environments/${environmentId}/variables`,
+  );
+}
+
+export async function createEnvVariable(
+  environmentId: string,
+  body: { key: string; value: string },
+) {
+  return apiPost<EnvVariable>(
+    `/api/v1/environments/${environmentId}/variables`,
+    body,
+  );
+}
+
+export async function deleteEnvVariable(variableId: string) {
+  return apiDelete<null>(`/api/v1/variables/${variableId}`);
+}
+
+export async function fetchEnvSecrets(environmentId: string) {
+  return apiGet<EnvSecret[]>(`/api/v1/environments/${environmentId}/secrets`);
+}
+
+export async function createEnvSecret(
+  environmentId: string,
+  body: { key: string; value: string },
+) {
+  return apiPost<EnvSecret>(
+    `/api/v1/environments/${environmentId}/secrets`,
+    body,
+  );
+}
+
+export async function deleteEnvSecret(secretId: string) {
+  return apiDelete<null>(`/api/v1/secrets/${secretId}`);
+}
+
+export async function revealEnvSecret(secretId: string) {
+  return apiPost<{ id: string; key: string; value: string; version?: number }>(
+    `/api/v1/secrets/${secretId}/reveal`,
+  );
+}
+
+export async function promoteEnvironment(
+  environmentId: string,
+  target: string,
+) {
+  return apiPost<PromoteResult>(
+    `/api/v1/environments/${environmentId}/promote`,
+    { target },
+  );
+}
+
+export async function fetchServicePromotions(serviceId: string) {
+  return apiGet<{ items: PromoteResult[] }>(
+    `/api/v1/services/${serviceId}/promotions`,
+  );
+}
+
 export { API_BASE };

@@ -58,6 +58,10 @@ public enum ErrorCode {
     ENVIRONMENT_ARCHIVED("ENV003", "Environment is archived", HttpStatus.BAD_REQUEST),
     ENVIRONMENT_INVALID_STATE("ENV004", "Environment is not in a valid state", HttpStatus.BAD_REQUEST),
     ENVIRONMENT_DELETE_BLOCKED("ENV005", "Environment cannot be deleted", HttpStatus.BAD_REQUEST),
+    VARIABLE_NOT_FOUND("CFG001", "Variable not found", HttpStatus.NOT_FOUND),
+    SECRET_NOT_FOUND("CFG002", "Secret not found", HttpStatus.NOT_FOUND),
+    CONFIG_KEY_DUPLICATE("CFG003", "Config key already exists", HttpStatus.CONFLICT),
+    PROMOTE_INVALID_PATH("CFG004", "Invalid environment promotion path", HttpStatus.BAD_REQUEST),
 
     // Wizard
     WIZARD_NOT_FOUND("WIZARD001", "Wizard not found", HttpStatus.NOT_FOUND),

@@ -5,24 +5,42 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
   archiveServiceEnvironment,
+  createEnvSecret,
+  createEnvVariable,
   createServiceEnvironment,
+  deleteEnvSecret,
+  deleteEnvVariable,
   fetchArchitectureReview,
   fetchEnvironmentHealth,
+  fetchEnvSecrets,
+  fetchEnvVariables,
   fetchK8sDeploymentByService,
   fetchPipelines,
   fetchService,
   fetchServiceEnvironments,
   fetchServiceLogs,
   fetchServiceMetrics,
+  fetchServicePromotions,
+  promoteEnvironment,
   restoreServiceEnvironment,
+  revealEnvSecret,
   type AppService,
   type ArchitectureReview,
+  type EnvSecret,
+  type EnvVariable,
   type K8sDeployment,
   type LogLine,
   type Pipeline,
+  type PromoteResult,
   type ServiceEnvironment,
   type ServiceMetrics,
 } from "@/lib/api";
+
+function nextPromoteTarget(type: string): string | null {
+  if (type === "DEV") return "STAGE";
+  if (type === "STAGE") return "PRODUCTION";
+  return null;
+}
 
 function StatusBadge({ value }: { value?: string | null }) {
   if (!value) {
@@ -64,24 +82,45 @@ export default function ServiceDetailPage() {
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [review, setReview] = useState<ArchitectureReview | null>(null);
   const [environments, setEnvironments] = useState<ServiceEnvironment[]>([]);
+  const [promotions, setPromotions] = useState<PromoteResult[]>([]);
+  const [selectedEnvId, setSelectedEnvId] = useState<string | null>(null);
+  const [variables, setVariables] = useState<EnvVariable[]>([]);
+  const [secrets, setSecrets] = useState<EnvSecret[]>([]);
+  const [varKey, setVarKey] = useState("");
+  const [varValue, setVarValue] = useState("");
+  const [secretKey, setSecretKey] = useState("");
+  const [secretValue, setSecretValue] = useState("");
+  const [revealMap, setRevealMap] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [envBusy, setEnvBusy] = useState(false);
   const [newEnvType, setNewEnvType] = useState("STAGE");
+
+  const loadConfig = useCallback(async (envId: string) => {
+    const [v, s] = await Promise.all([
+      fetchEnvVariables(envId),
+      fetchEnvSecrets(envId),
+    ]);
+    setVariables(v.success && v.data ? v.data : []);
+    setSecrets(s.success && s.data ? s.data : []);
+    setRevealMap({});
+  }, []);
 
   const load = useCallback(async () => {
     if (!serviceId) return;
     setLoading(true);
     setError(null);
     try {
-      const [s, d, m, p, l, envs] = await Promise.all([
+      const [s, d, m, p, l, envs, promo] = await Promise.all([
         fetchService(serviceId),
         fetchK8sDeploymentByService(serviceId),
         fetchServiceMetrics(serviceId),
         fetchPipelines({ serviceId }),
         fetchServiceLogs(serviceId, 30),
         fetchServiceEnvironments(serviceId),
+        fetchServicePromotions(serviceId),
       ]);
       if (!s.success || !s.data) {
         setError(s.error?.message ?? "서비스를 찾을 수 없습니다.");
@@ -93,9 +132,13 @@ export default function ServiceDetailPage() {
       setMetrics(m.success ? (m.data ?? null) : null);
       setPipelines(p.success && p.data ? p.data : []);
       setLogs(l.success && l.data ? l.data.lines : []);
-      setEnvironments(
-        envs.success && envs.data ? envs.data.items : [],
-      );
+      const envItems = envs.success && envs.data ? envs.data.items : [];
+      setEnvironments(envItems);
+      setPromotions(promo.success && promo.data ? promo.data.items : []);
+      setSelectedEnvId((prev) => {
+        if (prev && envItems.some((e) => e.id === prev)) return prev;
+        return envItems[0]?.id ?? null;
+      });
     } catch {
       setError("서비스 정보를 불러오지 못했습니다.");
     } finally {
@@ -106,6 +149,15 @@ export default function ServiceDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (selectedEnvId) {
+      loadConfig(selectedEnvId);
+    } else {
+      setVariables([]);
+      setSecrets([]);
+    }
+  }, [selectedEnvId, loadConfig]);
 
   async function runArchitectureReview() {
     if (!service?.wizardId) {
@@ -127,6 +179,7 @@ export default function ServiceDetailPage() {
     if (!serviceId) return;
     setEnvBusy(true);
     setError(null);
+    setMessage(null);
     const res = await createServiceEnvironment(serviceId, { type: envTypeToCreate });
     setEnvBusy(false);
     if (!res.success) {
@@ -163,12 +216,96 @@ export default function ServiceDetailPage() {
     await load();
   }
 
+  async function onPromote(env: ServiceEnvironment) {
+    const target = nextPromoteTarget(env.type);
+    if (!target) return;
+    setEnvBusy(true);
+    setError(null);
+    setMessage(null);
+    const res = await promoteEnvironment(env.id, target);
+    setEnvBusy(false);
+    if (!res.success || !res.data) {
+      setError(res.error?.message ?? "Promote 실패");
+      return;
+    }
+    setMessage(
+      `Promoted ${res.data.sourceType} → ${res.data.targetType} (vars ${res.data.variablesCopied}, secrets ${res.data.secretsCopied})`,
+    );
+    await load();
+  }
+
+  async function addVariable() {
+    if (!selectedEnvId || !varKey.trim()) return;
+    setEnvBusy(true);
+    setError(null);
+    const res = await createEnvVariable(selectedEnvId, {
+      key: varKey.trim().toUpperCase(),
+      value: varValue,
+    });
+    setEnvBusy(false);
+    if (!res.success) {
+      setError(res.error?.message ?? "Variable 생성 실패");
+      return;
+    }
+    setVarKey("");
+    setVarValue("");
+    await loadConfig(selectedEnvId);
+  }
+
+  async function addSecret() {
+    if (!selectedEnvId || !secretKey.trim() || !secretValue) return;
+    setEnvBusy(true);
+    setError(null);
+    const res = await createEnvSecret(selectedEnvId, {
+      key: secretKey.trim().toUpperCase(),
+      value: secretValue,
+    });
+    setEnvBusy(false);
+    if (!res.success) {
+      setError(res.error?.message ?? "Secret 생성 실패");
+      return;
+    }
+    setSecretKey("");
+    setSecretValue("");
+    await loadConfig(selectedEnvId);
+  }
+
+  async function onRevealSecret(id: string) {
+    setEnvBusy(true);
+    setError(null);
+    const res = await revealEnvSecret(id);
+    setEnvBusy(false);
+    if (!res.success || !res.data) {
+      setError(res.error?.message ?? "Reveal 실패");
+      return;
+    }
+    setRevealMap((prev) => ({ ...prev, [id]: res.data!.value }));
+  }
+
+  async function onDeleteVariable(id: string) {
+    if (!selectedEnvId) return;
+    setEnvBusy(true);
+    await deleteEnvVariable(id);
+    setEnvBusy(false);
+    await loadConfig(selectedEnvId);
+  }
+
+  async function onDeleteSecret(id: string) {
+    if (!selectedEnvId) return;
+    setEnvBusy(true);
+    await deleteEnvSecret(id);
+    setEnvBusy(false);
+    await loadConfig(selectedEnvId);
+  }
+
   const missingEnvTypes = ["DEV", "STAGE", "PRODUCTION"].filter(
     (t) => !environments.some((e) => e.type === t && e.status !== "ARCHIVED"),
   );
   const envTypeToCreate = missingEnvTypes.includes(newEnvType)
     ? newEnvType
     : (missingEnvTypes[0] ?? "STAGE");
+  const selectedEnv =
+    environments.find((e) => e.id === selectedEnvId) ?? null;
 
   if (loading) {
     return (
@@ -252,14 +389,19 @@ export default function ServiceDetailPage() {
           {error}
         </p>
       )}
+      {message && (
+        <p className="mb-4 rounded-lg border border-emerald-900/40 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-300">
+          {message}
+        </p>
+      )}
 
-      {/* Environments — Sprint A */}
+      {/* Environments — Sprint A + B */}
       <section className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-medium">Environments</h2>
             <p className="mt-0.5 text-xs text-[var(--muted)]">
-              Service infrastructure contexts (DEV → STAGE → PRODUCTION). Promote is Sprint B.
+              DEV → STAGE → PRODUCTION · Variables / Secrets · Promote
             </p>
           </div>
           {missingEnvTypes.length > 0 && (
@@ -305,64 +447,236 @@ export default function ServiceDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {environments.map((env) => (
-                  <tr
-                    key={env.id}
-                    className="border-b border-[var(--border)]/50 last:border-0"
-                  >
-                    <td className="px-2 py-2.5 font-medium">{env.type}</td>
-                    <td className="px-2 py-2.5">
-                      <StatusBadge value={env.status} />
-                    </td>
-                    <td className="px-2 py-2.5 font-mono text-xs">
-                      {env.namespace}
-                      {env.clusterLabel ? (
-                        <span className="mt-0.5 block text-[var(--muted)]">
-                          {env.clusterLabel}
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-2 py-2.5 text-xs text-[var(--muted)]">
-                      {env.gitOpsBranch ?? "—"}
-                    </td>
-                    <td className="px-2 py-2.5 tabular-nums">
-                      {env.replicaCount ?? 1}
-                      {env.hpaEnabled ? (
-                        <span className="ml-1 text-xs text-[var(--muted)]">HPA</span>
-                      ) : null}
-                    </td>
-                    <td className="px-2 py-2.5">
-                      <StatusBadge value={env.healthStatus} />
-                      {env.healthMessage ? (
-                        <span className="mt-0.5 block max-w-[160px] truncate text-[10px] text-[var(--muted)]">
-                          {env.healthMessage}
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-2 py-2.5">
-                      <div className="flex flex-wrap gap-1.5">
+                {environments.map((env) => {
+                  const target = nextPromoteTarget(env.type);
+                  const active = env.id === selectedEnvId;
+                  return (
+                    <tr
+                      key={env.id}
+                      className={`border-b border-[var(--border)]/50 last:border-0 ${
+                        active ? "bg-[var(--primary)]/10" : "hover:bg-white/[0.03]"
+                      }`}
+                    >
+                      <td className="px-2 py-2.5">
                         <button
                           type="button"
-                          disabled={envBusy}
-                          onClick={() => checkEnvHealth(env.id)}
-                          className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
+                          className="font-medium hover:underline"
+                          onClick={() => setSelectedEnvId(env.id)}
                         >
-                          Health
+                          {env.type}
                         </button>
-                        <button
-                          type="button"
-                          disabled={envBusy}
-                          onClick={() => toggleArchive(env)}
-                          className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
-                        >
-                          {env.status === "ARCHIVED" ? "Restore" : "Archive"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-2 py-2.5">
+                        <StatusBadge value={env.status} />
+                      </td>
+                      <td className="px-2 py-2.5 font-mono text-xs">
+                        {env.namespace}
+                        {env.clusterLabel ? (
+                          <span className="mt-0.5 block text-[var(--muted)]">
+                            {env.clusterLabel}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="px-2 py-2.5 text-xs text-[var(--muted)]">
+                        {env.gitOpsBranch ?? "—"}
+                      </td>
+                      <td className="px-2 py-2.5 tabular-nums">
+                        {env.replicaCount ?? 1}
+                        {env.hpaEnabled ? (
+                          <span className="ml-1 text-xs text-[var(--muted)]">HPA</span>
+                        ) : null}
+                      </td>
+                      <td className="px-2 py-2.5">
+                        <StatusBadge value={env.healthStatus} />
+                      </td>
+                      <td className="px-2 py-2.5">
+                        <div className="flex flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            disabled={envBusy}
+                            onClick={() => setSelectedEnvId(env.id)}
+                            className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5"
+                          >
+                            Config
+                          </button>
+                          {target && env.status !== "ARCHIVED" && (
+                            <button
+                              type="button"
+                              disabled={envBusy}
+                              onClick={() => onPromote(env)}
+                              className="rounded border border-sky-500/40 px-2 py-0.5 text-[11px] text-sky-300 hover:bg-sky-500/10 disabled:opacity-50"
+                            >
+                              Promote → {target}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            disabled={envBusy}
+                            onClick={() => checkEnvHealth(env.id)}
+                            className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
+                          >
+                            Health
+                          </button>
+                          <button
+                            type="button"
+                            disabled={envBusy}
+                            onClick={() => toggleArchive(env)}
+                            className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
+                          >
+                            {env.status === "ARCHIVED" ? "Restore" : "Archive"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Config panel for selected env */}
+        {selectedEnv && (
+          <div className="mt-5 grid gap-4 border-t border-[var(--border)] pt-5 lg:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+                Variables · {selectedEnv.type}
+              </h3>
+              <div className="mb-2 flex flex-wrap gap-2">
+                <input
+                  className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 font-mono text-xs"
+                  placeholder="KEY"
+                  value={varKey}
+                  onChange={(e) => setVarKey(e.target.value)}
+                />
+                <input
+                  className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
+                  placeholder="value"
+                  value={varValue}
+                  onChange={(e) => setVarValue(e.target.value)}
+                />
+                <button
+                  type="button"
+                  disabled={envBusy}
+                  onClick={addVariable}
+                  className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs text-white disabled:opacity-60"
+                >
+                  Add
+                </button>
+              </div>
+              <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] text-xs">
+                {variables.length === 0 ? (
+                  <li className="px-3 py-3 text-[var(--muted)]">No variables</li>
+                ) : (
+                  variables.map((v) => (
+                    <li key={v.id} className="flex items-center justify-between gap-2 px-3 py-2">
+                      <span>
+                        <span className="font-mono text-sky-300">{v.key}</span>
+                        <span className="mx-2 text-[var(--muted)]">=</span>
+                        <span>{v.value}</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="text-[var(--muted)] hover:text-red-300"
+                        onClick={() => onDeleteVariable(v.id)}
+                      >
+                        Delete
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+            <div>
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+                Secrets · {selectedEnv.type}
+              </h3>
+              <div className="mb-2 flex flex-wrap gap-2">
+                <input
+                  className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 font-mono text-xs"
+                  placeholder="SECRET_KEY"
+                  value={secretKey}
+                  onChange={(e) => setSecretKey(e.target.value)}
+                />
+                <input
+                  type="password"
+                  className="min-w-[120px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
+                  placeholder="value"
+                  value={secretValue}
+                  onChange={(e) => setSecretValue(e.target.value)}
+                />
+                <button
+                  type="button"
+                  disabled={envBusy}
+                  onClick={addSecret}
+                  className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs text-white disabled:opacity-60"
+                >
+                  Add
+                </button>
+              </div>
+              <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] text-xs">
+                {secrets.length === 0 ? (
+                  <li className="px-3 py-3 text-[var(--muted)]">No secrets</li>
+                ) : (
+                  secrets.map((s) => (
+                    <li key={s.id} className="flex items-center justify-between gap-2 px-3 py-2">
+                      <span>
+                        <span className="font-mono text-amber-300">{s.key}</span>
+                        <span className="mx-2 text-[var(--muted)]">=</span>
+                        <span className="font-mono">
+                          {revealMap[s.id] ?? s.maskedValue}
+                        </span>
+                      </span>
+                      <span className="flex gap-2">
+                        {!revealMap[s.id] && (
+                          <button
+                            type="button"
+                            className="text-[var(--muted)] hover:text-white"
+                            onClick={() => onRevealSecret(s.id)}
+                          >
+                            Reveal
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="text-[var(--muted)] hover:text-red-300"
+                          onClick={() => onDeleteSecret(s.id)}
+                        >
+                          Delete
+                        </button>
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+              <p className="mt-2 text-[10px] text-[var(--muted)]">
+                Secrets stored AES-encrypted · list always masked · Reveal is audited
+              </p>
+            </div>
+          </div>
+        )}
+
+        {promotions.length > 0 && (
+          <div className="mt-5 border-t border-[var(--border)] pt-4">
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+              Promotion history
+            </h3>
+            <ul className="space-y-1 text-xs text-[var(--muted)]">
+              {promotions.slice(0, 5).map((p) => (
+                <li key={p.promotionId}>
+                  <span className="text-white">
+                    {p.sourceType} → {p.targetType}
+                  </span>
+                  {" · "}
+                  {p.status}
+                  {" · "}
+                  vars {p.variablesCopied} / secrets {p.secretsCopied}
+                  {p.finishedAt
+                    ? ` · ${new Date(p.finishedAt).toLocaleString()}`
+                    : ""}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </section>

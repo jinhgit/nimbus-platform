@@ -30,6 +30,10 @@ public final class ServiceDtos {
             String githubRepoUrl,
             String githubOwner,
             String githubRepoName,
+            String k8sNamespace,
+            String k8sDeployment,
+            String k8sStatus,
+            String k8sClusterType,
             Instant createdAt,
             Instant updatedAt
     ) {

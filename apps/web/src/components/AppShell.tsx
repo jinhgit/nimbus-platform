@@ -19,6 +19,7 @@ const nav = [
   { href: "/catalog", label: "카탈로그" },
   { href: "/wizard", label: "서비스 생성" },
   { href: "/workspaces", label: "워크스페이스" },
+  { href: "/infrastructure", label: "인프라" },
   { href: "/settings", label: "설정" },
 ];
 

@@ -61,10 +61,16 @@ export default function ServicesPage() {
                       href={s.githubRepoUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-1 inline-block text-xs text-[var(--primary)] hover:underline"
+                      className="mt-1 block text-xs text-[var(--primary)] hover:underline"
                     >
                       {s.githubOwner}/{s.githubRepoName}
                     </a>
+                  )}
+                  {s.k8sNamespace && (
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      K8s: {s.k8sNamespace}/{s.k8sDeployment} · {s.k8sStatus}
+                      {s.k8sClusterType ? ` (${s.k8sClusterType})` : ""}
+                    </p>
                   )}
                 </div>
                 <div className="text-right text-xs text-[var(--muted)]">

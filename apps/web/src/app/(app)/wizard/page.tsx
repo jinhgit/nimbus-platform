@@ -7,6 +7,7 @@ import {
   executeWizard,
   fetchCatalog,
   fetchGitHubStatus,
+  fetchK8sCluster,
   fetchProjects,
   fetchMe,
   getWizard,
@@ -55,15 +56,17 @@ export default function WizardPage() {
   const [loading, setLoading] = useState(false);
   const [previewTab, setPreviewTab] = useState<(typeof PREVIEW_TABS)[number]["id"]>("structure");
   const [githubConnected, setGithubConnected] = useState(false);
+  const [k8sAvailable, setK8sAvailable] = useState(false);
 
   useEffect(() => {
     fetchMe().then(async (me) => {
       const ws = me.data?.workspace?.id;
       if (!ws) return;
-      const [p, c, g] = await Promise.all([
+      const [p, c, g, k] = await Promise.all([
         fetchProjects(ws),
         fetchCatalog(),
         fetchGitHubStatus(),
+        fetchK8sCluster(),
       ]);
       if (p.success && p.data) {
         setProjects(p.data);
@@ -75,6 +78,7 @@ export default function WizardPage() {
         if (spring) setTemplateId(spring.id);
       }
       if (g.success && g.data) setGithubConnected(g.data.connected);
+      if (k.success && k.data) setK8sAvailable(k.data.available);
     });
   }, []);
 
@@ -218,16 +222,28 @@ export default function WizardPage() {
             카탈로그 → AI 추천 → 미리보기 → 프로비저닝 · 시연 메인 플로우
           </p>
         </div>
-        <Link
-          href="/settings"
-          className={`rounded-full px-3 py-1 text-xs ${
-            githubConnected
-              ? "bg-emerald-500/15 text-emerald-400"
-              : "border border-[var(--border)] text-[var(--muted)]"
-          }`}
-        >
-          {githubConnected ? "GitHub 연결됨" : "GitHub 미연결 · 시뮬레이션"}
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/settings"
+            className={`rounded-full px-3 py-1 text-xs ${
+              githubConnected
+                ? "bg-emerald-500/15 text-emerald-400"
+                : "border border-[var(--border)] text-[var(--muted)]"
+            }`}
+          >
+            {githubConnected ? "GitHub 연결됨" : "GitHub 미연결"}
+          </Link>
+          <Link
+            href="/infrastructure"
+            className={`rounded-full px-3 py-1 text-xs ${
+              k8sAvailable
+                ? "bg-emerald-500/15 text-emerald-400"
+                : "border border-[var(--border)] text-[var(--muted)]"
+            }`}
+          >
+            {k8sAvailable ? "K8s 연결됨" : "K8s 미연결 · sim"}
+          </Link>
+        </div>
       </div>
 
       <ol className="mb-8 flex flex-wrap gap-2">
@@ -456,18 +472,16 @@ export default function WizardPage() {
             </p>
             <ul className="space-y-2 text-sm text-[var(--muted)]">
               {[
-                "Repository 생성",
-                "GitHub Actions 생성",
-                "Helm 생성",
-                "Terraform 생성",
-                "ArgoCD 생성",
-                "Deploy",
-              ].map((label, i) => {
-                const threshold = (i + 1) * 15;
-                const done = (wizard.progress ?? 0) >= threshold;
+                { label: "Repository / SCM", at: 20 },
+                { label: "Helm · Terraform · Actions", at: 48 },
+                { label: "로컬 Kubernetes 연결", at: 62 },
+                { label: "Namespace · Deployment", at: 75 },
+                { label: "Pod Ready / Health", at: 100 },
+              ].map((item) => {
+                const done = (wizard.progress ?? 0) >= item.at;
                 return (
-                  <li key={label} className={done ? "text-emerald-400" : ""}>
-                    {done ? "✓" : "○"} {label}
+                  <li key={item.label} className={done ? "text-emerald-400" : ""}>
+                    {done ? "✓" : "○"} {item.label}
                   </li>
                 );
               })}

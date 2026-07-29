@@ -18,6 +18,9 @@ nimbus:
     jwt-secret: test-secret-key-for-nimbus-platform-jwt-32b
   cors:
     allowed-origins: http://localhost:3000
+  k8s:
+    # 테스트는 클러스터 없이 시뮬레이션 경로
+    enabled: false
 
 logging:
   level:

@@ -82,6 +82,45 @@ export type AppService = {
   githubRepoUrl?: string;
   githubOwner?: string;
   githubRepoName?: string;
+  k8sNamespace?: string;
+  k8sDeployment?: string;
+  k8sStatus?: string;
+  k8sClusterType?: string;
+};
+
+export type K8sClusterStatus = {
+  available: boolean;
+  enabled: boolean;
+  context?: string;
+  clusterType?: string;
+  version?: string;
+  message?: string;
+  nodeCount: number;
+  namespaceCount: number;
+};
+
+export type K8sPod = {
+  name: string;
+  phase: string;
+  node?: string;
+  restarts: number;
+  ready: boolean;
+};
+
+export type K8sDeployment = {
+  id: string;
+  serviceId?: string;
+  wizardId?: string;
+  namespaceName: string;
+  deploymentName: string;
+  image?: string;
+  replicas?: number;
+  readyReplicas?: number;
+  clusterContext?: string;
+  clusterType?: string;
+  status: string;
+  message?: string;
+  pods?: K8sPod[];
 };
 
 export type GitHubConnection = {
@@ -389,6 +428,19 @@ export async function fetchGitHubHealth() {
 
 export async function fetchGitHubRepositories() {
   return apiGet<GitHubRepo[]>("/api/v1/github/repositories");
+}
+
+export async function fetchK8sCluster() {
+  return apiGet<K8sClusterStatus>("/api/v1/k8s/cluster");
+}
+
+export async function refreshK8sCluster() {
+  return apiPost<K8sClusterStatus>("/api/v1/k8s/cluster/refresh");
+}
+
+export async function fetchK8sDeployments(workspaceId?: string) {
+  const q = workspaceId ? `?workspaceId=${workspaceId}` : "";
+  return apiGet<K8sDeployment[]>(`/api/v1/k8s/deployments${q}`);
 }
 
 export { API_BASE };

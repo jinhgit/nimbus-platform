@@ -20,3 +20,9 @@ install:
 
 test-api:
 	cd apps/api && ./gradlew test
+
+kind-up:
+	bash scripts/kind-up.sh
+
+k3d-up:
+	bash scripts/k3d-up.sh

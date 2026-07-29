@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   API_BASE,
+  fetchK8sCluster,
   fetchMe,
   fetchProjects,
   fetchServices,
   fetchWorkspaces,
   type AppService,
+  type K8sClusterStatus,
   type MeResponse,
   type Project,
   type WorkspaceSummary,
@@ -27,6 +29,7 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [services, setServices] = useState<AppService[]>([]);
   const [health, setHealth] = useState<string>("checking");
+  const [cluster, setCluster] = useState<K8sClusterStatus | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/health`)
@@ -39,6 +42,9 @@ export default function DashboardPage() {
     });
     fetchWorkspaces().then((res) => {
       if (res.success && res.data) setWorkspaces(res.data);
+    });
+    fetchK8sCluster().then((res) => {
+      if (res.success && res.data) setCluster(res.data);
     });
   }, []);
 
@@ -117,12 +123,20 @@ export default function DashboardPage() {
         <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
           <h2 className="mb-3 text-sm font-medium">플랫폼 현황</h2>
           <ul className="space-y-2 text-sm text-[var(--muted)]">
-            <li>클러스터: 로컬 (k3d/kind 연동 예정) · Healthy</li>
-            <li>GitHub: Adapter 연동 예정 · Free tier</li>
+            <li>
+              클러스터:{" "}
+              {cluster?.available
+                ? `${cluster.clusterType ?? "local"} · ${cluster.context ?? ""} · 연결됨`
+                : "미연결 (kind/k3d 시 실배포)"}
+            </li>
+            <li>GitHub: Settings에서 PAT 연결 · Free tier</li>
             <li>AI: rule-engine (Ollama 확장 가능)</li>
             <li>카탈로그: Golden Path 템플릿 준비됨</li>
           </ul>
           <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/infrastructure" className="text-xs text-[var(--primary)] hover:underline">
+              인프라
+            </Link>
             <Link href="/catalog" className="text-xs text-[var(--primary)] hover:underline">
               카탈로그
             </Link>

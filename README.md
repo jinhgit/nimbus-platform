@@ -49,7 +49,8 @@ Platform Engineering Portal을 목표로 한다.
 - Next.js: Login · Dashboard · Projects · Services · Catalog · Wizard
 
 **GitHub Adapter:** Settings에서 PAT 연결 → Wizard Deploy 시 실제 Private Repo + 파일 생성  
-**다음:** k3d 배포 · Monitoring 링크 · OAuth App SCM 연결
+**K8s 실배포:** `./scripts/kind-up.sh` 또는 `k3d-up.sh` → Wizard Deploy 시 Namespace/Deployment/Service 적용 (데모 이미지 nginx)  
+**다음:** Monitoring(Prom/Grafana) · 로그 스트림 · OAuth App SCM
 
 ---
 

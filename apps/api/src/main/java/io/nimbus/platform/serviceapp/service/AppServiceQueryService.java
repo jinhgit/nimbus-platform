@@ -71,6 +71,7 @@ public class AppServiceQueryService {
                 s.getEnvironmentType(), s.getReplicaCount(), s.getDatabaseType(), s.getCacheType(),
                 s.getHpaEnabled(), s.getProjectId(), s.getWorkspaceId(), s.getTemplateId(),
                 s.getWizardId(), s.getGithubRepoUrl(), s.getGithubOwner(), s.getGithubRepoName(),
+                s.getK8sNamespace(), s.getK8sDeployment(), s.getK8sStatus(), s.getK8sClusterType(),
                 s.getCreatedAt(), s.getUpdatedAt()
         );
     }

@@ -69,7 +69,14 @@ public enum ErrorCode {
     GITHUB_INVALID_TOKEN("GITHUB004", "Invalid GitHub token", HttpStatus.UNAUTHORIZED),
     GITHUB_RATE_LIMIT("GITHUB005", "GitHub rate limit exceeded", HttpStatus.TOO_MANY_REQUESTS),
     GITHUB_WORKFLOW_FAILED("GITHUB006", "Workflow generation failed", HttpStatus.BAD_GATEWAY),
-    GITHUB_ALREADY_CONNECTED("GITHUB007", "GitHub already connected", HttpStatus.CONFLICT);
+    GITHUB_ALREADY_CONNECTED("GITHUB007", "GitHub already connected", HttpStatus.CONFLICT),
+
+    // Kubernetes / local cluster
+    K8S_UNAVAILABLE("K8S001", "Local Kubernetes cluster is not available", HttpStatus.SERVICE_UNAVAILABLE),
+    K8S_CONTEXT_DENIED("K8S002", "Kubernetes context is not allowed (local k3d/kind only)", HttpStatus.FORBIDDEN),
+    K8S_DEPLOY_FAILED("K8S003", "Kubernetes deploy failed", HttpStatus.BAD_GATEWAY),
+    K8S_NAMESPACE_FAILED("K8S004", "Failed to create namespace", HttpStatus.BAD_GATEWAY),
+    K8S_NOT_FOUND("K8S005", "Kubernetes resource not found", HttpStatus.NOT_FOUND);
 
     private final String code;
     private final String defaultMessage;

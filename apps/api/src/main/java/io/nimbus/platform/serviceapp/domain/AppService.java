@@ -72,6 +72,18 @@ public class AppService extends BaseEntity {
     @Column(name = "github_repo_name", length = 100)
     private String githubRepoName;
 
+    @Column(name = "k8s_namespace", length = 63)
+    private String k8sNamespace;
+
+    @Column(name = "k8s_deployment", length = 63)
+    private String k8sDeployment;
+
+    @Column(name = "k8s_status", length = 16)
+    private String k8sStatus;
+
+    @Column(name = "k8s_cluster_type", length = 32)
+    private String k8sClusterType;
+
     protected AppService() {
     }
 
@@ -120,6 +132,13 @@ public class AppService extends BaseEntity {
         this.githubOwner = owner;
         this.githubRepoName = repoName;
         this.githubRepoUrl = htmlUrl;
+    }
+
+    public void bindK8s(String namespace, String deployment, String status, String clusterType) {
+        this.k8sNamespace = namespace;
+        this.k8sDeployment = deployment;
+        this.k8sStatus = status;
+        this.k8sClusterType = clusterType;
     }
 
     public UUID getProjectId() {
@@ -188,5 +207,21 @@ public class AppService extends BaseEntity {
 
     public String getGithubRepoName() {
         return githubRepoName;
+    }
+
+    public String getK8sNamespace() {
+        return k8sNamespace;
+    }
+
+    public String getK8sDeployment() {
+        return k8sDeployment;
+    }
+
+    public String getK8sStatus() {
+        return k8sStatus;
+    }
+
+    public String getK8sClusterType() {
+        return k8sClusterType;
     }
 }

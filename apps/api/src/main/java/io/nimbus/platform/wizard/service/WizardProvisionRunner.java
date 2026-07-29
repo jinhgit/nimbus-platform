@@ -6,6 +6,8 @@ import io.nimbus.platform.github.domain.GitRepositoryRecord;
 import io.nimbus.platform.github.repository.GitRepositoryRecordRepository;
 import io.nimbus.platform.github.service.GitHubConnectionService;
 import io.nimbus.platform.github.service.GitHubProvisionService;
+import io.nimbus.platform.k8s.domain.K8sDeploymentRecord;
+import io.nimbus.platform.k8s.service.K8sDeployService;
 import io.nimbus.platform.serviceapp.domain.AppService;
 import io.nimbus.platform.serviceapp.repository.AppServiceRepository;
 import io.nimbus.platform.wizard.domain.ServiceWizard;
@@ -24,8 +26,8 @@ import java.util.UUID;
 
 /**
  * Provision orchestrator.
- * GitHub 연결 시: 실제 Repository + 파일 생성.
- * 미연결 시: 시연용 시뮬레이션 (free-only 로컬).
+ * 1) GitHub 연결 시 실제 Repo 생성
+ * 2) 로컬 k3d/kind 가용 시 실배포 (불가 시 시뮬레이션)
  */
 @Component
 public class WizardProvisionRunner {
@@ -37,6 +39,7 @@ public class WizardProvisionRunner {
     private final GitHubConnectionService connectionService;
     private final GitHubProvisionService gitHubProvisionService;
     private final GitRepositoryRecordRepository gitRepositoryRecordRepository;
+    private final K8sDeployService k8sDeployService;
     private final WizardService wizardService;
     private final ObjectMapper objectMapper;
 
@@ -46,6 +49,7 @@ public class WizardProvisionRunner {
             GitHubConnectionService connectionService,
             GitHubProvisionService gitHubProvisionService,
             GitRepositoryRecordRepository gitRepositoryRecordRepository,
+            K8sDeployService k8sDeployService,
             @Lazy WizardService wizardService,
             ObjectMapper objectMapper
     ) {
@@ -54,6 +58,7 @@ public class WizardProvisionRunner {
         this.connectionService = connectionService;
         this.gitHubProvisionService = gitHubProvisionService;
         this.gitRepositoryRecordRepository = gitRepositoryRecordRepository;
+        this.k8sDeployService = k8sDeployService;
         this.wizardService = wizardService;
         this.objectMapper = objectMapper;
     }
@@ -66,11 +71,23 @@ public class WizardProvisionRunner {
                 return;
             }
             boolean githubConnected = connectionService.findActiveEntity(wizard.getCreatedBy()).isPresent();
+            GitRepositoryRecord repo = null;
+
             if (githubConnected) {
-                runRealGitHub(wizardId);
+                repo = runGitHubSteps(wizardId);
+                if (repo == null && isFailed(wizardId)) {
+                    return;
+                }
             } else {
-                runSimulation(wizardId);
+                runGitHubSimulation(wizardId);
             }
+
+            if (isFailed(wizardId) || isCancelled(wizardId)) {
+                return;
+            }
+
+            K8sDeploymentRecord deploy = runK8sSteps(wizardId);
+            complete(wizardId, repo, deploy);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             fail(wizardId, "Interrupted");
@@ -80,58 +97,76 @@ public class WizardProvisionRunner {
         }
     }
 
-    private void runRealGitHub(UUID wizardId) throws InterruptedException {
+    private GitRepositoryRecord runGitHubSteps(UUID wizardId) throws InterruptedException {
         applyStep(wizardId, "GitHub 연결 확인", 5, WizardStatus.PROVISIONING);
-        sleep(300);
+        sleep(200);
 
         ServiceWizard wizard = load(wizardId);
         if (wizard == null || wizard.getStatus() == WizardStatus.CANCELLED) {
-            return;
+            return null;
         }
-
         WizardDtos.PreviewResponse preview = resolvePreview(wizard);
 
-        applyStep(wizardId, "Repository 생성 중 (GitHub API)", 20, WizardStatus.PROVISIONING);
+        applyStep(wizardId, "Repository 생성 중 (GitHub API)", 18, WizardStatus.PROVISIONING);
         GitRepositoryRecord repo;
         try {
             repo = gitHubProvisionService.provisionFromWizard(wizard, preview);
         } catch (BusinessException ex) {
             if (ex.getErrorCode() == ErrorCode.GITHUB_REPO_EXISTS) {
                 fail(wizardId, "Repository 이름이 이미 존재합니다: " + wizard.getServiceName());
-                return;
+                return null;
             }
             throw ex;
         }
 
-        applyStep(wizardId, "README · Dockerfile 커밋", 40, WizardStatus.PROVISIONING);
-        sleep(200);
-        applyStep(wizardId, "Helm · Terraform · Actions 커밋", 60, WizardStatus.PROVISIONING);
-        sleep(200);
-        applyStep(wizardId, "ArgoCD · k8s Manifest 커밋", 75, WizardStatus.PROVISIONING);
-        sleep(200);
-        applyStep(wizardId, "Deploy (local simulation)", 90, WizardStatus.DEPLOYING);
-        sleep(300);
-        applyStep(wizardId, "Verify Health", 100, WizardStatus.DEPLOYING);
-
-        complete(wizardId, repo);
-        log.info("Wizard {} provisioned real GitHub repo {}", wizardId, repo.getHtmlUrl());
+        applyStep(wizardId, "README · Dockerfile 커밋", 32, WizardStatus.PROVISIONING);
+        sleep(150);
+        applyStep(wizardId, "Helm · Terraform · Actions 커밋", 45, WizardStatus.PROVISIONING);
+        sleep(150);
+        applyStep(wizardId, "ArgoCD · k8s Manifest 커밋", 55, WizardStatus.PROVISIONING);
+        sleep(150);
+        return repo;
     }
 
-    private void runSimulation(UUID wizardId) throws InterruptedException {
-        applyStep(wizardId, "GitHub 미연결 — 시뮬레이션 모드", 5, WizardStatus.PROVISIONING);
-        sleep(400);
+    private void runGitHubSimulation(UUID wizardId) throws InterruptedException {
+        applyStep(wizardId, "GitHub 미연결 — SCM 시뮬레이션", 5, WizardStatus.PROVISIONING);
+        sleep(300);
         applyStep(wizardId, "Repository 생성 (sim)", 20, WizardStatus.PROVISIONING);
-        sleep(500);
-        applyStep(wizardId, "GitHub Actions 생성 (sim)", 40, WizardStatus.PROVISIONING);
-        sleep(500);
-        applyStep(wizardId, "Helm · Terraform 생성 (sim)", 60, WizardStatus.PROVISIONING);
-        sleep(500);
-        applyStep(wizardId, "ArgoCD Manifest 생성 (sim)", 75, WizardStatus.PROVISIONING);
-        sleep(400);
-        applyStep(wizardId, "Deploy (local simulation)", 90, WizardStatus.DEPLOYING);
-        sleep(400);
-        applyStep(wizardId, "Verify Health", 100, WizardStatus.DEPLOYING);
-        complete(wizardId, null);
+        sleep(350);
+        applyStep(wizardId, "GitHub Actions 생성 (sim)", 35, WizardStatus.PROVISIONING);
+        sleep(350);
+        applyStep(wizardId, "Helm · Terraform 생성 (sim)", 48, WizardStatus.PROVISIONING);
+        sleep(300);
+        applyStep(wizardId, "ArgoCD Manifest 생성 (sim)", 55, WizardStatus.PROVISIONING);
+        sleep(250);
+    }
+
+    private K8sDeploymentRecord runK8sSteps(UUID wizardId) throws InterruptedException {
+        applyStep(wizardId, "로컬 Kubernetes 연결 확인 (k3d/kind)", 62, WizardStatus.DEPLOYING);
+        sleep(200);
+
+        ServiceWizard wizard = load(wizardId);
+        if (wizard == null || wizard.getStatus() == WizardStatus.CANCELLED) {
+            return null;
+        }
+
+        boolean available = k8sDeployService.isClusterAvailable();
+        if (available) {
+            applyStep(wizardId, "Namespace · Deployment 적용", 75, WizardStatus.DEPLOYING);
+        } else {
+            applyStep(wizardId, "클러스터 없음 — K8s 시뮬레이션", 75, WizardStatus.DEPLOYING);
+        }
+
+        K8sDeploymentRecord deploy = k8sDeployService.deployFromWizard(wizard);
+
+        applyStep(wizardId,
+                available
+                        ? "Pod Ready 대기 (" + deploy.getReadyReplicas() + "/" + deploy.getReplicas() + ")"
+                        : "Deploy 시뮬레이션 완료",
+                90, WizardStatus.DEPLOYING);
+        sleep(200);
+        applyStep(wizardId, "Health Verify", 100, WizardStatus.DEPLOYING);
+        return deploy;
     }
 
     private WizardDtos.PreviewResponse resolvePreview(ServiceWizard wizard) {
@@ -156,7 +191,7 @@ public class WizardProvisionRunner {
     }
 
     @Transactional
-    protected void complete(UUID wizardId, GitRepositoryRecord repo) {
+    protected void complete(UUID wizardId, GitRepositoryRecord repo, K8sDeploymentRecord deploy) {
         ServiceWizard wizard = wizardRepository.findByIdAndDeletedAtIsNull(wizardId).orElse(null);
         if (wizard == null || wizard.getStatus() == WizardStatus.CANCELLED) {
             return;
@@ -178,20 +213,35 @@ public class WizardProvisionRunner {
         );
         if (repo != null) {
             service.bindGitHub(repo.getOwner(), repo.getRepoName(), repo.getHtmlUrl());
-            service.markReady();
-            service = appServiceRepository.save(service);
+        }
+        if (deploy != null) {
+            service.bindK8s(
+                    deploy.getNamespaceName(),
+                    deploy.getDeploymentName(),
+                    deploy.getStatus().name(),
+                    deploy.getClusterType()
+            );
+        }
+        service.markReady();
+        service = appServiceRepository.save(service);
+
+        if (repo != null) {
             repo.bindService(service.getId());
             gitRepositoryRecordRepository.save(repo);
-        } else {
-            service.markReady();
-            service = appServiceRepository.save(service);
-        }
-        wizard.complete(service.getId());
-        if (repo != null) {
             wizard.appendLogPublic("GitHub Repository: " + repo.getHtmlUrl());
         } else {
-            wizard.appendLogPublic("GitHub not connected — simulation only");
+            wizard.appendLogPublic("GitHub not connected — SCM simulation");
         }
+
+        if (deploy != null) {
+            k8sDeployService.bindService(wizardId, service.getId());
+            wizard.appendLogPublic("K8s: " + deploy.getStatus()
+                    + " ns=" + deploy.getNamespaceName()
+                    + " deploy=" + deploy.getDeploymentName()
+                    + " type=" + deploy.getClusterType());
+        }
+
+        wizard.complete(service.getId());
         wizardRepository.save(wizard);
         log.info("Wizard {} completed → service {}", wizardId, service.getId());
     }
@@ -204,6 +254,16 @@ public class WizardProvisionRunner {
         }
         wizard.fail(reason != null ? reason : "Unknown error");
         wizardRepository.save(wizard);
+    }
+
+    private boolean isFailed(UUID wizardId) {
+        ServiceWizard w = load(wizardId);
+        return w != null && w.getStatus() == WizardStatus.FAILED;
+    }
+
+    private boolean isCancelled(UUID wizardId) {
+        ServiceWizard w = load(wizardId);
+        return w != null && w.getStatus() == WizardStatus.CANCELLED;
     }
 
     private ServiceWizard load(UUID wizardId) {

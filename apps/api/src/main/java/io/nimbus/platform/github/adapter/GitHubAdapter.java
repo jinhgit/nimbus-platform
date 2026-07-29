@@ -201,6 +201,59 @@ public class GitHubAdapter implements GitProvider {
         }
     }
 
+    @Override
+    public RepoPublicKey fetchActionsPublicKey(String accessToken, String owner, String repo) {
+        try {
+            String body = restClient.get()
+                    .uri("/repos/{owner}/{repo}/actions/secrets/public-key", owner, repo)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .retrieve()
+                    .body(String.class);
+            JsonNode node = objectMapper.readTree(body);
+            String keyId = node.path("key_id").asText(null);
+            String key = node.path("key").asText(null);
+            if (keyId == null || key == null) {
+                throw new BusinessException(ErrorCode.GITHUB_API_FAILED, "public-key response incomplete");
+            }
+            return new RepoPublicKey(keyId, key);
+        } catch (RestClientResponseException ex) {
+            throw mapHttpError(ex);
+        } catch (BusinessException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new BusinessException(ErrorCode.GITHUB_API_FAILED, ex.getMessage());
+        }
+    }
+
+    @Override
+    public void putActionsSecret(
+            String accessToken,
+            String owner,
+            String repo,
+            String secretName,
+            String encryptedValue,
+            String keyId
+    ) {
+        try {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("encrypted_value", encryptedValue);
+            payload.put("key_id", keyId);
+            restClient.put()
+                    .uri("/repos/{owner}/{repo}/actions/secrets/{name}", owner, repo, secretName)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException ex) {
+            throw mapHttpError(ex);
+        } catch (BusinessException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new BusinessException(ErrorCode.GITHUB_API_FAILED, ex.getMessage());
+        }
+    }
+
     private BusinessException mapHttpError(RestClientResponseException ex) {
         int status = ex.getStatusCode().value();
         String body = ex.getResponseBodyAsString();

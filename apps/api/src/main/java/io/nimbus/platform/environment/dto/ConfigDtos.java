@@ -62,7 +62,34 @@ public final class ConfigDtos {
             String maskedValue,
             Integer version,
             Instant createdAt,
-            Instant updatedAt
+            Instant updatedAt,
+            Instant lastSyncedAt,
+            String lastSyncStatus,
+            String lastSyncMessage
+    ) {
+    }
+
+    public record SecretSyncRequest(
+            /** null/empty = 전체 시크릿 */
+            java.util.List<String> keys
+    ) {
+    }
+
+    public record SecretSyncItem(
+            String key,
+            String status,
+            String message
+    ) {
+    }
+
+    public record SecretSyncResponse(
+            String mode,
+            String repository,
+            int attempted,
+            int succeeded,
+            int failed,
+            java.util.List<SecretSyncItem> items,
+            String message
     ) {
     }
 

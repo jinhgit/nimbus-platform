@@ -25,13 +25,16 @@ public class EnvironmentConfigController {
 
     private final EnvironmentConfigService configService;
     private final EnvironmentPromoteService promoteService;
+    private final io.nimbus.platform.environment.service.GitHubSecretSyncService secretSyncService;
 
     public EnvironmentConfigController(
             EnvironmentConfigService configService,
-            EnvironmentPromoteService promoteService
+            EnvironmentPromoteService promoteService,
+            io.nimbus.platform.environment.service.GitHubSecretSyncService secretSyncService
     ) {
         this.configService = configService;
         this.promoteService = promoteService;
+        this.secretSyncService = secretSyncService;
     }
 
     // ── Variables ──────────────────────────────────────────
@@ -104,6 +107,15 @@ public class EnvironmentConfigController {
     public ApiResponse<ConfigDtos.SecretRevealResponse> revealSecret(@PathVariable UUID secretId) {
         NimbusPrincipal principal = SecurityUtils.requirePrincipal();
         return ApiResponse.ok(configService.revealSecret(principal, secretId));
+    }
+
+    @PostMapping("/environments/{environmentId}/secrets/sync-github")
+    public ApiResponse<ConfigDtos.SecretSyncResponse> syncGitHubSecrets(
+            @PathVariable UUID environmentId,
+            @RequestBody(required = false) ConfigDtos.SecretSyncRequest request
+    ) {
+        NimbusPrincipal principal = SecurityUtils.requirePrincipal();
+        return ApiResponse.ok(secretSyncService.sync(principal, environmentId, request));
     }
 
     // ── Promote ────────────────────────────────────────────

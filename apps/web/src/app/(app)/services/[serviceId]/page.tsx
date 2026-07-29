@@ -17,13 +17,16 @@ import {
   fetchK8sDeploymentByService,
   fetchPipelines,
   fetchService,
+  fetchServiceDeployments,
   fetchServiceEnvironments,
   fetchServiceLogs,
   fetchServiceMetrics,
   fetchServicePromotions,
+  fetchServiceTimeline,
   promoteEnvironment,
   restoreServiceEnvironment,
   revealEnvSecret,
+  syncEnvSecretsToGitHub,
   type AppService,
   type ArchitectureReview,
   type EnvSecret,
@@ -32,8 +35,10 @@ import {
   type LogLine,
   type Pipeline,
   type PromoteResult,
+  type ServiceDeployment,
   type ServiceEnvironment,
   type ServiceMetrics,
+  type TimelineItem,
 } from "@/lib/api";
 
 function nextPromoteTarget(type: string): string | null {
@@ -83,6 +88,8 @@ export default function ServiceDetailPage() {
   const [review, setReview] = useState<ArchitectureReview | null>(null);
   const [environments, setEnvironments] = useState<ServiceEnvironment[]>([]);
   const [promotions, setPromotions] = useState<PromoteResult[]>([]);
+  const [deployments, setDeployments] = useState<ServiceDeployment[]>([]);
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [selectedEnvId, setSelectedEnvId] = useState<string | null>(null);
   const [variables, setVariables] = useState<EnvVariable[]>([]);
   const [secrets, setSecrets] = useState<EnvSecret[]>([]);
@@ -113,7 +120,7 @@ export default function ServiceDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [s, d, m, p, l, envs, promo] = await Promise.all([
+      const [s, d, m, p, l, envs, promo, deps, tl] = await Promise.all([
         fetchService(serviceId),
         fetchK8sDeploymentByService(serviceId),
         fetchServiceMetrics(serviceId),
@@ -121,6 +128,8 @@ export default function ServiceDetailPage() {
         fetchServiceLogs(serviceId, 30),
         fetchServiceEnvironments(serviceId),
         fetchServicePromotions(serviceId),
+        fetchServiceDeployments(serviceId),
+        fetchServiceTimeline(serviceId),
       ]);
       if (!s.success || !s.data) {
         setError(s.error?.message ?? "서비스를 찾을 수 없습니다.");
@@ -135,6 +144,8 @@ export default function ServiceDetailPage() {
       const envItems = envs.success && envs.data ? envs.data.items : [];
       setEnvironments(envItems);
       setPromotions(promo.success && promo.data ? promo.data.items : []);
+      setDeployments(deps.success && deps.data ? deps.data.items : []);
+      setTimeline(tl.success && tl.data ? tl.data.items : []);
       setSelectedEnvId((prev) => {
         if (prev && envItems.some((e) => e.id === prev)) return prev;
         return envItems[0]?.id ?? null;
@@ -295,6 +306,24 @@ export default function ServiceDetailPage() {
     setEnvBusy(true);
     await deleteEnvSecret(id);
     setEnvBusy(false);
+    await loadConfig(selectedEnvId);
+  }
+
+  async function onSyncGitHubSecrets() {
+    if (!selectedEnvId) return;
+    setEnvBusy(true);
+    setError(null);
+    setMessage(null);
+    const res = await syncEnvSecretsToGitHub(selectedEnvId);
+    setEnvBusy(false);
+    if (!res.success || !res.data) {
+      setError(res.error?.message ?? "GitHub 시크릿 동기화 실패");
+      return;
+    }
+    setMessage(
+      `GitHub Secret sync · ${res.data.mode} · 성공 ${res.data.succeeded}/${res.data.attempted}` +
+        (res.data.repository ? ` · ${res.data.repository}` : ""),
+    );
     await loadConfig(selectedEnvId);
   }
 
@@ -649,9 +678,19 @@ export default function ServiceDetailPage() {
                   ))
                 )}
               </ul>
-              <p className="mt-2 text-[10px] text-[var(--muted)]">
-                시크릿은 AES로 암호화 저장됩니다. 목록은 항상 마스킹되며, 보기 작업은 감사 로그에 남습니다.
-              </p>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[10px] text-[var(--muted)]">
+                  AES 저장 · 마스킹 목록 · 보기 시 감사 기록
+                </p>
+                <button
+                  type="button"
+                  disabled={envBusy || secrets.length === 0}
+                  onClick={onSyncGitHubSecrets}
+                  className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] hover:bg-white/5 disabled:opacity-50"
+                >
+                  GitHub Secret 동기화
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -670,14 +709,60 @@ export default function ServiceDetailPage() {
                   {" · "}
                   {p.status}
                   {" · "}
-                  vars {p.variablesCopied} / secrets {p.secretsCopied}
+                  변수 {p.variablesCopied} / 시크릿 {p.secretsCopied}
                   {p.finishedAt
-                    ? ` · ${new Date(p.finishedAt).toLocaleString()}`
+                    ? ` · ${new Date(p.finishedAt).toLocaleString("ko-KR")}`
                     : ""}
                 </li>
               ))}
             </ul>
           </div>
+        )}
+      </section>
+
+      {/* Deployment timeline — Sprint D */}
+      <section className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+        <h2 className="mb-1 text-sm font-medium">배포 이력 · 타임라인</h2>
+        <p className="mb-4 text-xs text-[var(--muted)]">
+          Wizard 프로비저닝 · 환경 승격 등 플랫폼 이벤트를 시간순으로 표시합니다.
+        </p>
+        {timeline.length === 0 && deployments.length === 0 ? (
+          <p className="text-sm text-[var(--muted)]">
+            아직 배포 이력이 없습니다. Wizard 완료 또는 Promote 후 여기에 기록됩니다.
+          </p>
+        ) : (
+          <ul className="space-y-0 border-l border-[var(--border)] pl-4">
+            {(timeline.length > 0
+              ? timeline
+              : deployments.map((d) => ({
+                  kind: "DEPLOYMENT",
+                  id: d.id,
+                  at: d.finishedAt ?? d.createdAt,
+                  title: `${d.trigger} · ${d.environmentType ?? "—"}`,
+                  detail: d.message ?? d.versionLabel,
+                  status: d.status,
+                }))
+            ).slice(0, 12).map((item) => (
+              <li key={`${item.kind}-${item.id}`} className="relative pb-4 last:pb-0">
+                <span className="absolute -left-[1.15rem] top-1 h-2 w-2 rounded-full bg-[var(--primary)]" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
+                    {item.kind}
+                  </span>
+                  {item.status ? <StatusBadge value={item.status} /> : null}
+                  <span className="text-[11px] text-[var(--muted)]">
+                    {item.at
+                      ? new Date(item.at).toLocaleString("ko-KR")
+                      : "—"}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-sm text-zinc-100">{item.title}</p>
+                {item.detail ? (
+                  <p className="text-xs text-[var(--muted)]">{item.detail}</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

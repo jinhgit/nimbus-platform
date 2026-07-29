@@ -10,6 +10,9 @@ import io.nimbus.platform.environment.domain.EnvironmentStatus;
 import io.nimbus.platform.environment.domain.PromotionRecord;
 import io.nimbus.platform.environment.domain.ServiceEnvironment;
 import io.nimbus.platform.environment.dto.ConfigDtos;
+import io.nimbus.platform.deployment.domain.DeploymentStatus;
+import io.nimbus.platform.deployment.domain.DeploymentTrigger;
+import io.nimbus.platform.deployment.service.DeploymentService;
 import io.nimbus.platform.environment.repository.PromotionRecordRepository;
 import io.nimbus.platform.environment.repository.ServiceEnvironmentRepository;
 import io.nimbus.platform.serviceapp.domain.AppService;
@@ -37,6 +40,7 @@ public class EnvironmentPromoteService {
     private final WorkspaceBootstrapService workspaceBootstrapService;
     private final WorkspacePermissionService workspacePermissionService;
     private final AuditService auditService;
+    private final DeploymentService deploymentService;
 
     public EnvironmentPromoteService(
             ServiceEnvironmentRepository environmentRepository,
@@ -45,7 +49,8 @@ public class EnvironmentPromoteService {
             EnvironmentConfigService configService,
             WorkspaceBootstrapService workspaceBootstrapService,
             WorkspacePermissionService workspacePermissionService,
-            AuditService auditService
+            AuditService auditService,
+            DeploymentService deploymentService
     ) {
         this.environmentRepository = environmentRepository;
         this.appServiceRepository = appServiceRepository;
@@ -54,6 +59,7 @@ public class EnvironmentPromoteService {
         this.workspaceBootstrapService = workspaceBootstrapService;
         this.workspacePermissionService = workspacePermissionService;
         this.auditService = auditService;
+        this.deploymentService = deploymentService;
     }
 
     @Transactional
@@ -143,6 +149,24 @@ public class EnvironmentPromoteService {
                 service.getName() + "/" + source.getType() + "→" + targetType,
                 source.getWorkspaceId(),
                 message
+        );
+
+        deploymentService.record(
+                service.getId(),
+                target.getId(),
+                service.getWorkspaceId(),
+                service.getProjectId(),
+                targetType,
+                DeploymentStatus.SUCCESS,
+                DeploymentTrigger.ENVIRONMENT_PROMOTE,
+                DeploymentService.versionNow(),
+                service.getK8sDeployment(),
+                target.getNamespaceName(),
+                message,
+                record.getId(),
+                null,
+                null,
+                principal.userId()
         );
 
         return toPromoteResponse(record);

@@ -925,6 +925,68 @@ export async function promoteEnvironment(
   );
 }
 
+export type ServiceDeployment = {
+  id: string;
+  serviceId: string;
+  environmentId?: string;
+  environmentType?: string;
+  status: string;
+  trigger: string;
+  versionLabel?: string;
+  imageTag?: string;
+  namespaceName?: string;
+  message?: string;
+  promotionId?: string;
+  wizardId?: string;
+  pipelineId?: string;
+  triggeredBy?: string;
+  createdAt?: string;
+  finishedAt?: string;
+};
+
+export type TimelineItem = {
+  kind: string;
+  id: string;
+  at?: string;
+  title: string;
+  detail?: string;
+  status?: string;
+};
+
+export type SecretSyncResponse = {
+  mode: string;
+  repository?: string;
+  attempted: number;
+  succeeded: number;
+  failed: number;
+  items: { key: string; status: string; message?: string }[];
+  message?: string;
+};
+
+export async function fetchServiceDeployments(serviceId: string) {
+  return apiGet<{
+    serviceId: string;
+    items: ServiceDeployment[];
+    count: number;
+  }>(`/api/v1/services/${serviceId}/deployments`);
+}
+
+export async function fetchServiceTimeline(serviceId: string) {
+  return apiGet<{ serviceId: string; items: TimelineItem[] }>(
+    `/api/v1/services/${serviceId}/timeline`,
+  );
+}
+
+export async function syncEnvSecretsToGitHub(
+  environmentId: string,
+  keys?: string[],
+) {
+  return apiPost<SecretSyncResponse>(
+    `/api/v1/environments/${environmentId}/secrets/sync-github`,
+    keys ? { keys } : {},
+  );
+}
+
 export async function fetchServicePromotions(serviceId: string) {
   return apiGet<{ items: PromoteResult[] }>(
     `/api/v1/services/${serviceId}/promotions`,

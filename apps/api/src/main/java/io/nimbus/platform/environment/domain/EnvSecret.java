@@ -36,6 +36,15 @@ public class EnvSecret extends BaseEntity {
     @Column(name = "created_by", nullable = false)
     private UUID createdBy;
 
+    @Column(name = "last_synced_at")
+    private java.time.Instant lastSyncedAt;
+
+    @Column(name = "last_sync_status", length = 24)
+    private String lastSyncStatus;
+
+    @Column(name = "last_sync_message", length = 500)
+    private String lastSyncMessage;
+
     protected EnvSecret() {
     }
 
@@ -61,6 +70,14 @@ public class EnvSecret extends BaseEntity {
     public void rotate(String valueEnc) {
         this.valueEnc = valueEnc;
         this.rotationVersion = (this.rotationVersion == null ? 1 : this.rotationVersion) + 1;
+    }
+
+    public void markSynced(String status, String message) {
+        this.lastSyncedAt = java.time.Instant.now();
+        this.lastSyncStatus = status;
+        this.lastSyncMessage = message != null && message.length() > 500
+                ? message.substring(0, 500)
+                : message;
     }
 
     public UUID getEnvironmentId() {
@@ -89,5 +106,17 @@ public class EnvSecret extends BaseEntity {
 
     public UUID getCreatedBy() {
         return createdBy;
+    }
+
+    public java.time.Instant getLastSyncedAt() {
+        return lastSyncedAt;
+    }
+
+    public String getLastSyncStatus() {
+        return lastSyncStatus;
+    }
+
+    public String getLastSyncMessage() {
+        return lastSyncMessage;
     }
 }

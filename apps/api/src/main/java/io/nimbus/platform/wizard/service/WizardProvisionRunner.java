@@ -2,6 +2,9 @@ package io.nimbus.platform.wizard.service;
 
 import io.nimbus.platform.common.exception.BusinessException;
 import io.nimbus.platform.common.exception.ErrorCode;
+import io.nimbus.platform.deployment.domain.DeploymentStatus;
+import io.nimbus.platform.deployment.domain.DeploymentTrigger;
+import io.nimbus.platform.deployment.service.DeploymentService;
 import io.nimbus.platform.environment.service.EnvironmentService;
 import io.nimbus.platform.github.domain.GitRepositoryRecord;
 import io.nimbus.platform.github.repository.GitRepositoryRecordRepository;
@@ -46,6 +49,7 @@ public class WizardProvisionRunner {
     private final K8sDeployService k8sDeployService;
     private final BuildPipelineService buildPipelineService;
     private final EnvironmentService environmentService;
+    private final DeploymentService deploymentService;
     private final ProvisionSagaService sagaService;
     private final WizardService wizardService;
     private final ObjectMapper objectMapper;
@@ -60,6 +64,7 @@ public class WizardProvisionRunner {
             K8sDeployService k8sDeployService,
             BuildPipelineService buildPipelineService,
             EnvironmentService environmentService,
+            DeploymentService deploymentService,
             ProvisionSagaService sagaService,
             @Lazy WizardService wizardService,
             ObjectMapper objectMapper,
@@ -73,6 +78,7 @@ public class WizardProvisionRunner {
         this.k8sDeployService = k8sDeployService;
         this.buildPipelineService = buildPipelineService;
         this.environmentService = environmentService;
+        this.deploymentService = deploymentService;
         this.sagaService = sagaService;
         this.wizardService = wizardService;
         this.objectMapper = objectMapper;
@@ -298,8 +304,31 @@ public class WizardProvisionRunner {
         try {
             var env = environmentService.ensureDefaultForService(service, wizard.getCreatedBy());
             wizard.appendLogPublic("Environment: " + env.getType() + " ns=" + env.getNamespaceName());
+            DeploymentStatus depStatus = deploy != null && "SIMULATED".equalsIgnoreCase(String.valueOf(deploy.getStatus()))
+                    ? DeploymentStatus.SIMULATED
+                    : DeploymentStatus.SUCCESS;
+            if (deploy == null) {
+                depStatus = DeploymentStatus.SIMULATED;
+            }
+            deploymentService.record(
+                    service.getId(),
+                    env.getId(),
+                    service.getWorkspaceId(),
+                    service.getProjectId(),
+                    env.getType(),
+                    depStatus,
+                    DeploymentTrigger.WIZARD_PROVISION,
+                    DeploymentService.versionNow(),
+                    deploy != null ? deploy.getImage() : null,
+                    env.getNamespaceName(),
+                    "Wizard provision completed",
+                    null,
+                    wizard.getId(),
+                    null,
+                    wizard.getCreatedBy()
+            );
         } catch (Exception e) {
-            log.warn("Failed to ensure default environment: {}", e.getMessage());
+            log.warn("Failed to ensure default environment/deployment: {}", e.getMessage());
         }
 
         if (repo != null) {

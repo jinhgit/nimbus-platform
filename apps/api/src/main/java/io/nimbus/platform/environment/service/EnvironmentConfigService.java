@@ -287,8 +287,22 @@ public class EnvironmentConfigService {
                 mask(s.getKey()),
                 s.getRotationVersion(),
                 s.getCreatedAt(),
-                s.getUpdatedAt()
+                s.getUpdatedAt(),
+                s.getLastSyncedAt(),
+                s.getLastSyncStatus(),
+                s.getLastSyncMessage()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public String decryptSecretValue(EnvSecret secret) {
+        return tokenCryptoService.decrypt(secret.getValueEnc());
+    }
+
+    @Transactional
+    public void markSecretSynced(EnvSecret secret, String status, String message) {
+        secret.markSynced(status, message);
+        secretRepository.save(secret);
     }
 
     static String mask(String key) {

@@ -99,7 +99,7 @@
 |------|:----:|------|
 | User / Workspace / Project / Service | ✅ | |
 | Soft Delete / UUID / version | ✅ | |
-| Deployment / Pipeline 테이블 | 🔶 | 일부 엔티티 |
+| Deployment / Pipeline 테이블 | ✅~🔶 | Sprint D service_deployments · Pipeline 시뮬 |
 | Secret 암호화 (토큰) | ✅ | AES |
 | audit_log 테이블 | ✅ | `audit_logs` 엔티티 (불변, soft-delete 없음) |
 | incident / event_log | ❌ | |
@@ -209,7 +209,9 @@ DEMO-SCENARIO 기준 핵심 플로우는 **구현됨**.
 | **Sprint B: Variable/Secret + Promote + Audit** | ✅ |
 | **Sprint C: Provision Saga · Retry · 권한** | ✅ |
 
-**다음:** ArgoCD 실연동 / OpenAPI·E2E / Incident AI (P2)
+| **Sprint D: Deployment 이력 · 타임라인 · GitHub Secret sync(얇게)** | ✅ |
+
+**다음:** OpenAPI·E2E / YAML Explain / Ollama / ArgoCD 실연동
 
 ---
 

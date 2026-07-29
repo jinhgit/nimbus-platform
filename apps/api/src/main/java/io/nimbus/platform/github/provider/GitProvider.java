@@ -15,6 +15,27 @@ public interface GitProvider {
 
     RateLimitStatus rateLimit(String accessToken);
 
+    /**
+     * Actions secret public key. null if unavailable.
+     */
+    RepoPublicKey fetchActionsPublicKey(String accessToken, String owner, String repo);
+
+    /**
+     * Upsert GitHub Actions repository secret (encrypted_value + key_id).
+     * Thin: if encryption unsupported, implementations may throw or no-op.
+     */
+    void putActionsSecret(
+            String accessToken,
+            String owner,
+            String repo,
+            String secretName,
+            String encryptedValue,
+            String keyId
+    );
+
     record RateLimitStatus(int remaining, int limit, long resetEpochSeconds) {
+    }
+
+    record RepoPublicKey(String keyId, String keyBase64) {
     }
 }

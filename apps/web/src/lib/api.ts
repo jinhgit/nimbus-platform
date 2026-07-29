@@ -413,6 +413,59 @@ export async function explainYaml(input: {
   });
 }
 
+/** Service 메타로 설명용 Deployment YAML 스켈레톤 생성 (Zero-YAML 플랫폼 산출물 형태) */
+export function buildServiceDeploymentYaml(service: {
+  name: string;
+  replicaCount?: number;
+  k8sNamespace?: string;
+  k8sDeployment?: string;
+  environmentType?: string;
+  runtime?: string;
+}): string {
+  const ns =
+    service.k8sNamespace ||
+    `${service.name}-${(service.environmentType ?? "DEV").toLowerCase()}`;
+  const deploy = service.k8sDeployment || service.name;
+  const replicas = service.replicaCount ?? 1;
+  const env = (service.environmentType ?? "DEV").toLowerCase();
+  return `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${deploy}
+  namespace: ${ns}
+  labels:
+    app: ${service.name}
+    nimbus.io/environment: ${env}
+spec:
+  replicas: ${replicas}
+  selector:
+    matchLabels:
+      app: ${service.name}
+  template:
+    metadata:
+      labels:
+        app: ${service.name}
+    spec:
+      containers:
+        - name: ${service.name}
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 5
+`;
+}
+
 export async function createWizard(input: {
   projectId: string;
   serviceName: string;

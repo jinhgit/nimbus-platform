@@ -48,6 +48,15 @@ Nimbus 설계 문서 전체 목록.
 
 ---
 
+## OpenAPI
+
+| File | Topic |
+|------|-------|
+| [openapi.yaml](api/openapi.yaml) | 핵심 REST 스냅샷 · 런타임 `GET /v3/api-docs` |
+| [api/README](api/README.md) | OpenAPI + Engineering Spec 목록 |
+
+---
+
 ## Demo / Portfolio
 
 | File | Topic |

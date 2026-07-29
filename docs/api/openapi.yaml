@@ -1,0 +1,357 @@
+openapi: 3.0.3
+info:
+  title: Nimbus Platform API
+  description: |
+    AI Native Internal Developer Platform REST API (핵심 엔드포인트 스냅샷).
+    상세 시나리오 스펙은 docs/api/API-*.md 를 함께 본다.
+  version: 0.1.0
+  contact:
+    name: Nimbus Platform
+
+servers:
+  - url: http://localhost:8080
+    description: Local
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Projects
+  - name: Services
+  - name: Environments
+  - name: AI
+  - name: Deployments
+  - name: Wizard
+
+paths:
+  /api/v1/health:
+    get:
+      tags: [Health]
+      summary: API health
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+
+  /api/v1/auth/dev-login:
+    post:
+      tags: [Auth]
+      summary: Dev login (local free-only)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: Tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Me
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+
+  /api/v1/projects:
+    get:
+      tags: [Projects]
+      summary: List projects
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Project list
+    post:
+      tags: [Projects]
+      summary: Create project
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, workspaceId]
+              properties:
+                name: { type: string }
+                workspaceId: { type: string, format: uuid }
+                description: { type: string }
+      responses:
+        "200":
+          description: Created
+
+  /api/v1/services:
+    get:
+      tags: [Services]
+      summary: List services
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Service list
+
+  /api/v1/services/{serviceId}:
+    get:
+      tags: [Services]
+      summary: Get service
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/serviceId"
+      responses:
+        "200":
+          description: Service
+
+  /api/v1/services/{serviceId}/environments:
+    get:
+      tags: [Environments]
+      summary: List environments (auto-ensure default)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/serviceId"
+      responses:
+        "200":
+          description: Environment list
+    post:
+      tags: [Environments]
+      summary: Create environment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/serviceId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: string
+                  enum: [DEV, STAGE, PRODUCTION]
+      responses:
+        "200":
+          description: Created
+
+  /api/v1/environments/{environmentId}/promote:
+    post:
+      tags: [Environments]
+      summary: Promote DEV→STAGE or STAGE→PRODUCTION
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: environmentId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target]
+              properties:
+                target:
+                  type: string
+                  enum: [STAGE, PRODUCTION]
+      responses:
+        "200":
+          description: Promote result
+
+  /api/v1/environments/{environmentId}/secrets/sync-github:
+    post:
+      tags: [Environments]
+      summary: Thin GitHub Actions secret sync
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: environmentId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Sync result (SIMULATED / SIMULATED_LIVE / LIVE)
+
+  /api/v1/services/{serviceId}/deployments:
+    get:
+      tags: [Deployments]
+      summary: Deployment history
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/serviceId"
+      responses:
+        "200":
+          description: Deployments
+
+  /api/v1/services/{serviceId}/timeline:
+    get:
+      tags: [Deployments]
+      summary: Service timeline (deployments + promotions)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/serviceId"
+      responses:
+        "200":
+          description: Timeline
+
+  /api/v1/ai/yaml/explain:
+    post:
+      tags: [AI]
+      summary: YAML Explain (rule-engine)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string }
+                kind:
+                  type: string
+                  enum: [AUTO, DEPLOYMENT, SERVICE, HELM, ARGO, ACTIONS, TERRAFORM, INGRESS, GENERIC]
+                serviceName: { type: string }
+                environmentType:
+                  type: string
+                  enum: [DEV, STAGE, PRODUCTION]
+      responses:
+        "200":
+          description: Explain result with highlights, risks, suggestions
+
+  /api/v1/ai/recommend:
+    post:
+      tags: [AI]
+      summary: Runtime/DB/Cache recommendation
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Recommendation
+
+  /api/v1/service-wizard:
+    post:
+      tags: [Wizard]
+      summary: Create service wizard session
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Wizard created
+
+  /api/v1/service-wizard/{wizardId}/execute:
+    post:
+      tags: [Wizard]
+      summary: Start provision saga
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wizardId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: jobId = sagaId
+
+  /api/v1/service-wizard/{wizardId}/retry:
+    post:
+      tags: [Wizard]
+      summary: Retry failed provision
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: wizardId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: New saga attempt
+
+  /api/v1/audit:
+    get:
+      tags: [Auth]
+      summary: Audit log search
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: action
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Audit list
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    serviceId:
+      name: serviceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: {}
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+
+security:
+  - bearerAuth: []

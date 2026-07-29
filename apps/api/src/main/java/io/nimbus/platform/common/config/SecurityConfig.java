@@ -36,6 +36,10 @@ public class SecurityConfig {
                                 "/actuator/prometheus",
                                 "/api/v1/health",
                                 "/api/v1/health/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/api/v1/openapi.yaml",
+                                "/api/v1/openapi.json",
                                 "/h2-console/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/dev-login").permitAll()

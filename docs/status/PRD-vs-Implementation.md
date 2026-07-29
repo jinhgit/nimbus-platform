@@ -127,7 +127,7 @@
 | Phase 3 Infra 풀 | 🔶 |
 | Phase 4 AI 풀 | 🔶 |
 | Phase 5 Observability 풀 | 🔶 |
-| Phase 6 Coverage/E2E | ❌ |
+| Phase 6 Coverage/E2E | 🔶 | PlatformApiSmokeTest · openapi.yaml 스냅샷 |
 
 ---
 
@@ -211,7 +211,10 @@ DEMO-SCENARIO 기준 핵심 플로우는 **구현됨**.
 
 | **Sprint D: Deployment 이력 · 타임라인 · GitHub Secret sync(얇게)** | ✅ |
 
-**다음:** OpenAPI·E2E / YAML Explain / Ollama / ArgoCD 실연동
+| **YAML Explain API + Wizard UI** | ✅ |
+| **Service Detail YAML Explain + OpenAPI 스냅샷 + Smoke** | ✅ |
+
+**다음:** Dashboard 위젯 / Ollama Provider / Incident (얇게)
 
 ---
 

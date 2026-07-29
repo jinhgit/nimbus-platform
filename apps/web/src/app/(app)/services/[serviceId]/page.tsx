@@ -5,11 +5,13 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
   archiveServiceEnvironment,
+  buildServiceDeploymentYaml,
   createEnvSecret,
   createEnvVariable,
   createServiceEnvironment,
   deleteEnvSecret,
   deleteEnvVariable,
+  explainYaml,
   fetchArchitectureReview,
   fetchEnvironmentHealth,
   fetchEnvSecrets,
@@ -23,6 +25,7 @@ import {
   fetchServiceMetrics,
   fetchServicePromotions,
   fetchServiceTimeline,
+  getWizard,
   promoteEnvironment,
   restoreServiceEnvironment,
   revealEnvSecret,
@@ -39,6 +42,7 @@ import {
   type ServiceEnvironment,
   type ServiceMetrics,
   type TimelineItem,
+  type YamlExplainResult,
 } from "@/lib/api";
 
 function nextPromoteTarget(type: string): string | null {
@@ -86,6 +90,10 @@ export default function ServiceDetailPage() {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [review, setReview] = useState<ArchitectureReview | null>(null);
+  const [yamlSource, setYamlSource] = useState("");
+  const [yamlKind, setYamlKind] = useState("DEPLOYMENT");
+  const [yamlExplain, setYamlExplain] = useState<YamlExplainResult | null>(null);
+  const [explainLoading, setExplainLoading] = useState(false);
   const [environments, setEnvironments] = useState<ServiceEnvironment[]>([]);
   const [promotions, setPromotions] = useState<PromoteResult[]>([]);
   const [deployments, setDeployments] = useState<ServiceDeployment[]>([]);
@@ -150,6 +158,26 @@ export default function ServiceDetailPage() {
         if (prev && envItems.some((e) => e.id === prev)) return prev;
         return envItems[0]?.id ?? null;
       });
+
+      // Wizard Preview YAML 우선, 없으면 서비스 메타 기반 스켈레톤
+      let yaml = buildServiceDeploymentYaml(s.data);
+      let kind = "DEPLOYMENT";
+      if (s.data.wizardId) {
+        const w = await getWizard(s.data.wizardId);
+        if (w.success && w.data?.preview?.deploymentYaml) {
+          yaml = w.data.preview.deploymentYaml;
+          kind = "DEPLOYMENT";
+        } else if (w.success && w.data?.preview?.helmValues) {
+          yaml = w.data.preview.helmValues;
+          kind = "HELM";
+        } else if (w.success && w.data?.preview?.argoApplication) {
+          yaml = w.data.preview.argoApplication;
+          kind = "ARGO";
+        }
+      }
+      setYamlSource(yaml);
+      setYamlKind(kind);
+      setYamlExplain(null);
     } catch {
       setError("서비스 정보를 불러오지 못했습니다.");
     } finally {
@@ -184,6 +212,27 @@ export default function ServiceDetailPage() {
       return;
     }
     setReview(res.data);
+  }
+
+  async function runYamlExplain() {
+    if (!yamlSource.trim()) {
+      setError("Explain 할 YAML이 없습니다.");
+      return;
+    }
+    setExplainLoading(true);
+    setError(null);
+    const res = await explainYaml({
+      content: yamlSource,
+      kind: yamlKind,
+      serviceName: service?.name,
+      environmentType: service?.environmentType,
+    });
+    setExplainLoading(false);
+    if (!res.success || !res.data) {
+      setError(res.error?.message ?? "YAML Explain 실패");
+      return;
+    }
+    setYamlExplain(res.data);
   }
 
   async function addEnvironment() {
@@ -1002,6 +1051,111 @@ export default function ServiceDetailPage() {
           )}
         </section>
       </div>
+
+      {/* YAML Explain — Service Detail 재사용 */}
+      <section className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-medium">YAML Explain</h2>
+            <p className="mt-0.5 text-xs text-[var(--muted)]">
+              Wizard Preview YAML이 있으면 우선 사용하고, 없으면 서비스 메타로 Deployment
+              스켈레톤을 만듭니다. rule-engine 설명.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
+              value={yamlKind}
+              onChange={(e) => setYamlKind(e.target.value)}
+            >
+              {[
+                "AUTO",
+                "DEPLOYMENT",
+                "HELM",
+                "ARGO",
+                "ACTIONS",
+                "SERVICE",
+                "GENERIC",
+              ].map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={runYamlExplain}
+              disabled={explainLoading || !yamlSource.trim()}
+              className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--primary-hover)] disabled:opacity-60"
+            >
+              {explainLoading ? "분석 중…" : "Explain 실행"}
+            </button>
+          </div>
+        </div>
+        <textarea
+          className="nimbus-input min-h-[160px] font-mono text-[11px] leading-relaxed"
+          value={yamlSource}
+          onChange={(e) => setYamlSource(e.target.value)}
+          spellCheck={false}
+        />
+        {yamlExplain && (
+          <div className="mt-4 rounded-xl border border-[var(--border)] bg-black/25 p-4">
+            <p className="text-sm text-zinc-100">{yamlExplain.summary}</p>
+            <p className="mt-1 text-[11px] text-[var(--muted)]">
+              kind: {yamlExplain.detectedKind} · provider: {yamlExplain.provider}
+            </p>
+            <ul className="mt-3 space-y-2">
+              {yamlExplain.highlights.map((h) => (
+                <li
+                  key={`${h.path}-${h.title}`}
+                  className="rounded-lg border border-[var(--border)] px-3 py-2"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`text-[10px] font-medium uppercase ${
+                        h.level === "WARN"
+                          ? "text-amber-300"
+                          : h.level === "ERROR"
+                            ? "text-red-300"
+                            : "text-sky-300"
+                      }`}
+                    >
+                      {h.level}
+                    </span>
+                    <span className="text-sm font-medium text-zinc-100">{h.title}</span>
+                    <span className="font-mono text-[10px] text-[var(--muted)]">
+                      {h.path}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
+                    {h.explanation}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            {yamlExplain.risks?.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-medium text-amber-300">리스크</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-[var(--muted)]">
+                  {yamlExplain.risks.map((r) => (
+                    <li key={r}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {yamlExplain.suggestions?.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-medium text-emerald-300">제안</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-[var(--muted)]">
+                  {yamlExplain.suggestions.map((r) => (
+                    <li key={r}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

@@ -34,20 +34,46 @@ type NavItem = {
   Icon: ComponentType<IconProps>;
 };
 
-const nav: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", Icon: IconDashboard },
-  { href: "/projects", label: "Projects", Icon: IconProjects },
-  { href: "/services", label: "Services", Icon: IconServices },
-  { href: "/catalog", label: "Catalog", Icon: IconCatalog },
-  { href: "/wizard", label: "Create Service", Icon: IconWizard },
-  { href: "/pipelines", label: "Pipelines", Icon: IconPipelines },
-  { href: "/monitoring", label: "Monitoring", Icon: IconMonitoring },
-  { href: "/logs", label: "Logs", Icon: IconLogs },
-  { href: "/audit", label: "Audit", Icon: IconAudit },
-  { href: "/workspaces", label: "Workspaces", Icon: IconWorkspaces },
-  { href: "/infrastructure", label: "Infrastructure", Icon: IconInfrastructure },
-  { href: "/settings", label: "Settings", Icon: IconSettings },
+type NavSection = {
+  title?: string;
+  items: NavItem[];
+};
+
+const navSections: NavSection[] = [
+  {
+    items: [
+      { href: "/dashboard", label: "Dashboard", Icon: IconDashboard },
+      { href: "/projects", label: "Projects", Icon: IconProjects },
+      { href: "/services", label: "Services", Icon: IconServices },
+      { href: "/catalog", label: "Catalog", Icon: IconCatalog },
+      { href: "/wizard", label: "Create Service", Icon: IconWizard },
+    ],
+  },
+  {
+    title: "Operations",
+    items: [
+      { href: "/pipelines", label: "Pipelines", Icon: IconPipelines },
+      { href: "/monitoring", label: "Monitoring", Icon: IconMonitoring },
+      { href: "/logs", label: "Logs", Icon: IconLogs },
+      { href: "/audit", label: "Audit", Icon: IconAudit },
+      { href: "/infrastructure", label: "Infrastructure", Icon: IconInfrastructure },
+    ],
+  },
+  {
+    title: "Workspace",
+    items: [
+      { href: "/workspaces", label: "Workspaces", Icon: IconWorkspaces },
+      { href: "/settings", label: "Settings", Icon: IconSettings },
+    ],
+  },
 ];
+
+function initials(name?: string | null) {
+  if (!name) return "N";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -80,57 +106,104 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-[var(--muted)]">
-        Loading…
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 text-sm text-[var(--muted)]">
+        <div className="h-8 w-8 animate-pulse rounded-xl bg-[var(--primary)]/30" />
+        Loading portal…
       </div>
     );
   }
 
+  const workspaceName =
+    user && "workspace" in user && user.workspace
+      ? user.workspace.name
+      : null;
+
   return (
     <div className="flex min-h-screen">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--card)]">
-        <div className="border-b border-[var(--border)] px-5 py-5">
-          <Link href="/dashboard" className="text-sm font-semibold tracking-wide">
-            NIMBUS
+      <aside className="sticky top-0 flex h-screen w-[15.5rem] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--card)]/90 backdrop-blur-xl">
+        <div className="border-b border-[var(--border)] px-4 py-5">
+          <Link href="/dashboard" className="group flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 text-xs font-bold text-white shadow-[0_0_20px_-4px_var(--primary-glow)]">
+              N
+            </span>
+            <span>
+              <span className="block text-[13px] font-semibold tracking-[0.12em] text-white">
+                NIMBUS
+              </span>
+              <span className="block text-[11px] text-[var(--muted)]">
+                Platform Portal
+              </span>
+            </span>
           </Link>
-          <p className="mt-1 text-xs text-[var(--muted)]">Platform Portal</p>
         </div>
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
-          {nav.map((item) => {
-            const active = pathname.startsWith(item.href);
-            const { Icon } = item;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
-                  active
-                    ? "bg-[var(--primary)]/15 text-white"
-                    : "text-[var(--muted)] hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <Icon
-                  size={18}
-                  className={`shrink-0 ${active ? "opacity-100" : "opacity-80"}`}
-                />
-                <span className="truncate">{item.label}</span>
-              </Link>
-            );
-          })}
+
+        <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-2.5 py-4">
+          {navSections.map((section, si) => (
+            <div key={section.title ?? `s-${si}`}>
+              {section.title ? (
+                <p className="mb-1.5 px-2.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--muted-soft)]">
+                  {section.title}
+                </p>
+              ) : null}
+              <div className="flex flex-col gap-0.5">
+                {section.items.map((item) => {
+                  const active = pathname.startsWith(item.href);
+                  const { Icon } = item;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition ${
+                        active
+                          ? "bg-[var(--primary-soft)] text-white"
+                          : "text-[var(--muted)] hover:bg-white/[0.04] hover:text-white"
+                      }`}
+                    >
+                      {active ? (
+                        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-[var(--primary)]" />
+                      ) : null}
+                      <Icon
+                        size={17}
+                        className={`shrink-0 ${
+                          active
+                            ? "text-blue-300"
+                            : "text-zinc-500 group-hover:text-zinc-300"
+                        }`}
+                      />
+                      <span className="truncate font-medium">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
-        <div className="border-t border-[var(--border)] p-4">
-          <p className="truncate text-sm font-medium">{user?.name}</p>
-          <p className="truncate text-xs text-[var(--muted)]">{user?.email}</p>
+
+        <div className="border-t border-[var(--border)] p-3">
+          <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-black/20 px-2.5 py-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-800 text-[11px] font-semibold text-white">
+              {initials(user?.name)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-medium text-zinc-100">
+                {user?.name}
+              </p>
+              <p className="truncate text-[11px] text-[var(--muted)]">
+                {workspaceName ?? user?.email}
+              </p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={onLogout}
-            className="mt-3 inline-flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-white"
+            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[12px] text-[var(--muted)] transition hover:bg-white/[0.04] hover:text-white"
           >
             <IconLogout size={14} />
             Log out
           </button>
         </div>
       </aside>
+
       <main className="min-w-0 flex-1 overflow-auto">{children}</main>
     </div>
   );

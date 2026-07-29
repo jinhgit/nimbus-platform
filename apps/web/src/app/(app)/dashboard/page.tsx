@@ -15,11 +15,32 @@ import {
   type Project,
   type WorkspaceSummary,
 } from "@/lib/api";
+import {
+  IconCatalog,
+  IconInfrastructure,
+  IconProjects,
+  IconWizard,
+} from "@/components/icons";
+import {
+  Card,
+  CardTitle,
+  Page,
+  PageHeader,
+  StatCard,
+  StatusBadge,
+} from "@/components/ui";
+
+function healthTone(value: string): "ok" | "warn" | "bad" | "default" {
+  if (value === "UP" || value === "up") return "ok";
+  if (value === "checking") return "warn";
+  if (value === "down") return "bad";
+  return "default";
+}
 
 function healthLabel(value: string) {
-  if (value === "UP" || value === "up") return "정상";
-  if (value === "checking") return "확인 중";
-  if (value === "down") return "중단";
+  if (value === "UP" || value === "up") return "Healthy";
+  if (value === "checking") return "Checking…";
+  if (value === "down") return "Down";
   return value;
 }
 
@@ -60,100 +81,146 @@ export default function DashboardPage() {
   }, [me, workspaces]);
 
   const readyServices = services.filter((s) => s.status === "READY").length;
-  const widgets = [
-    { label: "API 상태", value: healthLabel(health) },
-    { label: "프로젝트", value: String(projects.length) },
-    { label: "서비스", value: String(services.length) },
-    { label: "정상 배포", value: String(readyServices) },
-  ];
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">대시보드</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            {me
-              ? `${me.name} · ${me.workspace?.name ?? "워크스페이스 없음"}`
-              : "사용자 정보를 불러오는 중…"}
-          </p>
-        </div>
-        <Link
-          href="/wizard"
-          className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-hover)]"
-        >
-          서비스 생성
-        </Link>
+    <Page>
+      <PageHeader
+        eyebrow="Overview"
+        title="Dashboard"
+        description={
+          me
+            ? `${me.name} · ${me.workspace?.name ?? "No workspace"}`
+            : "Loading workspace…"
+        }
+        actions={
+          <Link href="/wizard" className="nimbus-btn-primary">
+            <IconWizard size={15} />
+            Create Service
+          </Link>
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="API"
+          value={healthLabel(health)}
+          tone={healthTone(health)}
+          hint="Platform health"
+        />
+        <StatCard
+          label="Projects"
+          value={projects.length}
+          tone="info"
+          hint="Business contexts"
+        />
+        <StatCard
+          label="Services"
+          value={services.length}
+          tone="default"
+          hint="Deploy units"
+        />
+        <StatCard
+          label="Ready"
+          value={readyServices}
+          tone={readyServices > 0 ? "ok" : "default"}
+          hint="Status READY"
+        />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {widgets.map((w) => (
-          <div
-            key={w.label}
-            className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"
+      <div className="mt-6 grid gap-5 lg:grid-cols-2">
+        <Card>
+          <CardTitle
+            action={
+              <Link
+                href="/services"
+                className="text-xs text-[var(--primary)] hover:underline"
+              >
+                View all
+              </Link>
+            }
           >
-            <p className="text-xs text-[var(--muted)]">{w.label}</p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums">{w.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
-          <h2 className="mb-3 text-sm font-medium">최근 서비스</h2>
+            Recent services
+          </CardTitle>
           {services.length === 0 ? (
             <p className="text-sm text-[var(--muted)]">
-              아직 서비스가 없습니다.{" "}
+              No services yet.{" "}
               <Link href="/wizard" className="text-[var(--primary)] hover:underline">
-                Wizard 시작하기
+                Start the Wizard
               </Link>
             </p>
           ) : (
             <ul className="divide-y divide-[var(--border)]">
-              {services.slice(0, 5).map((s) => (
+              {services.slice(0, 6).map((s) => (
                 <li key={s.id}>
                   <Link
                     href={`/services/${s.id}`}
-                    className="flex justify-between py-3 text-sm hover:text-white"
+                    className="-mx-2 flex items-center justify-between rounded-lg px-2 py-2.5 transition hover:bg-white/[0.03]"
                   >
-                    <span>{s.name}</span>
-                    <span className="text-xs text-emerald-400">{s.status}</span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-zinc-100">
+                        {s.name}
+                      </p>
+                      <p className="truncate text-[11px] text-[var(--muted)]">
+                        {s.runtime} · {s.environmentType}
+                      </p>
+                    </div>
+                    <StatusBadge value={s.status} />
                   </Link>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </Card>
 
-        <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
-          <h2 className="mb-3 text-sm font-medium">플랫폼 현황</h2>
-          <ul className="space-y-2 text-sm text-[var(--muted)]">
-            <li>
-              클러스터:{" "}
-              {cluster?.available
-                ? `${cluster.clusterType ?? "local"} · ${cluster.context ?? ""} · 연결됨`
-                : "미연결 (kind/k3d 시 실배포)"}
+        <Card>
+          <CardTitle>Platform status</CardTitle>
+          <ul className="space-y-3 text-sm">
+            <li className="flex items-start justify-between gap-3">
+              <span className="text-[var(--muted)]">Cluster</span>
+              <span className="text-right text-zinc-200">
+                {cluster?.available ? (
+                  <>
+                    <StatusBadge value="CONNECTED" />
+                    <span className="mt-1 block text-[11px] text-[var(--muted)]">
+                      {cluster.clusterType ?? "local"}
+                      {cluster.context ? ` · ${cluster.context}` : ""}
+                    </span>
+                  </>
+                ) : (
+                  <StatusBadge value="DISCONNECTED" />
+                )}
+              </span>
             </li>
-            <li>GitHub: Settings에서 PAT 연결 · Free tier</li>
-            <li>AI: rule-engine (Ollama 확장 가능)</li>
-            <li>카탈로그: Golden Path 템플릿 준비됨</li>
+            <li className="flex justify-between gap-3 text-[var(--muted)]">
+              <span>GitHub SCM</span>
+              <span className="text-zinc-300">Settings · OAuth / PAT</span>
+            </li>
+            <li className="flex justify-between gap-3 text-[var(--muted)]">
+              <span>AI</span>
+              <span className="text-zinc-300">Rule engine · Ollama-ready</span>
+            </li>
+            <li className="flex justify-between gap-3 text-[var(--muted)]">
+              <span>Catalog</span>
+              <span className="text-zinc-300">Golden Path templates</span>
+            </li>
           </ul>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Link href="/infrastructure" className="text-xs text-[var(--primary)] hover:underline">
-              인프라
+
+          <div className="mt-5 flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
+            <Link href="/infrastructure" className="nimbus-btn-ghost !px-3 !py-1.5 text-xs">
+              <IconInfrastructure size={14} />
+              Infra
             </Link>
-            <Link href="/catalog" className="text-xs text-[var(--primary)] hover:underline">
-              카탈로그
+            <Link href="/catalog" className="nimbus-btn-ghost !px-3 !py-1.5 text-xs">
+              <IconCatalog size={14} />
+              Catalog
             </Link>
-            <Link href="/projects" className="text-xs text-[var(--primary)] hover:underline">
-              프로젝트
-            </Link>
-            <Link href="/services" className="text-xs text-[var(--primary)] hover:underline">
-              서비스
+            <Link href="/projects" className="nimbus-btn-ghost !px-3 !py-1.5 text-xs">
+              <IconProjects size={14} />
+              Projects
             </Link>
           </div>
-        </section>
+        </Card>
       </div>
-    </div>
+    </Page>
   );
 }

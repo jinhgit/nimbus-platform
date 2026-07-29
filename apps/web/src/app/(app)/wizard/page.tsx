@@ -233,12 +233,17 @@ export default function WizardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
+    <div className="nimbus-page max-w-5xl">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Service Wizard</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            카탈로그 → AI 추천 → 미리보기 → 프로비저닝 · 시연 메인 플로우
+          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--primary)]">
+            Golden Path
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">
+            Service Wizard
+          </h1>
+          <p className="mt-1.5 text-sm text-[var(--muted)]">
+            Catalog → AI recommend → Preview → Provision saga
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -246,8 +251,8 @@ export default function WizardPage() {
             href="/settings"
             className={`rounded-full px-3 py-1 text-xs ${
               githubConnected
-                ? "bg-emerald-500/15 text-emerald-400"
-                : "border border-[var(--border)] text-[var(--muted)]"
+                ? "nimbus-badge-ok border"
+                : "nimbus-badge-neutral border"
             }`}
           >
             {githubConnected ? "GitHub 연결됨" : "GitHub 미연결"}
@@ -269,11 +274,11 @@ export default function WizardPage() {
         {STEPS.map((label, i) => (
           <li
             key={label}
-            className={`rounded-full px-3 py-1 text-xs ${
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
               i === step
-                ? "bg-[var(--primary)] text-white"
+                ? "bg-[var(--primary)] text-white shadow-[0_0_16px_-4px_var(--primary-glow)]"
                 : i < step
-                  ? "bg-[var(--primary)]/20 text-white"
+                  ? "bg-[var(--primary-soft)] text-blue-200"
                   : "border border-[var(--border)] text-[var(--muted)]"
             }`}
           >
@@ -283,12 +288,12 @@ export default function WizardPage() {
       </ol>
 
       {error && (
-        <p className="mb-4 rounded-lg border border-red-900/50 bg-red-950/40 px-3 py-2 text-sm text-red-300">
+        <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
           {error}
         </p>
       )}
 
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+      <div className="nimbus-card p-6">
         {step === 0 && (
           <div className="space-y-4">
             <h2 className="text-lg font-medium">서비스 정보</h2>

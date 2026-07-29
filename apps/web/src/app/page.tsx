@@ -3,78 +3,76 @@ import Link from "next/link";
 const features = [
   {
     title: "Service Wizard",
-    desc: "클릭 몇 번으로 서비스 생성부터 배포까지 한 번에",
+    desc: "Catalog → AI recommend → Preview → Provision in one flow.",
   },
   {
-    title: "GitOps",
-    desc: "Terraform → Git → ArgoCD → Kubernetes 자동 경로",
+    title: "GitOps path",
+    desc: "Helm, Terraform, Actions, Argo manifests generated for you.",
   },
   {
-    title: "AI Platform Engineer",
-    desc: "아키텍처 리뷰, YAML 설명, 장애 원인 분석",
+    title: "AI Decision Engine",
+    desc: "Runtime / DB / Cache recommendations with confidence & reason.",
   },
   {
-    title: "Service Catalog",
-    desc: "조직 Golden Path 템플릿과 Blueprint",
+    title: "Environments",
+    desc: "DEV → STAGE → PRODUCTION with variables, secrets, and promote.",
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-16">
-      <header className="mb-16">
-        <p className="mb-3 text-sm font-medium tracking-wide text-[var(--primary)]">
-          NIMBUS PLATFORM
-        </p>
-        <h1 className="mb-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-          AI 기반 내부
+    <main className="relative mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-16">
+      <div className="nimbus-mesh pointer-events-none absolute inset-0 opacity-40" />
+
+      <header className="relative mb-16">
+        <div className="mb-6 flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 text-xs font-bold text-white shadow-[0_0_28px_-4px_var(--primary-glow)]">
+            N
+          </span>
+          <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-blue-300/90">
+            Nimbus Platform
+          </span>
+        </div>
+        <h1 className="mb-4 max-w-2xl text-4xl font-semibold tracking-tight text-white sm:text-5xl sm:leading-[1.1]">
+          AI-native Internal
           <br />
-          개발자 플랫폼
+          Developer Platform
         </h1>
-        <p className="max-w-2xl text-lg text-[var(--muted)]">
-          Kubernetes, Helm, Terraform을 몰라도 서비스를 만들고 배포할 수 있는
-          Platform Engineering 포털입니다. 지금은 Catalog · Wizard · AI 추천까지
-          동작하는 단계입니다.
+        <p className="max-w-2xl text-base leading-relaxed text-[var(--muted)] sm:text-lg">
+          Ship services without living in YAML. Catalog, Wizard, AI review,
+          GitHub, environments, and audit — free-only by default.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/login"
-            className="rounded-lg bg-[var(--primary)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--primary-hover)]"
-          >
-            로그인 / 시작하기
+          <Link href="/login" className="nimbus-btn-primary px-5 py-2.5">
+            Get started
           </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm font-medium transition hover:border-zinc-500"
-          >
-            대시보드
+          <Link href="/dashboard" className="nimbus-btn-ghost px-5 py-2.5">
+            Dashboard
           </Link>
           <a
             href="http://localhost:8080/api/v1/health"
-            className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm font-medium transition hover:border-zinc-500"
+            className="nimbus-btn-ghost px-5 py-2.5"
             target="_blank"
             rel="noreferrer"
           >
-            API 상태
+            API health
           </a>
         </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        {features.map((item) => (
-          <article
-            key={item.title}
-            className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5"
-          >
-            <h2 className="mb-2 text-base font-medium">{item.title}</h2>
-            <p className="text-sm text-[var(--muted)]">{item.desc}</p>
-          </article>
+      <section className="relative grid gap-3 sm:grid-cols-2">
+        {features.map((f) => (
+          <div key={f.title} className="nimbus-card nimbus-card-interactive p-5">
+            <h2 className="text-sm font-medium text-zinc-100">{f.title}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+              {f.desc}
+            </p>
+          </div>
         ))}
       </section>
 
-      <footer className="mt-auto pt-16 text-sm text-[var(--muted)]">
-        Phase 1–2 · Auth · Workspace · Project · Catalog · Wizard · 문서는{" "}
-        <code className="text-zinc-300">/docs</code> 참고
+      <footer className="relative mt-auto pt-16 text-center text-xs text-[var(--muted-soft)]">
+        Design the platform, not just the deployment.
       </footer>
     </main>
   );

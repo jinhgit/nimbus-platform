@@ -383,6 +383,36 @@ export async function fetchArchitectureReview(wizardId: string) {
   );
 }
 
+export type YamlHighlight = {
+  path: string;
+  level: string;
+  title: string;
+  explanation: string;
+};
+
+export type YamlExplainResult = {
+  summary: string;
+  detectedKind: string;
+  highlights: YamlHighlight[];
+  risks: string[];
+  suggestions: string[];
+  provider: string;
+};
+
+export async function explainYaml(input: {
+  content: string;
+  kind?: string;
+  serviceName?: string;
+  environmentType?: string;
+}) {
+  return apiPost<YamlExplainResult>("/api/v1/ai/yaml/explain", {
+    content: input.content,
+    kind: input.kind ?? "AUTO",
+    serviceName: input.serviceName,
+    environmentType: input.environmentType,
+  });
+}
+
 export async function createWizard(input: {
   projectId: string;
   serviceName: string;

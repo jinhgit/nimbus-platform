@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   createWizard,
   executeWizard,
+  explainYaml,
   fetchCatalog,
   fetchGitHubStatus,
   fetchK8sCluster,
@@ -24,6 +25,7 @@ import {
   type ProvisionSaga,
   type Wizard,
   type WizardPreview,
+  type YamlExplainResult,
 } from "@/lib/api";
 
 const STEPS = [
@@ -57,6 +59,8 @@ export default function WizardPage() {
   const [wizard, setWizard] = useState<Wizard | null>(null);
   const [recommendation, setRecommendation] = useState<AiRecommendation | null>(null);
   const [preview, setPreview] = useState<WizardPreview | null>(null);
+  const [yamlExplain, setYamlExplain] = useState<YamlExplainResult | null>(null);
+  const [explainLoading, setExplainLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [previewTab, setPreviewTab] = useState<(typeof PREVIEW_TABS)[number]["id"]>("structure");
@@ -226,10 +230,53 @@ export default function WizardPage() {
     setLoading(false);
     if (res.success && res.data) {
       setPreview(res.data);
+      setYamlExplain(null);
       setStep(4);
     } else {
       setError(res.error?.message ?? "미리보기에 실패했습니다.");
     }
+  }
+
+  function currentPreviewContent(): { content: string; kind: string } | null {
+    if (!preview) return null;
+    switch (previewTab) {
+      case "yaml":
+        return { content: preview.deploymentYaml, kind: "DEPLOYMENT" };
+      case "helm":
+        return { content: preview.helmValues, kind: "HELM" };
+      case "argo":
+        return { content: preview.argoApplication, kind: "ARGO" };
+      case "actions":
+        return { content: preview.githubActions, kind: "ACTIONS" };
+      case "terraform":
+        return { content: preview.terraformVars, kind: "TERRAFORM" };
+      case "blueprint":
+        return { content: preview.blueprint, kind: "GENERIC" };
+      default:
+        return null;
+    }
+  }
+
+  async function runYamlExplain() {
+    const cur = currentPreviewContent();
+    if (!cur?.content) {
+      setError("이 탭에는 Explain 할 YAML 내용이 없습니다. YAML/Helm/Argo 탭을 선택하세요.");
+      return;
+    }
+    setExplainLoading(true);
+    setError(null);
+    const res = await explainYaml({
+      content: cur.content,
+      kind: cur.kind,
+      serviceName: wizard?.serviceName ?? serviceName,
+      environmentType: environmentType,
+    });
+    setExplainLoading(false);
+    if (!res.success || !res.data) {
+      setError(res.error?.message ?? "YAML Explain 실패");
+      return;
+    }
+    setYamlExplain(res.data);
   }
 
   return (
@@ -471,6 +518,76 @@ export default function WizardPage() {
               {previewTab === "yaml" && preview.deploymentYaml}
               {previewTab === "argo" && preview.argoApplication}
             </pre>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={explainLoading || previewTab === "structure"}
+                onClick={runYamlExplain}
+                className="nimbus-btn-primary !px-3 !py-1.5 text-xs disabled:opacity-60"
+              >
+                {explainLoading ? "분석 중…" : "YAML Explain"}
+              </button>
+              <span className="text-xs text-[var(--muted)]">
+                선택한 탭의 매니페스트를 rule-engine이 필드별로 설명합니다.
+              </span>
+            </div>
+            {yamlExplain && (
+              <div className="rounded-xl border border-[var(--border)] bg-black/25 p-4">
+                <p className="text-sm text-zinc-100">{yamlExplain.summary}</p>
+                <p className="mt-1 text-[11px] text-[var(--muted)]">
+                  kind: {yamlExplain.detectedKind} · provider: {yamlExplain.provider}
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {yamlExplain.highlights.map((h) => (
+                    <li
+                      key={`${h.path}-${h.title}`}
+                      className="rounded-lg border border-[var(--border)] px-3 py-2"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`text-[10px] font-medium uppercase ${
+                            h.level === "WARN"
+                              ? "text-amber-300"
+                              : h.level === "ERROR"
+                                ? "text-red-300"
+                                : "text-sky-300"
+                          }`}
+                        >
+                          {h.level}
+                        </span>
+                        <span className="text-sm font-medium text-zinc-100">{h.title}</span>
+                        <span className="font-mono text-[10px] text-[var(--muted)]">
+                          {h.path}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
+                        {h.explanation}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+                {yamlExplain.risks?.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs font-medium text-amber-300">리스크</p>
+                    <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-[var(--muted)]">
+                      {yamlExplain.risks.map((r) => (
+                        <li key={r}>{r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {yamlExplain.suggestions?.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs font-medium text-emerald-300">제안</p>
+                    <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-[var(--muted)]">
+                      {yamlExplain.suggestions.map((r) => (
+                        <li key={r}>{r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
             <p className="text-xs text-[var(--muted)]">
               배포 시작을 누르면 Provision Job이 비동기로 실행됩니다.
               {githubConnected

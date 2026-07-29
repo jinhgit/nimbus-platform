@@ -2,6 +2,7 @@ package io.nimbus.platform.ai.controller;
 
 import io.nimbus.platform.ai.dto.AiDtos;
 import io.nimbus.platform.ai.service.RuleBasedAiService;
+import io.nimbus.platform.ai.service.YamlExplainService;
 import io.nimbus.platform.auth.security.SecurityUtils;
 import io.nimbus.platform.common.api.ApiResponse;
 import io.nimbus.platform.common.exception.BusinessException;
@@ -22,10 +23,16 @@ import java.util.UUID;
 public class AiController {
 
     private final RuleBasedAiService aiService;
+    private final YamlExplainService yamlExplainService;
     private final ServiceWizardRepository wizardRepository;
 
-    public AiController(RuleBasedAiService aiService, ServiceWizardRepository wizardRepository) {
+    public AiController(
+            RuleBasedAiService aiService,
+            YamlExplainService yamlExplainService,
+            ServiceWizardRepository wizardRepository
+    ) {
         this.aiService = aiService;
+        this.yamlExplainService = yamlExplainService;
         this.wizardRepository = wizardRepository;
     }
 
@@ -43,5 +50,16 @@ public class AiController {
         ServiceWizard wizard = wizardRepository.findByIdAndDeletedAtIsNull(wizardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.WIZARD_NOT_FOUND));
         return ApiResponse.ok(aiService.review(wizard));
+    }
+
+    /**
+     * YAML Explain — rule-engine 기반 필드 설명 (PRD v1.4 Agent 2).
+     */
+    @PostMapping("/yaml/explain")
+    public ApiResponse<AiDtos.YamlExplainResponse> explainYaml(
+            @Valid @RequestBody AiDtos.YamlExplainRequest request
+    ) {
+        SecurityUtils.requirePrincipal();
+        return ApiResponse.ok(yamlExplainService.explain(request));
     }
 }

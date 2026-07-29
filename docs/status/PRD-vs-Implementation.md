@@ -87,7 +87,7 @@
 |------|:----:|------|
 | Architecture Review | ✅ | rule-engine |
 | Runtime/DB/Cache 추천 | ✅ | |
-| YAML Generator/Explain 풀셋 | 🔶 | |
+| YAML Generator/Explain 풀셋 | 🔶~✅ | Explain: `POST /api/v1/ai/yaml/explain` rule-engine · Wizard UI |
 | Incident Analysis | ❌ → **실운영 P2** | |
 | Cost Advisor | ⏸ | v2 |
 | Ollama Provider 기본 | 🔶 | 구조 여지, 기본 rule |

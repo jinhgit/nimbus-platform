@@ -391,12 +391,13 @@ export default function WizardPage() {
                 disabled={loading}
                 className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-hover)] disabled:opacity-60"
               >
-                {loading ? "분석 중…" : "AI Recommendation"}
+                {loading ? "분석 중…" : "AI 추천 받기"}
               </button>
             </div>
             {!recommendation ? (
               <p className="text-sm text-[var(--muted)]">
-                AI Recommendation을 눌러 Platform Engineer 역할의 추천을 받으세요.
+                AI 추천을 실행하면 Platform Engineer 관점의 Runtime/DB/Cache 제안을 받을 수
+                있습니다.
               </p>
             ) : (
               <div className="space-y-4">

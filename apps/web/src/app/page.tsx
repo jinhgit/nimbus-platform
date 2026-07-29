@@ -1,10 +1,22 @@
 import Link from "next/link";
 
 const features = [
-  { title: "Service Wizard", desc: "클릭 몇 번으로 서비스 생성부터 배포까지" },
-  { title: "GitOps", desc: "Terraform → Git → ArgoCD → Kubernetes" },
-  { title: "AI Platform Engineer", desc: "아키텍처 리뷰, YAML, 장애 분석" },
-  { title: "Service Catalog", desc: "Golden Path 템플릿과 Blueprint" },
+  {
+    title: "Service Wizard",
+    desc: "클릭 몇 번으로 서비스 생성부터 배포까지 한 번에",
+  },
+  {
+    title: "GitOps",
+    desc: "Terraform → Git → ArgoCD → Kubernetes 자동 경로",
+  },
+  {
+    title: "AI Platform Engineer",
+    desc: "아키텍처 리뷰, YAML 설명, 장애 원인 분석",
+  },
+  {
+    title: "Service Catalog",
+    desc: "조직 Golden Path 템플릿과 Blueprint",
+  },
 ];
 
 export default function HomePage() {
@@ -15,13 +27,14 @@ export default function HomePage() {
           NIMBUS PLATFORM
         </p>
         <h1 className="mb-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-          AI Native Internal
+          AI 기반 내부
           <br />
-          Developer Platform
+          개발자 플랫폼
         </h1>
         <p className="max-w-2xl text-lg text-[var(--muted)]">
           Kubernetes, Helm, Terraform을 몰라도 서비스를 만들고 배포할 수 있는
-          Platform Engineering Portal. 지금은 monorepo 뼈대 단계입니다.
+          Platform Engineering 포털입니다. 지금은 Catalog · Wizard · AI 추천까지
+          동작하는 단계입니다.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
@@ -34,7 +47,7 @@ export default function HomePage() {
             href="/dashboard"
             className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm font-medium transition hover:border-zinc-500"
           >
-            Dashboard
+            대시보드
           </Link>
           <a
             href="http://localhost:8080/api/v1/health"
@@ -42,7 +55,7 @@ export default function HomePage() {
             target="_blank"
             rel="noreferrer"
           >
-            API Health
+            API 상태
           </a>
         </div>
       </header>
@@ -60,7 +73,8 @@ export default function HomePage() {
       </section>
 
       <footer className="mt-auto pt-16 text-sm text-[var(--muted)]">
-        Phase 1 — Auth · Workspace · Project · docs 는 <code className="text-zinc-300">/docs</code> 참고
+        Phase 1–2 · Auth · Workspace · Project · Catalog · Wizard · 문서는{" "}
+        <code className="text-zinc-300">/docs</code> 참고
       </footer>
     </main>
   );

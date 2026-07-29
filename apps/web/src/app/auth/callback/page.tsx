@@ -12,7 +12,7 @@ function CallbackInner() {
   useEffect(() => {
     const accessToken = params.get("accessToken");
     if (!accessToken) {
-      setMessage("accessToken 이 없습니다.");
+      setMessage("액세스 토큰이 없습니다.");
       return;
     }
     localStorage.setItem("nimbus_access_token", accessToken);

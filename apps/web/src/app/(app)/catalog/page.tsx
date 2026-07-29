@@ -23,16 +23,17 @@ export default function CatalogPage() {
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Service Catalog</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">서비스 카탈로그</h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Golden Path 템플릿. Wizard에서 Publish된 템플릿만 선택합니다.
+            Golden Path 템플릿입니다. Wizard에서는 게시(Published)된 템플릿만
+            선택할 수 있습니다.
           </p>
         </div>
         <Link
           href="/wizard"
           className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-hover)]"
         >
-          Create Service
+          서비스 생성
         </Link>
       </div>
 
@@ -69,15 +70,25 @@ export default function CatalogPage() {
             </div>
             <p className="mb-3 text-sm text-[var(--muted)]">{t.description}</p>
             <div className="flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-              <span className="rounded border border-[var(--border)] px-2 py-0.5">{t.runtime}</span>
-              <span className="rounded border border-[var(--border)] px-2 py-0.5">{t.type}</span>
-              <span className="rounded border border-[var(--border)] px-2 py-0.5">{t.language}</span>
-              <span className="rounded border border-[var(--border)] px-2 py-0.5">v{t.latestVersion}</span>
+              <span className="rounded border border-[var(--border)] px-2 py-0.5">
+                {t.runtime}
+              </span>
+              <span className="rounded border border-[var(--border)] px-2 py-0.5">
+                {t.type}
+              </span>
+              <span className="rounded border border-[var(--border)] px-2 py-0.5">
+                {t.language}
+              </span>
+              <span className="rounded border border-[var(--border)] px-2 py-0.5">
+                v{t.latestVersion}
+              </span>
             </div>
           </article>
         ))}
         {items.length === 0 && (
-          <p className="text-sm text-[var(--muted)]">템플릿이 없습니다. API를 확인하세요.</p>
+          <p className="text-sm text-[var(--muted)]">
+            템플릿이 없습니다. API 서버를 확인하세요.
+          </p>
         )}
       </div>
     </div>

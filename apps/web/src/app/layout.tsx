@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Nimbus Platform",
-  description: "AI Native Internal Developer Platform",
+  description: "AI 기반 내부 개발자 플랫폼 (IDP) — Platform Engineering Portal",
 };
 
 export default function RootLayout({

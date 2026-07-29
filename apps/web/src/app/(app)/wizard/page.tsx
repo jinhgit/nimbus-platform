@@ -20,13 +20,23 @@ import {
 } from "@/lib/api";
 
 const STEPS = [
-  "Service Info",
-  "Template",
-  "Infrastructure",
-  "AI Review",
-  "Preview",
-  "Provision",
-  "Complete",
+  "서비스 정보",
+  "템플릿",
+  "인프라",
+  "AI 리뷰",
+  "미리보기",
+  "프로비저닝",
+  "완료",
+];
+
+const PREVIEW_TABS = [
+  { id: "structure" as const, label: "구조" },
+  { id: "blueprint" as const, label: "Blueprint" },
+  { id: "helm" as const, label: "Helm" },
+  { id: "terraform" as const, label: "Terraform" },
+  { id: "actions" as const, label: "Actions" },
+  { id: "yaml" as const, label: "YAML" },
+  { id: "argo" as const, label: "ArgoCD" },
 ];
 
 export default function WizardPage() {
@@ -42,9 +52,7 @@ export default function WizardPage() {
   const [preview, setPreview] = useState<WizardPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [previewTab, setPreviewTab] = useState<
-    "structure" | "blueprint" | "helm" | "terraform" | "actions" | "yaml" | "argo"
-  >("structure");
+  const [previewTab, setPreviewTab] = useState<(typeof PREVIEW_TABS)[number]["id"]>("structure");
 
   useEffect(() => {
     fetchMe().then(async (me) => {
@@ -63,7 +71,6 @@ export default function WizardPage() {
     });
   }, []);
 
-  // poll provision progress
   useEffect(() => {
     if (!wizard || step !== 5) return;
     if (wizard.status === "COMPLETED" || wizard.status === "FAILED") return;
@@ -96,7 +103,7 @@ export default function WizardPage() {
       templateId: templateId || undefined,
     });
     if (!res.success || !res.data) {
-      setError(res.error?.message ?? "Wizard 생성 실패");
+      setError(res.error?.message ?? "Wizard 생성에 실패했습니다.");
       return null;
     }
     setWizard(res.data);
@@ -135,14 +142,14 @@ export default function WizardPage() {
         if (!wizard) return;
         const v = await previewWizard(wizard.id);
         if (!v.success || !v.data) {
-          setError(v.error?.message ?? "Preview 실패");
+          setError(v.error?.message ?? "미리보기에 실패했습니다.");
           return;
         }
         setPreview(v.data);
         setStep(5);
         const exec = await executeWizard(wizard.id);
         if (!exec.success) {
-          setError(exec.error?.message ?? "Deploy 실패");
+          setError(exec.error?.message ?? "배포 시작에 실패했습니다.");
           return;
         }
         const refreshed = await getWizard(wizard.id);
@@ -171,7 +178,7 @@ export default function WizardPage() {
       }
       const res = await recommendWizard(w.id);
       if (!res.success || !res.data) {
-        setError(res.error?.message ?? "AI 추천 실패");
+        setError(res.error?.message ?? "AI 추천에 실패했습니다.");
         return;
       }
       setRecommendation(res.data);
@@ -191,7 +198,7 @@ export default function WizardPage() {
       setPreview(res.data);
       setStep(4);
     } else {
-      setError(res.error?.message ?? "Preview 실패");
+      setError(res.error?.message ?? "미리보기에 실패했습니다.");
     }
   }
 
@@ -200,11 +207,10 @@ export default function WizardPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Service Wizard</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Catalog → AI → Preview → Provision · 시연 메인 플로우
+          카탈로그 → AI 추천 → 미리보기 → 프로비저닝 · 시연 메인 플로우
         </p>
       </div>
 
-      {/* steps */}
       <ol className="mb-8 flex flex-wrap gap-2">
         {STEPS.map((label, i) => (
           <li
@@ -231,17 +237,17 @@ export default function WizardPage() {
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
         {step === 0 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-medium">Service Info</h2>
+            <h2 className="text-lg font-medium">서비스 정보</h2>
             {projects.length === 0 ? (
               <p className="text-sm text-[var(--muted)]">
                 프로젝트가 없습니다.{" "}
                 <Link href="/projects" className="text-[var(--primary)] hover:underline">
-                  Project 생성
+                  프로젝트 만들기
                 </Link>
               </p>
             ) : (
               <label className="block text-sm">
-                <span className="mb-1 block text-[var(--muted)]">Project</span>
+                <span className="mb-1 block text-[var(--muted)]">프로젝트</span>
                 <select
                   className="w-full rounded-lg border border-[var(--border)] bg-black/30 px-3 py-2"
                   value={projectId}
@@ -256,13 +262,14 @@ export default function WizardPage() {
               </label>
             )}
             <label className="block text-sm">
-              <span className="mb-1 block text-[var(--muted)]">Service Name</span>
+              <span className="mb-1 block text-[var(--muted)]">서비스 이름</span>
               <input
                 className="w-full rounded-lg border border-[var(--border)] bg-black/30 px-3 py-2"
                 value={serviceName}
                 onChange={(e) => setServiceName(e.target.value)}
                 minLength={3}
                 maxLength={50}
+                placeholder="payment-api"
               />
             </label>
           </div>
@@ -270,7 +277,7 @@ export default function WizardPage() {
 
         {step === 1 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-medium">Template (Catalog)</h2>
+            <h2 className="text-lg font-medium">템플릿 (Catalog)</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {templates.map((t) => (
                 <button
@@ -295,9 +302,9 @@ export default function WizardPage() {
 
         {step === 2 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-medium">Infrastructure / Environment</h2>
+            <h2 className="text-lg font-medium">인프라 / 환경</h2>
             <label className="block text-sm">
-              <span className="mb-1 block text-[var(--muted)]">Environment</span>
+              <span className="mb-1 block text-[var(--muted)]">환경</span>
               <select
                 className="w-full rounded-lg border border-[var(--border)] bg-black/30 px-3 py-2"
                 value={environmentType}
@@ -309,8 +316,8 @@ export default function WizardPage() {
               </select>
             </label>
             <p className="text-sm text-[var(--muted)]">
-              Runtime: {selectedTemplate?.runtime ?? wizard?.runtime ?? "—"} · Template:{" "}
-              {selectedTemplate?.name ?? "—"}
+              Runtime: {selectedTemplate?.runtime ?? wizard?.runtime ?? "—"} ·
+              템플릿: {selectedTemplate?.name ?? "—"}
             </p>
           </div>
         )}
@@ -318,7 +325,7 @@ export default function WizardPage() {
         {step === 3 && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-medium">AI Recommendation</h2>
+              <h2 className="text-lg font-medium">AI 추천</h2>
               <button
                 type="button"
                 onClick={runRecommend}
@@ -330,14 +337,14 @@ export default function WizardPage() {
             </div>
             {!recommendation ? (
               <p className="text-sm text-[var(--muted)]">
-                AI Recommendation 버튼을 눌러 Platform Engineer 추천을 받으세요.
+                AI Recommendation을 눌러 Platform Engineer 역할의 추천을 받으세요.
               </p>
             ) : (
               <div className="space-y-4">
                 <p className="rounded-lg border border-[var(--border)] bg-black/20 p-4 text-sm">
                   {recommendation.summary}
                   <span className="ml-2 text-[var(--muted)]">
-                    (score {recommendation.overallScore} · {recommendation.provider})
+                    (점수 {recommendation.overallScore} · {recommendation.provider})
                   </span>
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -351,7 +358,7 @@ export default function WizardPage() {
                           {item.key}
                         </span>
                         <span className="text-emerald-400">
-                          Confidence {item.confidence}%
+                          신뢰도 {item.confidence}%
                         </span>
                       </div>
                       <p className="mt-2 text-lg font-semibold">{item.value}</p>
@@ -364,7 +371,7 @@ export default function WizardPage() {
                   onClick={runPreviewOnly}
                   className="text-sm text-[var(--primary)] hover:underline"
                 >
-                  Preview로 이동 →
+                  미리보기로 이동 →
                 </button>
               </div>
             )}
@@ -373,30 +380,22 @@ export default function WizardPage() {
 
         {step === 4 && preview && (
           <div className="space-y-4">
-            <h2 className="text-lg font-medium">Preview · {preview.repository}</h2>
+            <h2 className="text-lg font-medium">
+              미리보기 · {preview.repository}
+            </h2>
             <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  "structure",
-                  "blueprint",
-                  "helm",
-                  "terraform",
-                  "actions",
-                  "yaml",
-                  "argo",
-                ] as const
-              ).map((tab) => (
+              {PREVIEW_TABS.map((tab) => (
                 <button
-                  key={tab}
+                  key={tab.id}
                   type="button"
-                  onClick={() => setPreviewTab(tab)}
+                  onClick={() => setPreviewTab(tab.id)}
                   className={`rounded-full px-3 py-1 text-xs ${
-                    previewTab === tab
+                    previewTab === tab.id
                       ? "bg-[var(--primary)] text-white"
                       : "border border-[var(--border)] text-[var(--muted)]"
                   }`}
                 >
-                  {tab}
+                  {tab.label}
                 </button>
               ))}
             </div>
@@ -413,14 +412,14 @@ export default function WizardPage() {
               {previewTab === "argo" && preview.argoApplication}
             </pre>
             <p className="text-xs text-[var(--muted)]">
-              Deploy를 누르면 Provision Job이 비동기로 실행됩니다 (시연 Progress).
+              배포 시작을 누르면 Provision Job이 비동기로 실행됩니다. (시연용 진행률)
             </p>
           </div>
         )}
 
         {step === 5 && wizard && (
           <div className="space-y-4">
-            <h2 className="text-lg font-medium">Provision</h2>
+            <h2 className="text-lg font-medium">프로비저닝</h2>
             <p className="text-sm text-[var(--muted)]">
               {wizard.progressMessage ?? wizard.status}
             </p>
@@ -430,7 +429,9 @@ export default function WizardPage() {
                 style={{ width: `${wizard.progress ?? 0}%` }}
               />
             </div>
-            <p className="text-2xl font-semibold tabular-nums">{wizard.progress ?? 0}%</p>
+            <p className="text-2xl font-semibold tabular-nums">
+              {wizard.progress ?? 0}%
+            </p>
             <ul className="space-y-2 text-sm text-[var(--muted)]">
               {[
                 "Repository 생성",
@@ -454,22 +455,24 @@ export default function WizardPage() {
 
         {step === 6 && (
           <div className="space-y-4 text-center">
-            <h2 className="text-lg font-medium text-emerald-400">Complete</h2>
+            <h2 className="text-lg font-medium text-emerald-400">완료</h2>
             <p className="text-sm text-[var(--muted)]">
-              Service <strong className="text-white">{wizard?.serviceName}</strong> 가 생성되었습니다.
+              서비스{" "}
+              <strong className="text-white">{wizard?.serviceName}</strong> 가
+              생성되었습니다.
             </p>
             <div className="flex justify-center gap-3">
               <Link
                 href="/services"
                 className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white"
               >
-                Services 보기
+                서비스 목록
               </Link>
               <Link
                 href="/dashboard"
                 className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm"
               >
-                Dashboard
+                대시보드
               </Link>
             </div>
           </div>
@@ -495,10 +498,10 @@ export default function WizardPage() {
                 ? "처리 중…"
                 : step === 3
                   ? recommendation
-                    ? "Preview"
+                    ? "미리보기"
                     : "다음 (추천 권장)"
                   : step === 4
-                    ? "Deploy"
+                    ? "배포 시작"
                     : "다음"}
             </button>
           </div>

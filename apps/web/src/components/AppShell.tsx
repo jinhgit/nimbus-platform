@@ -13,12 +13,12 @@ import {
 } from "@/lib/api";
 
 const nav = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/projects", label: "Projects" },
-  { href: "/services", label: "Services" },
-  { href: "/catalog", label: "Catalog" },
-  { href: "/wizard", label: "Create Service" },
-  { href: "/workspaces", label: "Workspaces" },
+  { href: "/dashboard", label: "대시보드" },
+  { href: "/projects", label: "프로젝트" },
+  { href: "/services", label: "서비스" },
+  { href: "/catalog", label: "카탈로그" },
+  { href: "/wizard", label: "서비스 생성" },
+  { href: "/workspaces", label: "워크스페이스" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -65,7 +65,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/dashboard" className="text-sm font-semibold tracking-wide">
             NIMBUS
           </Link>
-          <p className="mt-1 text-xs text-[var(--muted)]">Platform Portal</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">플랫폼 포털</p>
         </div>
         <nav className="flex flex-1 flex-col gap-1 p-3">
           {nav.map((item) => {

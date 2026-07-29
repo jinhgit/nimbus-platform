@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  openapi:
+    name: OpenAPI sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check openapi.yaml sync + required paths
+        run: bash scripts/check-openapi-sync.sh
+
+  api-test:
+    name: API tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - name: OpenAPI sync gate
+        run: bash scripts/check-openapi-sync.sh
+      - name: Gradle test
+        working-directory: apps/api
+        run: ./gradlew test --no-daemon
+
+  web-typecheck:
+    name: Web typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install
+        working-directory: apps/web
+        run: npm ci
+      - name: tsc
+        working-directory: apps/web
+        run: npx tsc --noEmit
+
+  e2e:
+    name: Playwright smoke
+    runs-on: ubuntu-latest
+    needs: [api-test, web-typecheck, openapi]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install web deps
+        working-directory: apps/web
+        run: npm ci
+      - name: Install Playwright browsers
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - name: Start API
+        working-directory: apps/api
+        run: |
+          ./gradlew bootRun --args='--spring.profiles.active=local' --no-daemon > /tmp/nimbus-api.log 2>&1 &
+          echo $! > /tmp/nimbus-api.pid
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/api/v1/health >/dev/null; then
+              echo "API up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API failed to start" >&2
+          tail -n 80 /tmp/nimbus-api.log || true
+          exit 1
+      - name: Playwright
+        working-directory: apps/web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+        run: npm run test:e2e
+      - name: Stop API
+        if: always()
+        run: |
+          if [[ -f /tmp/nimbus-api.pid ]]; then kill $(cat /tmp/nimbus-api.pid) || true; fi

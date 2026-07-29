@@ -116,7 +116,12 @@ public final class ConfigDtos {
             int variablesCopied,
             int secretsCopied,
             String message,
-            Instant finishedAt
+            Instant finishedAt,
+            String gitOpsMode,
+            String gitOpsHeadBranch,
+            String gitOpsBaseBranch,
+            String pullRequestUrl,
+            Integer pullRequestNumber
     ) {
     }
 

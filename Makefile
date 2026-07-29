@@ -1,4 +1,4 @@
-.PHONY: up down logs api web install test-api
+.PHONY: up down logs api web install test-api test-e2e openapi-check
 
 up:
 	docker compose up -d
@@ -20,6 +20,13 @@ install:
 
 test-api:
 	cd apps/api && ./gradlew test
+
+openapi-check:
+	bash scripts/check-openapi-sync.sh
+
+# Requires API on :8080 (make api)
+test-e2e:
+	cd apps/web && npm run test:e2e
 
 kind-up:
 	bash scripts/kind-up.sh

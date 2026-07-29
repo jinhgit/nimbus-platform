@@ -1015,7 +1015,54 @@ export type PromoteResult = {
   secretsCopied: number;
   message?: string;
   finishedAt?: string;
+  gitOpsMode?: string;
+  gitOpsHeadBranch?: string;
+  gitOpsBaseBranch?: string;
+  pullRequestUrl?: string;
+  pullRequestNumber?: number;
 };
+
+export type WorkspaceMember = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+};
+
+export async function fetchWorkspaceMembers(workspaceId: string) {
+  return apiGet<WorkspaceMember[]>(`/api/v1/workspaces/${workspaceId}/members`);
+}
+
+export async function inviteWorkspaceMember(
+  workspaceId: string,
+  body: { email: string; role?: string },
+) {
+  return apiPost<WorkspaceMember>(
+    `/api/v1/workspaces/${workspaceId}/members/invite`,
+    body,
+  );
+}
+
+export async function updateWorkspaceMemberRole(
+  workspaceId: string,
+  memberId: string,
+  role: string,
+) {
+  return apiPatch<WorkspaceMember>(
+    `/api/v1/workspaces/${workspaceId}/members/${memberId}`,
+    { role },
+  );
+}
+
+export async function removeWorkspaceMember(
+  workspaceId: string,
+  memberId: string,
+) {
+  return apiDelete<null>(
+    `/api/v1/workspaces/${workspaceId}/members/${memberId}`,
+  );
+}
 
 export async function fetchEnvVariables(environmentId: string) {
   return apiGet<EnvVariable[]>(

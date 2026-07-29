@@ -28,7 +28,7 @@ import java.util.UUID;
 
 /**
  * Sprint B: DEV → STAGE → PRODUCTION 상태 전이 + config 복사 + Audit.
- * GitOps 실 PR/Sync 는 후속.
+ * GitOps thin: branch meta + optional PR (실패 시 SIMULATED/BRANCH_RECORDED).
  */
 @Service
 public class EnvironmentPromoteService {
@@ -41,6 +41,7 @@ public class EnvironmentPromoteService {
     private final WorkspacePermissionService workspacePermissionService;
     private final AuditService auditService;
     private final DeploymentService deploymentService;
+    private final PromoteGitOpsService promoteGitOpsService;
 
     public EnvironmentPromoteService(
             ServiceEnvironmentRepository environmentRepository,
@@ -50,7 +51,8 @@ public class EnvironmentPromoteService {
             WorkspaceBootstrapService workspaceBootstrapService,
             WorkspacePermissionService workspacePermissionService,
             AuditService auditService,
-            DeploymentService deploymentService
+            DeploymentService deploymentService,
+            PromoteGitOpsService promoteGitOpsService
     ) {
         this.environmentRepository = environmentRepository;
         this.appServiceRepository = appServiceRepository;
@@ -60,6 +62,7 @@ public class EnvironmentPromoteService {
         this.workspacePermissionService = workspacePermissionService;
         this.auditService = auditService;
         this.deploymentService = deploymentService;
+        this.promoteGitOpsService = promoteGitOpsService;
     }
 
     @Transactional
@@ -126,9 +129,21 @@ public class EnvironmentPromoteService {
         source.markReady();
         environmentRepository.save(source);
 
+        PromoteGitOpsService.GitOpsResult gitOps = promoteGitOpsService.resolve(
+                principal, service, source, target
+        );
+
         String message = "Promoted " + source.getType() + " → " + targetType
-                + " (variables=" + vars + ", secrets=" + secrets + ")";
-        PromotionRecord record = promotionRecordRepository.save(PromotionRecord.create(
+                + " (variables=" + vars + ", secrets=" + secrets
+                + ", gitOps=" + gitOps.modeLabel() + ")";
+        if (gitOps.detail() != null && !gitOps.detail().isBlank()) {
+            message = message + " · " + gitOps.detail();
+            if (message.length() > 480) {
+                message = message.substring(0, 480);
+            }
+        }
+
+        PromotionRecord record = PromotionRecord.create(
                 source.getServiceId(),
                 source.getWorkspaceId(),
                 source.getId(),
@@ -139,7 +154,15 @@ public class EnvironmentPromoteService {
                 secrets,
                 message,
                 principal.userId()
-        ));
+        );
+        record.applyGitOps(
+                gitOps.modeLabel(),
+                gitOps.headBranch(),
+                gitOps.baseBranch(),
+                gitOps.pullRequestUrl(),
+                gitOps.pullRequestNumber()
+        );
+        record = promotionRecordRepository.save(record);
 
         auditService.recordSuccess(
                 principal,
@@ -245,7 +268,12 @@ public class EnvironmentPromoteService {
                 r.getVariablesCopied() != null ? r.getVariablesCopied() : 0,
                 r.getSecretsCopied() != null ? r.getSecretsCopied() : 0,
                 r.getMessage(),
-                r.getFinishedAt() != null ? r.getFinishedAt() : r.getCreatedAt()
+                r.getFinishedAt() != null ? r.getFinishedAt() : r.getCreatedAt(),
+                r.getGitOpsMode(),
+                r.getGitOpsHeadBranch(),
+                r.getGitOpsBaseBranch(),
+                r.getPullRequestUrl(),
+                r.getPullRequestNumber()
         );
     }
 }

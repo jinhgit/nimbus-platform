@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   connectGitHub,
   disconnectGitHub,
@@ -8,12 +8,46 @@ import {
   fetchGitHubOauthConfig,
   fetchGitHubRepositories,
   fetchGitHubStatus,
+  fetchMe,
+  fetchWorkspaceMembers,
+  inviteWorkspaceMember,
+  removeWorkspaceMember,
   startGitHubOauth,
+  updateWorkspaceMemberRole,
   type GitHubHealth,
   type GitHubRepo,
+  type WorkspaceMember,
 } from "@/lib/api";
+import {
+  Card,
+  EmptyState,
+  ErrorBanner,
+  LoadingInline,
+  Page,
+  PageHeader,
+  SuccessBanner,
+} from "@/components/ui";
+
+const ROLE_OPTIONS = [
+  "VIEWER",
+  "DEVELOPER",
+  "PLATFORM_ENGINEER",
+  "ADMIN",
+] as const;
 
 export default function SettingsPage() {
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [myRole, setMyRole] = useState<string | null>(null);
+  const [canManageMembers, setCanManageMembers] = useState(false);
+  const [canInvite, setCanInvite] = useState(false);
+
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<string>("VIEWER");
+  const [memberBusy, setMemberBusy] = useState(false);
+
   const [connected, setConnected] = useState(false);
   const [login, setLogin] = useState<string | null>(null);
   const [authMethod, setAuthMethod] = useState<string | null>(null);
@@ -26,7 +60,18 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function refresh() {
+  const loadMembers = useCallback(async (ws: string) => {
+    setMembersLoading(true);
+    const res = await fetchWorkspaceMembers(ws);
+    setMembersLoading(false);
+    if (res.success && res.data) {
+      setMembers(res.data);
+    } else {
+      setError(res.error?.message ?? "멤버 목록을 불러오지 못했습니다.");
+    }
+  }, []);
+
+  async function refreshGithub() {
     const [status, cfg] = await Promise.all([
       fetchGitHubStatus(),
       fetchGitHubOauthConfig(),
@@ -65,8 +110,76 @@ export default function SettingsPage() {
       setError(`OAuth 연결 실패: ${reason}`);
       window.history.replaceState({}, "", "/settings");
     }
-    refresh();
-  }, []);
+
+    fetchMe().then((me) => {
+      if (me.success && me.data) {
+        setMyUserId(me.data.id);
+        const role = me.data.workspaceRole ?? null;
+        setMyRole(role);
+        setCanManageMembers(role === "OWNER" || role === "ADMIN");
+        setCanInvite(
+          role === "OWNER" ||
+            role === "ADMIN" ||
+            role === "PLATFORM_ENGINEER",
+        );
+        const ws = me.data.workspace?.id ?? null;
+        setWorkspaceId(ws);
+        if (ws) loadMembers(ws);
+      }
+    });
+    refreshGithub();
+  }, [loadMembers]);
+
+  async function onInvite(e: FormEvent) {
+    e.preventDefault();
+    if (!workspaceId || !canInvite) return;
+    setMemberBusy(true);
+    setError(null);
+    setMessage(null);
+    const res = await inviteWorkspaceMember(workspaceId, {
+      email: inviteEmail.trim(),
+      role: inviteRole,
+    });
+    setMemberBusy(false);
+    if (!res.success || !res.data) {
+      setError(res.error?.message ?? "초대에 실패했습니다.");
+      return;
+    }
+    setInviteEmail("");
+    setMessage(`${res.data.email} 을(를) ${res.data.role} 로 초대했습니다.`);
+    await loadMembers(workspaceId);
+  }
+
+  async function onRoleChange(member: WorkspaceMember, role: string) {
+    if (!workspaceId || !canManageMembers) return;
+    if (member.role === "OWNER") return;
+    setMemberBusy(true);
+    setError(null);
+    const res = await updateWorkspaceMemberRole(workspaceId, member.id, role);
+    setMemberBusy(false);
+    if (!res.success || !res.data) {
+      setError(res.error?.message ?? "역할 변경에 실패했습니다.");
+      return;
+    }
+    setMessage(`${member.email} → ${role}`);
+    await loadMembers(workspaceId);
+  }
+
+  async function onRemove(member: WorkspaceMember) {
+    if (!workspaceId || !canManageMembers) return;
+    if (member.role === "OWNER" || member.userId === myUserId) return;
+    if (!window.confirm(`${member.email} 멤버를 제거할까요?`)) return;
+    setMemberBusy(true);
+    setError(null);
+    const res = await removeWorkspaceMember(workspaceId, member.id);
+    setMemberBusy(false);
+    if (!res.success) {
+      setError(res.error?.message ?? "멤버 제거에 실패했습니다.");
+      return;
+    }
+    setMessage(`${member.email} 을(를) 제거했습니다.`);
+    await loadMembers(workspaceId);
+  }
 
   async function onOauthConnect() {
     setLoading(true);
@@ -97,7 +210,7 @@ export default function SettingsPage() {
     }
     setToken("");
     setMessage(`@${res.data.login} 계정에 PAT 로 연결되었습니다.`);
-    await refresh();
+    await refreshGithub();
   }
 
   async function onDisconnect() {
@@ -107,35 +220,156 @@ export default function SettingsPage() {
     setLoading(false);
     setMessage("GitHub 연결이 해제되었습니다.");
     setAuthMethod(null);
-    await refresh();
+    await refreshGithub();
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          GitHub SCM 연결 — OAuth 정식 연결(권장) 또는 PAT 보조 연결
-        </p>
-      </div>
+    <Page>
+      <PageHeader
+        eyebrow="Workspace"
+        title="Settings"
+        description={
+          <>
+            멤버 역할(VIEWER 포함) · GitHub SCM 연결
+            {myRole ? ` · 내 역할 ${myRole}` : ""}
+          </>
+        }
+      />
 
-      {error && (
-        <p className="mb-4 rounded-lg border border-red-900/50 bg-red-950/40 px-3 py-2 text-sm text-red-300">
-          {error}
-        </p>
-      )}
-      {message && (
-        <p className="mb-4 rounded-lg border border-emerald-900/40 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-300">
-          {message}
-        </p>
-      )}
+      {error ? <ErrorBanner message={error} /> : null}
+      {message ? <SuccessBanner message={message} /> : null}
 
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+      <Card className="mb-6">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-medium text-zinc-100" data-testid="members-heading">
+              Members
+            </h2>
+            <p className="mt-0.5 text-xs text-[var(--muted)]">
+              VIEWER는 Promote · Secret · Retry 등 변경 작업이 차단됩니다. 역할을
+              VIEWER로 바꿔 RBAC를 바로 확인할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        {canInvite ? (
+          <form
+            onSubmit={onInvite}
+            className="mb-5 flex flex-wrap items-end gap-2 border-b border-[var(--border)] pb-5"
+          >
+            <label className="min-w-[200px] flex-1 text-sm">
+              <span className="mb-1 block text-xs text-[var(--muted)]">
+                이메일
+              </span>
+              <input
+                type="email"
+                className="nimbus-input"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="viewer@nimbus.local"
+                required
+              />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-xs text-[var(--muted)]">역할</span>
+              <select
+                className="nimbus-input"
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value)}
+              >
+                {ROLE_OPTIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="submit"
+              disabled={memberBusy || !inviteEmail.trim()}
+              className="nimbus-btn-primary"
+            >
+              {memberBusy ? "처리 중…" : "초대"}
+            </button>
+          </form>
+        ) : (
+          <p className="mb-4 text-xs text-[var(--muted)]">
+            멤버 초대는 OWNER / ADMIN / PLATFORM_ENGINEER 만 가능합니다.
+          </p>
+        )}
+
+        {membersLoading ? (
+          <LoadingInline label="멤버를 불러오는 중…" />
+        ) : members.length === 0 ? (
+          <EmptyState
+            title="멤버가 없습니다"
+            description="워크스페이스에 멤버를 초대해 보세요."
+          />
+        ) : (
+          <ul className="divide-y divide-[var(--border)]">
+            {members.map((m) => {
+              const isSelf = m.userId === myUserId;
+              const isOwner = m.role === "OWNER";
+              return (
+                <li
+                  key={m.id}
+                  className="flex flex-wrap items-center justify-between gap-3 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-zinc-100">
+                      {m.name}
+                      {isSelf ? (
+                        <span className="ml-2 text-[11px] text-[var(--muted)]">
+                          (나)
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="text-xs text-[var(--muted)]">{m.email}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {canManageMembers && !isOwner ? (
+                      <select
+                        className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-xs"
+                        value={m.role}
+                        disabled={memberBusy}
+                        onChange={(e) => onRoleChange(m, e.target.value)}
+                      >
+                        {ROLE_OPTIONS.map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="rounded-full border border-[var(--border)] px-2.5 py-0.5 text-[11px] text-zinc-300">
+                        {m.role}
+                      </span>
+                    )}
+                    {canManageMembers && !isOwner && !isSelf ? (
+                      <button
+                        type="button"
+                        disabled={memberBusy}
+                        onClick={() => onRemove(m)}
+                        className="text-xs text-[var(--muted)] hover:text-rose-300 disabled:opacity-50"
+                      >
+                        제거
+                      </button>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+
+      <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-medium">GitHub SCM</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              연결 후 Service Wizard Deploy 시 실제 Private Repository가 생성됩니다.
+            <h2 className="text-sm font-medium text-zinc-100">GitHub SCM</h2>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              연결 후 Service Wizard Deploy 시 실제 Private Repository가
+              생성됩니다. Promote GitOps PR도 토큰이 있을 때 시도합니다.
             </p>
           </div>
           <span
@@ -156,7 +390,8 @@ export default function SettingsPage() {
             <li>상태: {health.status}</li>
             <li>방식: {health.authMethod ?? authMethod ?? "—"}</li>
             <li>
-              Rate Limit: {health.rateLimitRemaining ?? "—"} / {health.rateLimitLimit ?? "—"}
+              Rate Limit: {health.rateLimitRemaining ?? "—"} /{" "}
+              {health.rateLimitLimit ?? "—"}
             </li>
           </ul>
         )}
@@ -175,14 +410,13 @@ export default function SettingsPage() {
                 type="button"
                 onClick={onOauthConnect}
                 disabled={loading || !oauthConfigured}
-                className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-hover)] disabled:opacity-60"
+                className="nimbus-btn-primary disabled:opacity-60"
               >
                 {loading ? "이동 중…" : "GitHub OAuth로 연결"}
               </button>
               {!oauthConfigured && (
                 <p className="mt-2 text-xs text-amber-400/90">
-                  `.env` 에 Client ID/Secret 설정 후 API 재시작이 필요합니다. 자세한 내용은
-                  README · .env.example 참고.
+                  `.env` 에 Client ID/Secret 설정 후 API 재시작이 필요합니다.
                 </p>
               )}
             </div>
@@ -203,7 +437,7 @@ export default function SettingsPage() {
                     </span>
                     <input
                       type="password"
-                      className="w-full rounded-lg border border-[var(--border)] bg-black/30 px-3 py-2 text-sm outline-none focus:border-[var(--primary)]"
+                      className="nimbus-input"
                       value={token}
                       onChange={(e) => setToken(e.target.value)}
                       placeholder="ghp_…"
@@ -211,13 +445,10 @@ export default function SettingsPage() {
                       autoComplete="off"
                     />
                   </label>
-                  <p className="text-xs text-[var(--muted)]">
-                    토큰은 AES로 암호화 저장되며 API 응답에 평문이 노출되지 않습니다.
-                  </p>
                   <button
                     type="submit"
                     disabled={loading || !token.trim()}
-                    className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm hover:bg-white/5 disabled:opacity-60"
+                    className="nimbus-btn-ghost disabled:opacity-60"
                   >
                     {loading ? "연결 중…" : "PAT로 연결"}
                   </button>
@@ -230,14 +461,14 @@ export default function SettingsPage() {
             type="button"
             onClick={onDisconnect}
             disabled={loading}
-            className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm hover:bg-white/5 disabled:opacity-60"
+            className="nimbus-btn-ghost disabled:opacity-60"
           >
             연결 해제
           </button>
         )}
-      </section>
+      </Card>
 
-      <section className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+      <Card className="mt-6">
         <h2 className="mb-3 text-sm font-medium">Nimbus가 생성한 Repository</h2>
         {repos.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">
@@ -270,24 +501,7 @@ export default function SettingsPage() {
             ))}
           </ul>
         )}
-      </section>
-
-      <section className="mt-6 rounded-xl border border-dashed border-[var(--border)] p-4 text-xs text-[var(--muted)]">
-        <p className="mb-2 font-medium text-zinc-300">OAuth App 등록 요약</p>
-        <ol className="list-decimal space-y-1 pl-4">
-          <li>GitHub → Settings → Developer settings → OAuth Apps → New</li>
-          <li>Homepage URL: http://localhost:3000</li>
-          <li>
-            Authorization callback URL:{" "}
-            <code className="text-zinc-300">
-              http://localhost:8080/api/v1/github/oauth/callback
-            </code>
-          </li>
-          <li>
-            Client ID/Secret 을 <code className="text-zinc-300">.env</code> 에 넣고 API 재시작
-          </li>
-        </ol>
-      </section>
-    </div>
+      </Card>
+    </Page>
   );
 }

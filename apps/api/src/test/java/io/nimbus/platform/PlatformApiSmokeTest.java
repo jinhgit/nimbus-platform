@@ -43,6 +43,10 @@ class PlatformApiSmokeTest {
         String yaml = openapi.getResponse().getContentAsString();
         assertThat(yaml).contains("openapi: 3.0.3");
         assertThat(yaml).contains("/api/v1/ai/yaml/explain");
+        assertThat(yaml).contains("/api/v1/dashboard/overview");
+        assertThat(yaml).contains("/api/v1/auth/permissions");
+        assertThat(yaml).contains("/api/v1/workspaces/{workspaceId}/members");
+        assertThat(yaml).contains("/api/v1/environments/{environmentId}/promote");
 
         mockMvc.perform(get("/api/v1/openapi.json"))
                 .andExpect(status().isOk())

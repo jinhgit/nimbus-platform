@@ -159,8 +159,18 @@ public class WorkspaceService {
         if (!CAN_INVITE.contains(actor.getRole())) {
             throw new BusinessException(ErrorCode.WORKSPACE_PERMISSION);
         }
-        User invitee = userRepository.findByEmailAndDeletedAtIsNull(request.email())
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "User not found: " + request.email()));
+        String email = request.email().trim().toLowerCase();
+        User invitee = userRepository.findByEmailAndDeletedAtIsNull(email)
+                .orElseGet(() -> {
+                    // free-only: 미가입 이메일이면 로컬 유저 자동 생성 후 초대
+                    String localName = email.contains("@")
+                            ? email.substring(0, email.indexOf('@'))
+                            : email;
+                    if (localName.isBlank()) {
+                        localName = "invited-user";
+                    }
+                    return userRepository.save(User.createLocal(email, localName));
+                });
         if (memberRepository.existsByWorkspaceIdAndUserIdAndDeletedAtIsNull(workspaceId, invitee.getId())) {
             throw new BusinessException(ErrorCode.MEMBER_ALREADY);
         }
@@ -177,6 +187,15 @@ public class WorkspaceService {
                 role,
                 defaultTeam != null ? defaultTeam.getId() : null
         ));
+        auditService.recordSuccess(
+                principal,
+                AuditAction.INVITE_MEMBER,
+                "MEMBER",
+                created.getId(),
+                invitee.getEmail() + ":" + role.name(),
+                workspaceId,
+                "멤버 초대 " + role.name()
+        );
         return new WorkspaceDtos.MemberResponse(
                 created.getId(), invitee.getId(), invitee.getName(), invitee.getEmail(), created.getRole()
         );
@@ -205,6 +224,15 @@ public class WorkspaceService {
         target.changeRole(request.role());
         memberRepository.save(target);
         User user = userRepository.findByIdAndDeletedAtIsNull(target.getUserId()).orElse(null);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.UPDATE_MEMBER_ROLE,
+                "MEMBER",
+                target.getId(),
+                (user != null ? user.getEmail() : target.getUserId().toString()) + ":" + request.role(),
+                workspaceId,
+                "멤버 역할 변경 → " + request.role()
+        );
         return new WorkspaceDtos.MemberResponse(
                 target.getId(),
                 target.getUserId(),
@@ -226,8 +254,21 @@ public class WorkspaceService {
         if (target.getRole() == WorkspaceRole.OWNER) {
             throw new BusinessException(ErrorCode.WORKSPACE_LAST_OWNER);
         }
+        if (target.getUserId().equals(principal.userId())) {
+            throw new BusinessException(ErrorCode.WORKSPACE_PERMISSION, "Cannot remove yourself");
+        }
+        User user = userRepository.findByIdAndDeletedAtIsNull(target.getUserId()).orElse(null);
         target.softDelete();
         memberRepository.save(target);
+        auditService.recordSuccess(
+                principal,
+                AuditAction.REMOVE_MEMBER,
+                "MEMBER",
+                target.getId(),
+                user != null ? user.getEmail() : target.getUserId().toString(),
+                workspaceId,
+                "멤버 제거"
+        );
     }
 
     @Transactional(readOnly = true)

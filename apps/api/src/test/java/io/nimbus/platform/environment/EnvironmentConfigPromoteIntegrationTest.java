@@ -93,7 +93,7 @@ class EnvironmentConfigPromoteIntegrationTest {
                 .andExpect(jsonPath("$.data.key").value("LOG_LEVEL"))
                 .andExpect(jsonPath("$.data.value").value("INFO"));
 
-        // secret masked
+        // secret masked — promote also records thin GitOps (SIMULATED without SCM)
         MvcResult secretCreate = mockMvc.perform(post("/api/v1/environments/{id}/secrets", devEnvId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -140,7 +140,10 @@ class EnvironmentConfigPromoteIntegrationTest {
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.data.targetType").value("STAGE"))
                 .andExpect(jsonPath("$.data.variablesCopied").value(1))
-                .andExpect(jsonPath("$.data.secretsCopied").value(1));
+                .andExpect(jsonPath("$.data.secretsCopied").value(1))
+                .andExpect(jsonPath("$.data.gitOpsMode").value("SIMULATED"))
+                .andExpect(jsonPath("$.data.gitOpsHeadBranch").isNotEmpty())
+                .andExpect(jsonPath("$.data.gitOpsBaseBranch").isNotEmpty());
 
         // STAGE exists with copied variable
         MvcResult envsAfter = mockMvc.perform(get("/api/v1/services/{id}/environments", service.getId())

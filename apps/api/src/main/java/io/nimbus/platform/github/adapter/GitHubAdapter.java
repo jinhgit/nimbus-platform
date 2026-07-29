@@ -254,6 +254,44 @@ public class GitHubAdapter implements GitProvider {
         }
     }
 
+    @Override
+    public CreatedPullRequest createPullRequest(
+            String accessToken,
+            String owner,
+            String repo,
+            String title,
+            String body,
+            String head,
+            String base
+    ) {
+        try {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("title", title);
+            payload.put("body", body != null ? body : "");
+            payload.put("head", head);
+            payload.put("base", base);
+            String response = restClient.post()
+                    .uri("/repos/{owner}/{repo}/pulls", owner, repo)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .body(String.class);
+            JsonNode node = objectMapper.readTree(response);
+            return new CreatedPullRequest(
+                    node.path("number").asInt(0),
+                    node.path("html_url").asText(null),
+                    node.path("state").asText("open")
+            );
+        } catch (RestClientResponseException ex) {
+            throw mapHttpError(ex);
+        } catch (BusinessException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new BusinessException(ErrorCode.GITHUB_API_FAILED, ex.getMessage());
+        }
+    }
+
     private BusinessException mapHttpError(RestClientResponseException ex) {
         int status = ex.getStatusCode().value();
         String body = ex.getResponseBodyAsString();

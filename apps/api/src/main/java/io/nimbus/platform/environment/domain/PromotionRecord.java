@@ -51,6 +51,22 @@ public class PromotionRecord extends BaseEntity {
     @Column(length = 500)
     private String message;
 
+    /** SIMULATED | BRANCH_RECORDED | PR_CREATED */
+    @Column(name = "git_ops_mode", length = 32)
+    private String gitOpsMode;
+
+    @Column(name = "git_ops_head_branch", length = 120)
+    private String gitOpsHeadBranch;
+
+    @Column(name = "git_ops_base_branch", length = 120)
+    private String gitOpsBaseBranch;
+
+    @Column(name = "pull_request_url", length = 500)
+    private String pullRequestUrl;
+
+    @Column(name = "pull_request_number")
+    private Integer pullRequestNumber;
+
     @Column(name = "requested_by", nullable = false)
     private UUID requestedBy;
 
@@ -85,7 +101,22 @@ public class PromotionRecord extends BaseEntity {
         r.requestedBy = requestedBy;
         r.status = PromotionStatus.COMPLETED;
         r.finishedAt = Instant.now();
+        r.gitOpsMode = "SIMULATED";
         return r;
+    }
+
+    public void applyGitOps(
+            String mode,
+            String headBranch,
+            String baseBranch,
+            String pullRequestUrl,
+            Integer pullRequestNumber
+    ) {
+        this.gitOpsMode = mode;
+        this.gitOpsHeadBranch = headBranch;
+        this.gitOpsBaseBranch = baseBranch;
+        this.pullRequestUrl = pullRequestUrl;
+        this.pullRequestNumber = pullRequestNumber;
     }
 
     public UUID getServiceId() {
@@ -126,6 +157,26 @@ public class PromotionRecord extends BaseEntity {
 
     public String getMessage() {
         return message;
+    }
+
+    public String getGitOpsMode() {
+        return gitOpsMode;
+    }
+
+    public String getGitOpsHeadBranch() {
+        return gitOpsHeadBranch;
+    }
+
+    public String getGitOpsBaseBranch() {
+        return gitOpsBaseBranch;
+    }
+
+    public String getPullRequestUrl() {
+        return pullRequestUrl;
+    }
+
+    public Integer getPullRequestNumber() {
+        return pullRequestNumber;
     }
 
     public UUID getRequestedBy() {

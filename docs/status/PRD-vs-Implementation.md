@@ -56,7 +56,7 @@
 |------|:----:|------|
 | Auth / JWT / Refresh | ✅ | |
 | RBAC (역할 매트릭스 전체) | 🔶 | WorkspaceRole + `requireMutator`; VIEWER는 Promote/Secret/Retry/Project 생성 차단 (UI+API) |
-| Workspace / Team / Member | 🔶 | 핵심 CRUD; Invite 풀 플로우 얇음 |
+| Workspace / Team / Member | ✅~🔶 | Members UI(Settings) · Invite · 역할 변경(VIEWER) · Audit |
 | Dashboard widgets | ✅ | `GET /api/v1/dashboard/overview` — counts + recent promote/saga/audit |
 | Service Wizard 7단계 | ✅ | |
 | GitHub Integration | 🔶 | OAuth SCM + PAT + Adapter |
@@ -65,7 +65,7 @@
 | Notification (Realtime) | ❌ | |
 | Audit Log 검색 | ✅ | `GET /api/v1/audit` 필터 (action/resource/actor) |
 | Environment 도메인 | ✅ | Sprint A — DEV/STAGE/PROD 엔티티·API·UI |
-| Environment Promote | ✅ | Sprint B — DEV→STAGE→PROD + config 복사 + Audit |
+| Environment Promote | ✅ | Sprint B + thin GitOps (branch meta · PR 시도 · SIMULATED fallback) |
 
 ### 2.3 PRD v1.3 — Infrastructure
 
@@ -127,7 +127,7 @@
 | Phase 3 Infra 풀 | 🔶 |
 | Phase 4 AI 풀 | 🔶 |
 | Phase 5 Observability 풀 | 🔶 |
-| Phase 6 Coverage/E2E | 🔶 | PlatformApiSmokeTest · openapi.yaml 스냅샷 |
+| Phase 6 Coverage/E2E | 🔶~✅ | Smoke + Playwright 1경로 · OpenAPI sync CI |
 
 ---
 
@@ -213,8 +213,10 @@ DEMO-SCENARIO 기준 핵심 플로우는 **구현됨**.
 
 | **YAML Explain API + Wizard UI** | ✅ |
 | **Service Detail YAML Explain + OpenAPI 스냅샷 + Smoke** | ✅ |
+| **Dashboard widgets + RBAC + Loading/Empty/Error 통일** | ✅ |
+| **Members/Invite UI · Promote GitOps thin · Playwright · OpenAPI CI** | ✅ |
 
-**다음:** Dashboard 위젯 / Ollama Provider / Incident (얇게)
+**다음:** Ollama Provider / Incident (얇게) / Pipeline 실연동
 
 ---
 

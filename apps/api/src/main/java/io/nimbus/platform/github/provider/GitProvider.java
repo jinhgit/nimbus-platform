@@ -33,9 +33,25 @@ public interface GitProvider {
             String keyId
     );
 
+    /**
+     * Thin pull request create. Implementations may throw if branches missing.
+     */
+    CreatedPullRequest createPullRequest(
+            String accessToken,
+            String owner,
+            String repo,
+            String title,
+            String body,
+            String head,
+            String base
+    );
+
     record RateLimitStatus(int remaining, int limit, long resetEpochSeconds) {
     }
 
     record RepoPublicKey(String keyId, String keyBase64) {
+    }
+
+    record CreatedPullRequest(int number, String htmlUrl, String state) {
     }
 }

@@ -752,6 +752,33 @@ export default function ServiceDetailPage() {
                   {p.status}
                   {" · "}
                   변수 {p.variablesCopied} / 시크릿 {p.secretsCopied}
+                  {p.gitOpsMode ? (
+                    <>
+                      {" · "}
+                      <span className="text-sky-300/90">
+                        GitOps {p.gitOpsMode}
+                      </span>
+                      {p.gitOpsHeadBranch && p.gitOpsBaseBranch
+                        ? ` (${p.gitOpsHeadBranch} → ${p.gitOpsBaseBranch})`
+                        : ""}
+                      {p.pullRequestUrl ? (
+                        <>
+                          {" · "}
+                          <a
+                            href={p.pullRequestUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[var(--primary)] hover:underline"
+                          >
+                            PR
+                            {p.pullRequestNumber
+                              ? ` #${p.pullRequestNumber}`
+                              : ""}
+                          </a>
+                        </>
+                      ) : null}
+                    </>
+                  ) : null}
                   {p.finishedAt
                     ? ` · ${new Date(p.finishedAt).toLocaleString("ko-KR")}`
                     : ""}

@@ -10,6 +10,13 @@ Platform Engineering Portal을 목표로 한다.
 > Backstage 클론이 아니다.  
 > Catalog + Blueprint + GitOps + AI Decision Engine 을 한 플랫폼으로 묶는 방향.
 
+### 완전 무료 (Free-only)
+
+- **과금 클라우드 / 유료 LLM API / 결제·구독 모델 없음**
+- 로컬: Docker (Postgres, Redis), k3d·kind, Ollama, ArgoCD OSS
+- GitHub Free + Actions free 한도 안에서 데모
+- 상세: [docs/architecture/05-Free-Only-Constraints.md](docs/architecture/05-Free-Only-Constraints.md)
+
 ---
 
 ## 문서

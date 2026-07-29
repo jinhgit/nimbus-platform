@@ -18,6 +18,7 @@
 | 처음부터 제품 이야기 | [prd/PRD-v1.1-…](prd/PRD-v1.1-Project-Overview.md) |
 | 구현 스펙 | [api/](api/) |
 | 목록 전체 | [INDEX.md](INDEX.md) |
+| **완전 무료 제약** | [architecture/05-Free-Only-Constraints.md](architecture/05-Free-Only-Constraints.md) |
 | 로컬 실행 | [../README.md](../README.md) |
 
 ---

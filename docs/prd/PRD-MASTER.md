@@ -24,6 +24,13 @@ v1.1~v1.5 PRD 와 API 명세를 **한 장으로 훑기 위한 요약 레이어**
 
 인프라 콘솔이 아니라 **Developer Workspace**.
 
+### Free-only
+
+이 프로젝트는 **완전 무료**로 구현·데모한다.  
+과금 클라우드(EKS 등), 유료 LLM API, 결제/구독 모델 없음.  
+실행 경로는 Docker + k3d/kind + Ollama + GitHub Free + OSS GitOps.  
+→ [05-Free-Only-Constraints](../architecture/05-Free-Only-Constraints.md)
+
 ---
 
 ## 2. 왜 만드는가

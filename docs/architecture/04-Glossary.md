@@ -24,3 +24,5 @@
 | **HPA** | Horizontal Pod Autoscaler |
 | **Soft Delete** | 물리 삭제 대신 `deleted_at` 로 숨김 |
 | **TVP** | Thin Viable Platform — 얇게 시작해 확장하는 플랫폼 접근 |
+| **Free-only** | 과금 클라우드·유료 API·결제 모델 없이 로컬/OSS/무료 티어만 사용 |
+| **Ollama** | 로컬 LLM 런타임 — Nimbus AI 기본 Provider |

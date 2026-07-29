@@ -40,6 +40,7 @@ Nimbus 설계 문서 전체 목록.
 | [02-Monorepo-Layout](architecture/02-Monorepo-Layout.md) | 코드 트리 |
 | [03 Design Evolution Map](architecture/03-Canonical-Decisions.md) | 설계 누적 레이어 정리 |
 | [04-Glossary](architecture/04-Glossary.md) | 용어 |
+| [05-Free-Only-Constraints](architecture/05-Free-Only-Constraints.md) | **완전 무료** 제약·대체 경로 |
 
 ---
 

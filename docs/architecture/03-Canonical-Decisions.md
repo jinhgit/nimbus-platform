@@ -3,7 +3,8 @@
 설계를 쌓아가며 보강된 레이어를 한곳에 모아 둔 문서다.  
 **기존 PRD/API를 대체하지 않는다.** 옆에 덧붙인 확장 메모에 가깝다.
 
-누적 일자: 2026-07-29
+누적 일자: 2026-07-29  
+**(+)** Free-only 제약: [05-Free-Only-Constraints.md](05-Free-Only-Constraints.md)
 
 함께 보면 좋은 원본:
 
@@ -71,6 +72,12 @@ Terraform (infra 코드/파일)
 직접 `kubectl apply` 를 메인 경로로 쓰지 않고, Git을 배포 소스로 둔다.  
 Promotion(DEV→STAGE→PROD)도 PR/merge → ArgoCD 쪽과 맞물린다.
 
+### Free-only 실행 환경
+
+- 클러스터: **k3d / kind** (EKS 등 과금 클러스터 없음)
+- Terraform/Helm/Argo: **파일 생성 + 로컬 적용** (AWS apply 기본 off)
+- 상세: [05-Free-Only-Constraints.md](05-Free-Only-Constraints.md)
+
 ---
 
 ## 4. Service Wizard 보강
@@ -109,6 +116,7 @@ Context Builder → AIProvider → Guardrail → Recommendation → Wizard/Porta
 - 채팅만이 아니라 Platform Engineer 역할 (리뷰, 추천, 장애 분석).
 - reason + confidence.
 - Secret 마스킹, Provider 교체, Catalog 안에서의 추천.
+- **Free-only:** 기본 Provider = **Ollama (로컬)**. 유료 LLM API 키 필수 경로 없음.
 
 ---
 
@@ -148,12 +156,15 @@ GitHub App 권장, OAuth App 으로도 MVP 가능.
 |-------|------|
 | Web | Next.js 15, TypeScript, Tailwind (shadcn 도입 예정) |
 | API | Java 21, Spring Boot **4.0.x** (초기 문서 3.5 표기 → 코드 생성 시 4.x로 맞춤) |
-| DB | PostgreSQL 16 |
-| Cache | Redis 7 |
-| Local K8s | k3d / kind |
-| Cloud K8s | EKS 목표 |
+| DB | PostgreSQL 16 (Docker) |
+| Cache | Redis 7 (Docker) |
+| K8s | **k3d / kind only** (과금 클러스터 없음) |
+| AI | **Ollama 로컬** (유료 LLM API 기본 경로 없음) |
+| Git | GitHub Free + Actions free 범위 주의 |
+| Observability | 로컬 Prom / Grafana / Loki |
 
-문서의 초기 버전 숫자와 코드 버전이 조금 달라도, **의도는 동일**하고 구현 레포 버전이 실제 기준이 된다.
+문서의 초기 버전 숫자와 코드 버전이 조금 달라도, **의도는 동일**하고 구현 레포 버전이 실제 기준이 된다.  
+**완전 무료:** 과금 클라우드·유료 API·결제 모델 없음 → [05-Free-Only-Constraints](05-Free-Only-Constraints.md)
 
 ---
 
@@ -170,13 +181,14 @@ GitHub App 권장, OAuth App 으로도 MVP 가능.
 - Audit · Dashboard  
 - Observability 기본 연동  
 
-### 이후에 더 얹을 것
+### 이후에 더 얹을 것 (여전히 free 전제)
 
-- Multi-cloud / Multi-cluster  
-- Terraform apply 풀 프로비저닝  
-- FinOps, AI Auto Healing  
-- OPA / Vault  
-- Marketplace, MCP multi-agent  
+- Multi-cluster **로컬/라벨 수준** 실험  
+- AI Auto Healing 규칙 엔진 (로컬)  
+- OPA / 로컬 Vault OSS (선택)  
+- Marketplace·MCP 는 free tool 범위만  
+
+유료 클라우드 풀 프로비저닝·FinOps 청구 연동·유료 LLM 은 이 프로젝트 기본 범위에 넣지 않는다.  
 
 ---
 

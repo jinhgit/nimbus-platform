@@ -5,7 +5,7 @@ info:
     AI Native Internal Developer Platform REST API (핵심 엔드포인트 스냅샷).
     상세 시나리오 스펙은 docs/api/API-*.md 를 함께 본다.
     저장소 소스: docs/api/openapi.yaml · 런타임 서빙: classpath:openapi.yaml (동기화 필수).
-  version: 0.3.0
+  version: 0.4.0
   contact:
     name: Nimbus Platform
 
@@ -660,6 +660,102 @@ paths:
       responses:
         "200":
           description: Provider status
+
+
+  /api/v1/secrets/{secretId}/rotate:
+    post:
+      tags: [Environments]
+      summary: Rotate secret (version++ · optional random)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: secretId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value: { type: string }
+                generateRandom: { type: boolean }
+      responses:
+        "200":
+          description: Rotated (plainValueOnce only when generated)
+
+  /api/v1/projects/{projectId}/archive:
+    post:
+      tags: [Projects]
+      summary: Archive project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Archived
+
+  /api/v1/projects/{projectId}/restore:
+    post:
+      tags: [Projects]
+      summary: Restore archived project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Restored
+
+  /api/v1/projects/{projectId}/clone:
+    post:
+      tags: [Projects]
+      summary: Clone project metadata
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Cloned project
+
+  /api/v1/catalog/{templateId}:
+    get:
+      tags: [Services]
+      summary: Catalog template detail (blueprint/helm/tf/workflow)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Template detail
+
+  /api/v1/services/{serviceId}/argo-sync:
+    get:
+      tags: [Deployments]
+      summary: Thin ArgoCD Application sync status
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/serviceId"
+      responses:
+        "200":
+          description: LIVE if Application CR found else SIMULATED
 
 
 components:

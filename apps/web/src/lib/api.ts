@@ -406,9 +406,35 @@ export async function createProject(input: {
   return apiPost<Project>("/api/v1/projects", input);
 }
 
+export async function archiveProject(projectId: string) {
+  return apiPost<Project>(`/api/v1/projects/${projectId}/archive`);
+}
+
+export async function restoreProject(projectId: string) {
+  return apiPost<Project>(`/api/v1/projects/${projectId}/restore`);
+}
+
+export async function cloneProject(
+  projectId: string,
+  body?: { name?: string; description?: string },
+) {
+  return apiPost<Project>(`/api/v1/projects/${projectId}/clone`, body ?? {});
+}
+
 export async function fetchCatalog(q?: string) {
   const qs = q ? `?q=${encodeURIComponent(q)}` : "";
   return apiGet<CatalogTemplate[]>(`/api/v1/catalog${qs}`);
+}
+
+export type CatalogTemplateDetail = CatalogTemplate & {
+  blueprint?: string;
+  defaultHelmValues?: string;
+  defaultTerraformVars?: string;
+  defaultWorkflow?: string;
+};
+
+export async function fetchCatalogTemplate(templateId: string) {
+  return apiGet<CatalogTemplateDetail>(`/api/v1/catalog/${templateId}`);
 }
 
 export async function fetchServices(params: {
@@ -1201,6 +1227,44 @@ export async function revealEnvSecret(secretId: string) {
   return apiPost<{ id: string; key: string; value: string; version?: number }>(
     `/api/v1/secrets/${secretId}/reveal`,
   );
+}
+
+export type RotateSecretResult = {
+  id: string;
+  key: string;
+  maskedValue: string;
+  version: number;
+  generated: boolean;
+  plainValueOnce?: string;
+  rotatedAt?: string;
+};
+
+export async function rotateEnvSecret(
+  secretId: string,
+  body?: { value?: string; generateRandom?: boolean },
+) {
+  return apiPost<RotateSecretResult>(
+    `/api/v1/secrets/${secretId}/rotate`,
+    body ?? { generateRandom: true },
+  );
+}
+
+export type ArgoSyncStatus = {
+  serviceId: string;
+  serviceName: string;
+  mode: string;
+  syncStatus?: string;
+  healthStatus?: string;
+  applicationName?: string;
+  namespace?: string;
+  repoUrl?: string;
+  targetRevision?: string;
+  message?: string;
+  applicationManifest?: string;
+};
+
+export async function fetchArgoSync(serviceId: string) {
+  return apiGet<ArgoSyncStatus>(`/api/v1/services/${serviceId}/argo-sync`);
 }
 
 export async function promoteEnvironment(

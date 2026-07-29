@@ -88,6 +88,11 @@ public class LocalKubernetesGateway {
         return client != null;
     }
 
+    /** Nullable client for optional CRD probes (Argo etc.). */
+    public KubernetesClient clientOrNull() {
+        return client;
+    }
+
     public String getUnavailableReason() {
         return unavailableReason;
     }

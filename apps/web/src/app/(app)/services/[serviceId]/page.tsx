@@ -13,6 +13,7 @@ import {
   deleteEnvVariable,
   explainYaml,
   fetchArchitectureReview,
+  fetchArgoSync,
   fetchEnvironmentHealth,
   fetchEnvSecrets,
   fetchEnvVariables,
@@ -30,9 +31,11 @@ import {
   promoteEnvironment,
   restoreServiceEnvironment,
   revealEnvSecret,
+  rotateEnvSecret,
   syncEnvSecretsToGitHub,
   type AppService,
   type ArchitectureReview,
+  type ArgoSyncStatus,
   type EnvSecret,
   type EnvVariable,
   type K8sDeployment,
@@ -94,6 +97,8 @@ export default function ServiceDetailPage() {
   const [newEnvType, setNewEnvType] = useState("STAGE");
   const [canMutate, setCanMutate] = useState(true);
   const [workspaceRole, setWorkspaceRole] = useState<string | null>(null);
+  const [argo, setArgo] = useState<ArgoSyncStatus | null>(null);
+  const [rotatedOnce, setRotatedOnce] = useState<Record<string, string>>({});
 
   const loadConfig = useCallback(async (envId: string) => {
     const [v, s] = await Promise.all([
@@ -110,7 +115,7 @@ export default function ServiceDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [me, s, d, m, p, l, envs, promo, deps, tl] = await Promise.all([
+      const [me, s, d, m, p, l, envs, promo, deps, tl, ar] = await Promise.all([
         fetchMe(),
         fetchService(serviceId),
         fetchK8sDeploymentByService(serviceId),
@@ -121,9 +126,11 @@ export default function ServiceDetailPage() {
         fetchServicePromotions(serviceId),
         fetchServiceDeployments(serviceId),
         fetchServiceTimeline(serviceId),
+        fetchArgoSync(serviceId),
       ]);
       setCanMutate(me.data?.canMutate !== false);
       setWorkspaceRole(me.data?.workspaceRole ?? null);
+      setArgo(ar.success ? (ar.data ?? null) : null);
       if (!s.success || !s.data) {
         setError(s.error?.message ?? "서비스를 찾을 수 없습니다.");
         setService(null);
@@ -340,6 +347,34 @@ export default function ServiceDetailPage() {
     setEnvBusy(true);
     await deleteEnvSecret(id);
     setEnvBusy(false);
+    await loadConfig(selectedEnvId);
+  }
+
+  async function onRotateSecret(id: string) {
+    if (!selectedEnvId) return;
+    setEnvBusy(true);
+    setError(null);
+    setMessage(null);
+    const res = await rotateEnvSecret(id, { generateRandom: true });
+    setEnvBusy(false);
+    if (!res.success || !res.data) {
+      setError(res.error?.message ?? "시크릿 로테이션 실패");
+      return;
+    }
+    setMessage(
+      `시크릿 로테이션 · ${res.data.key} · v${res.data.version}` +
+        (res.data.generated ? " (자동 생성)" : ""),
+    );
+    if (res.data.plainValueOnce) {
+      setRotatedOnce((prev) => ({
+        ...prev,
+        [id]: res.data!.plainValueOnce!,
+      }));
+      setRevealMap((prev) => ({
+        ...prev,
+        [id]: res.data!.plainValueOnce!,
+      }));
+    }
     await loadConfig(selectedEnvId);
   }
 
@@ -695,7 +730,10 @@ export default function ServiceDetailPage() {
                         </span>
                       </span>
                       {canMutate ? (
-                        <span className="flex gap-2">
+                        <span className="flex flex-wrap gap-2">
+                          <span className="text-[10px] text-[var(--muted)]">
+                            v{s.version ?? 1}
+                          </span>
                           {!revealMap[s.id] && (
                             <button
                               type="button"
@@ -705,6 +743,13 @@ export default function ServiceDetailPage() {
                               보기
                             </button>
                           )}
+                          <button
+                            type="button"
+                            className="text-sky-300/90 hover:underline"
+                            onClick={() => onRotateSecret(s.id)}
+                          >
+                            로테이션
+                          </button>
                           <button
                             type="button"
                             className="text-[var(--muted)] hover:text-red-300"
@@ -718,9 +763,15 @@ export default function ServiceDetailPage() {
                   ))
                 )}
               </ul>
+              {Object.keys(rotatedOnce).length > 0 ? (
+                <p className="mt-2 text-[10px] text-amber-200/90">
+                  로테이션으로 생성된 값은 이 화면에서 한 번만 표시됩니다. 안전한 곳에
+                  복사하세요.
+                </p>
+              ) : null}
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[10px] text-[var(--muted)]">
-                  AES 저장 · 마스킹 목록 · 보기 시 감사 기록
+                  AES 저장 · 마스킹 · 로테이션(v++) · 보기 시 감사 기록
                 </p>
                 {canMutate ? (
                   <button
@@ -785,6 +836,51 @@ export default function ServiceDetailPage() {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+      </section>
+
+      {/* ArgoCD thin */}
+      <section className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-medium">ArgoCD Sync</h2>
+            <p className="mt-0.5 text-xs text-[var(--muted)]">
+              Application CR 조회(있으면 LIVE) · 없으면 매니페스트 SIMULATED
+            </p>
+          </div>
+          {argo ? <StatusBadge value={argo.mode} /> : null}
+        </div>
+        {!argo ? (
+          <p className="text-sm text-[var(--muted)]">Argo 상태를 불러오지 못했습니다.</p>
+        ) : (
+          <div className="space-y-3 text-sm">
+            <ul className="grid gap-2 sm:grid-cols-2">
+              <li className="text-[var(--muted)]">
+                Sync ·{" "}
+                <span className="text-zinc-200">{argo.syncStatus ?? "—"}</span>
+              </li>
+              <li className="text-[var(--muted)]">
+                Health ·{" "}
+                <span className="text-zinc-200">{argo.healthStatus ?? "—"}</span>
+              </li>
+              <li className="text-[var(--muted)]">
+                App ·{" "}
+                <span className="text-zinc-200">
+                  {argo.applicationName ?? "—"}
+                </span>
+              </li>
+              <li className="text-[var(--muted)]">
+                NS ·{" "}
+                <span className="text-zinc-200">{argo.namespace ?? "—"}</span>
+              </li>
+            </ul>
+            <p className="text-xs text-[var(--muted)]">{argo.message}</p>
+            {argo.applicationManifest ? (
+              <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-[var(--border)] bg-black/30 p-3 font-mono text-[10px] text-zinc-300">
+                {argo.applicationManifest}
+              </pre>
+            ) : null}
           </div>
         )}
       </section>

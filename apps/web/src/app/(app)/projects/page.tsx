@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
+  archiveProject,
+  cloneProject,
   createProject,
   fetchMe,
   fetchProjects,
+  restoreProject,
   type Project,
 } from "@/lib/api";
 import {
@@ -27,6 +30,7 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [canMutate, setCanMutate] = useState(true);
   const [role, setRole] = useState<string | null>(null);
 
@@ -78,6 +82,48 @@ export default function ProjectsPage() {
     await load(workspaceId);
   }
 
+  async function onArchive(p: Project) {
+    if (!workspaceId || !canMutate) return;
+    setBusyId(p.id);
+    setError(null);
+    const res = await archiveProject(p.id);
+    setBusyId(null);
+    if (!res.success) {
+      setError(res.error?.message ?? "보관 실패");
+      return;
+    }
+    await load(workspaceId);
+  }
+
+  async function onRestore(p: Project) {
+    if (!workspaceId || !canMutate) return;
+    setBusyId(p.id);
+    setError(null);
+    const res = await restoreProject(p.id);
+    setBusyId(null);
+    if (!res.success) {
+      setError(res.error?.message ?? "복원 실패");
+      return;
+    }
+    await load(workspaceId);
+  }
+
+  async function onClone(p: Project) {
+    if (!workspaceId || !canMutate) return;
+    setBusyId(p.id);
+    setError(null);
+    const res = await cloneProject(p.id, {
+      name: `${p.name} Copy`,
+      description: p.description,
+    });
+    setBusyId(null);
+    if (!res.success) {
+      setError(res.error?.message ?? "복제 실패");
+      return;
+    }
+    await load(workspaceId);
+  }
+
   if (loading) {
     return (
       <Page>
@@ -98,12 +144,17 @@ export default function ProjectsPage() {
             <Link href="/wizard" className="text-[var(--primary)] hover:underline">
               Service Wizard
             </Link>
-            에서 생성합니다.
+            에서 생성합니다. 보관·복제·복원을 지원합니다.
           </>
         }
       />
 
-      {error ? <ErrorBanner message={error} onRetry={() => workspaceId && load(workspaceId)} /> : null}
+      {error ? (
+        <ErrorBanner
+          message={error}
+          onRetry={() => workspaceId && load(workspaceId)}
+        />
+      ) : null}
       {!canMutate ? <ReadOnlyBanner role={role} /> : null}
 
       <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
@@ -151,22 +202,58 @@ export default function ProjectsPage() {
             />
           ) : (
             <ul className="divide-y divide-[var(--border)]">
-              {projects.map((p) => (
-                <li
-                  key={p.id}
-                  className="flex items-start justify-between gap-4 px-5 py-4 transition hover:bg-white/[0.02]"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium text-zinc-100">{p.name}</p>
-                    {p.description ? (
-                      <p className="mt-1 text-xs text-[var(--muted)]">
-                        {p.description}
-                      </p>
-                    ) : null}
-                  </div>
-                  <StatusBadge value={p.status} />
-                </li>
-              ))}
+              {projects.map((p) => {
+                const archived = p.status === "ARCHIVED";
+                return (
+                  <li
+                    key={p.id}
+                    className="flex flex-wrap items-start justify-between gap-4 px-5 py-4 transition hover:bg-white/[0.02]"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-zinc-100">{p.name}</p>
+                      {p.description ? (
+                        <p className="mt-1 text-xs text-[var(--muted)]">
+                          {p.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      <StatusBadge value={p.status} />
+                      {canMutate ? (
+                        <>
+                          <button
+                            type="button"
+                            disabled={busyId === p.id}
+                            onClick={() => onClone(p)}
+                            className="text-xs text-[var(--primary)] hover:underline disabled:opacity-50"
+                          >
+                            복제
+                          </button>
+                          {archived ? (
+                            <button
+                              type="button"
+                              disabled={busyId === p.id}
+                              onClick={() => onRestore(p)}
+                              className="text-xs text-emerald-300 hover:underline disabled:opacity-50"
+                            >
+                              복원
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={busyId === p.id}
+                              onClick={() => onArchive(p)}
+                              className="text-xs text-[var(--muted)] hover:text-amber-200 disabled:opacity-50"
+                            >
+                              보관
+                            </button>
+                          )}
+                        </>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>

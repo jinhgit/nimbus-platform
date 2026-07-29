@@ -78,4 +78,13 @@ public class ProjectController {
         NimbusPrincipal principal = SecurityUtils.requirePrincipal();
         return ApiResponse.ok(projectService.restore(principal, projectId));
     }
+
+    @PostMapping("/{projectId}/clone")
+    public ApiResponse<ProjectDtos.ProjectResponse> clone(
+            @PathVariable UUID projectId,
+            @RequestBody(required = false) ProjectDtos.CloneProjectRequest request
+    ) {
+        NimbusPrincipal principal = SecurityUtils.requirePrincipal();
+        return ApiResponse.ok(projectService.clone(principal, projectId, request));
+    }
 }

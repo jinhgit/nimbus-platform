@@ -109,6 +109,19 @@ public class EnvironmentConfigController {
         return ApiResponse.ok(configService.revealSecret(principal, secretId));
     }
 
+    @PostMapping("/secrets/{secretId}/rotate")
+    public ApiResponse<ConfigDtos.RotateSecretResponse> rotateSecret(
+            @PathVariable UUID secretId,
+            @RequestBody(required = false) ConfigDtos.RotateSecretRequest request
+    ) {
+        NimbusPrincipal principal = SecurityUtils.requirePrincipal();
+        return ApiResponse.ok(configService.rotateSecret(
+                principal,
+                secretId,
+                request != null ? request : new ConfigDtos.RotateSecretRequest(null, true)
+        ));
+    }
+
     @PostMapping("/environments/{environmentId}/secrets/sync-github")
     public ApiResponse<ConfigDtos.SecretSyncResponse> syncGitHubSecrets(
             @PathVariable UUID environmentId,

@@ -15,7 +15,7 @@ const STATIC_ITEMS: PaletteItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/dashboard", keywords: "home overview" },
   { id: "projects", label: "Projects", href: "/projects", keywords: "프로젝트" },
   { id: "services", label: "Services", href: "/services", keywords: "서비스" },
-  { id: "catalog", label: "Catalog", href: "/catalog", keywords: "template" },
+  { id: "catalog", label: "Catalog", href: "/catalog", keywords: "template blueprint" },
   { id: "wizard", label: "Create Service", href: "/wizard", keywords: "wizard 생성" },
   { id: "pipelines", label: "Pipelines", href: "/pipelines", keywords: "ci build actions" },
   { id: "incidents", label: "Incidents", href: "/incidents", keywords: "이슈 failure saga" },

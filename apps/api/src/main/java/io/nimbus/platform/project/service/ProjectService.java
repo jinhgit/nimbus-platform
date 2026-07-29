@@ -167,6 +167,64 @@ public class ProjectService {
         return toResponse(saved);
     }
 
+    /**
+     * Clone project metadata only (not services). Name auto-suffix if omitted.
+     */
+    @Transactional
+    public ProjectDtos.ProjectResponse clone(
+            NimbusPrincipal principal,
+            UUID projectId,
+            ProjectDtos.CloneProjectRequest request
+    ) {
+        Project source = requireProject(projectId);
+        workspacePermissionService.requireMutator(source.getWorkspaceId(), principal.userId());
+
+        String baseName = request != null && request.name() != null && !request.name().isBlank()
+                ? request.name().trim()
+                : source.getName() + " Copy";
+        String name = uniqueCloneName(source.getWorkspaceId(), baseName);
+        String description = request != null && request.description() != null
+                ? request.description()
+                : source.getDescription();
+
+        Project cloned = projectRepository.save(Project.create(
+                source.getWorkspaceId(),
+                source.getTeamId(),
+                name,
+                description,
+                source.getVisibility(),
+                principal.userId()
+        ));
+        auditService.recordSuccess(
+                principal,
+                AuditAction.CREATE_PROJECT,
+                "PROJECT",
+                cloned.getId(),
+                cloned.getName(),
+                cloned.getWorkspaceId(),
+                "프로젝트 복제 from " + source.getName()
+        );
+        return toResponse(cloned);
+    }
+
+    private String uniqueCloneName(UUID workspaceId, String base) {
+        String candidate = base.length() > 50 ? base.substring(0, 50) : base;
+        if (!projectRepository.existsByWorkspaceIdAndNameAndDeletedAtIsNull(workspaceId, candidate)) {
+            return candidate;
+        }
+        for (int i = 2; i < 100; i++) {
+            String suffix = " " + i;
+            String stem = base.length() + suffix.length() > 50
+                    ? base.substring(0, Math.max(3, 50 - suffix.length()))
+                    : base;
+            candidate = stem + suffix;
+            if (!projectRepository.existsByWorkspaceIdAndNameAndDeletedAtIsNull(workspaceId, candidate)) {
+                return candidate;
+            }
+        }
+        return base.substring(0, Math.min(40, base.length())) + "-" + System.currentTimeMillis() % 10000;
+    }
+
     private Project requireProject(UUID projectId) {
         return projectRepository.findByIdAndDeletedAtIsNull(projectId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PROJECT_NOT_FOUND));

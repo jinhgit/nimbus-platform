@@ -54,6 +54,27 @@ public final class ConfigDtos {
     ) {
     }
 
+    /**
+     * value 가 있으면 해당 값으로, 없거나 generateRandom=true 이면 플랫폼이 생성.
+     */
+    public record RotateSecretRequest(
+            @Size(max = 2000) String value,
+            Boolean generateRandom
+    ) {
+    }
+
+    public record RotateSecretResponse(
+            UUID id,
+            String key,
+            String maskedValue,
+            Integer version,
+            boolean generated,
+            /** 생성 시에만 1회 반환 (저장 후 재조회 불가) */
+            String plainValueOnce,
+            Instant rotatedAt
+    ) {
+    }
+
     /** 목록/조회: 값은 마스킹. reveal API 에서만 평문. */
     public record SecretResponse(
             UUID id,

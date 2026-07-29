@@ -32,6 +32,7 @@ REQUIRED_PATHS=(
   "/api/v1/ai/status"
   "/api/v1/ai/yaml/explain"
   "/api/v1/audit"
+  "/api/v1/secrets/{secretId}/rotate"
 )
 
 for p in "${REQUIRED_PATHS[@]}"; do

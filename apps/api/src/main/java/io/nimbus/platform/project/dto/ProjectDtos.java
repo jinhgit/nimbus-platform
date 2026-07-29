@@ -31,6 +31,12 @@ public final class ProjectDtos {
     ) {
     }
 
+    public record CloneProjectRequest(
+            @Size(min = 3, max = 50) String name,
+            @Size(max = 500) String description
+    ) {
+    }
+
     public record ProjectResponse(
             UUID id,
             String name,

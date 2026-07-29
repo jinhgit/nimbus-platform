@@ -163,9 +163,58 @@ public class EnvironmentConfigService {
         auditService.recordSuccess(
                 principal, AuditAction.UPDATE_SECRET, "SECRET",
                 saved.getId(), saved.getKey(), saved.getWorkspaceId(),
-                "Secret rotated v" + saved.getRotationVersion()
+                "Secret updated v" + saved.getRotationVersion()
         );
         return toSecretMasked(saved);
+    }
+
+    /**
+     * Explicit rotation — version++, optional random generation, ROTATE_SECRET audit.
+     * Generated plain value returned once in response only.
+     */
+    @Transactional
+    public ConfigDtos.RotateSecretResponse rotateSecret(
+            NimbusPrincipal principal,
+            UUID secretId,
+            ConfigDtos.RotateSecretRequest request
+    ) {
+        EnvSecret secret = secretRepository.findByIdAndDeletedAtIsNull(secretId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SECRET_NOT_FOUND));
+        requireWritableEnv(principal, secret.getEnvironmentId());
+
+        boolean generate = request != null
+                && (Boolean.TRUE.equals(request.generateRandom())
+                || request.value() == null
+                || request.value().isBlank());
+        String plain;
+        if (generate) {
+            plain = generateSecretValue();
+        } else {
+            plain = request.value().trim();
+        }
+        secret.rotate(tokenCryptoService.encrypt(plain));
+        EnvSecret saved = secretRepository.save(secret);
+        auditService.recordSuccess(
+                principal, AuditAction.ROTATE_SECRET, "SECRET",
+                saved.getId(), saved.getKey(), saved.getWorkspaceId(),
+                "Secret rotated v" + saved.getRotationVersion()
+                        + (generate ? " (generated)" : " (provided)")
+        );
+        return new ConfigDtos.RotateSecretResponse(
+                saved.getId(),
+                saved.getKey(),
+                mask(saved.getKey()),
+                saved.getRotationVersion(),
+                generate,
+                generate ? plain : null,
+                java.time.Instant.now()
+        );
+    }
+
+    private static String generateSecretValue() {
+        byte[] bytes = new byte[24];
+        new java.security.SecureRandom().nextBytes(bytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     @Transactional

@@ -67,6 +67,7 @@
 | Audit Log 검색 | ✅ | `GET /api/v1/audit` 필터 (action/resource/actor) |
 | Environment 도메인 | ✅ | Sprint A — DEV/STAGE/PROD 엔티티·API·UI |
 | Environment Promote | ✅ | Sprint B + thin GitOps (branch meta · PR 시도 · SIMULATED fallback) |
+| Secret Rotation | ✅ | `POST /secrets/{id}/rotate` · version++ · 생성값 1회 반환 · UI |
 
 ### 2.3 PRD v1.3 — Infrastructure
 
@@ -77,7 +78,7 @@
 | Helm values/chart | ✅ | |
 | Helm upgrade 실운영 | 🔶 | |
 | ArgoCD Manifest | ✅ | |
-| ArgoCD Auto Sync / Rollback UI | ❌ → **실운영 P1** | GitOps 본선 |
+| ArgoCD Auto Sync / Rollback UI | 🔶 | thin status LIVE/SIMULATED + Application 매니페스트 (`/argo-sync`) |
 | Prometheus / Grafana / Loki | 🔶 | compose profile + 링크 |
 | Resource Explorer | 🔶 | 인프라 페이지 수준 |
 | Backup / DR | ❌ | |
@@ -138,11 +139,11 @@
 |------|------|:----:|
 | API-01 Auth | OAuth, JWT, RBAC | 🔶~✅ |
 | API-02 Workspace | Team, Invite, Member | 🔶 |
-| API-03-01 Project | CRUD, Archive, Clone | 🔶 (Clone 등 일부 약함) |
+| API-03-01 Project | CRUD, Archive, Clone | ✅ Archive/Restore/Clone API+UI |
 | API-03-02 Environment | CRUD, Health, Archive, Promote | ✅~🔶 (GitOps 실 PR 후속) |
 | API-03-03 Variable/Secret | Config, AES mask, Reveal | ✅ (Rotation/GH Sync 후속) |
 | API-03-04 Metadata | Label, Tag | ❌ |
-| API-03-05 Catalog | Template, Blueprint | 🔶 (시드+조회 중심) |
+| API-03-05 Catalog | Template, Blueprint | ✅ 목록+상세(Blueprint/Helm/TF/Actions) |
 | API-04-01 Wizard | Workflow | ✅ 핵심 |
 | API-04-02 AI | Decision Engine | 🔶 rule-engine |
 | API-04-03 Provision | Saga, Rollback, Retry | ✅ Sprint C (step DB · compensate log · retry) |
@@ -217,8 +218,9 @@ DEMO-SCENARIO 기준 핵심 플로우는 **구현됨**.
 | **Dashboard widgets + RBAC + Loading/Empty/Error 통일** | ✅ |
 | **Members/Invite UI · Promote GitOps thin · Playwright · OpenAPI CI** | ✅ |
 | **Pipeline GH Actions thin · Incident · ⌘K · Ollama provider** | ✅ |
+| **Secret Rotation · Catalog 상세 · Project Archive/Clone · Argo Sync thin** | ✅ |
 
-**다음:** Secret Rotation / Catalog 상세 / Project Archive·Clone UI / Argo Sync thin
+**다음:** Notification / Secret GH Live sealed-box / E2E 경로 확대
 
 ---
 

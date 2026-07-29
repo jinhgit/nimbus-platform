@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import {
   clearAuthSession,
   fetchMe,
@@ -11,20 +11,42 @@ import {
   type MeResponse,
   type UserSummary,
 } from "@/lib/api";
+import {
+  IconAudit,
+  IconCatalog,
+  IconDashboard,
+  IconInfrastructure,
+  IconLogs,
+  IconLogout,
+  IconMonitoring,
+  IconPipelines,
+  IconProjects,
+  IconServices,
+  IconSettings,
+  IconWizard,
+  IconWorkspaces,
+  type IconProps,
+} from "@/components/icons";
 
-const nav = [
-  { href: "/dashboard", label: "대시보드" },
-  { href: "/projects", label: "프로젝트" },
-  { href: "/services", label: "서비스" },
-  { href: "/catalog", label: "카탈로그" },
-  { href: "/wizard", label: "서비스 생성" },
-  { href: "/pipelines", label: "파이프라인" },
-  { href: "/monitoring", label: "모니터링" },
-  { href: "/logs", label: "로그" },
-  { href: "/audit", label: "감사 로그" },
-  { href: "/workspaces", label: "워크스페이스" },
-  { href: "/infrastructure", label: "인프라" },
-  { href: "/settings", label: "설정" },
+type NavItem = {
+  href: string;
+  label: string;
+  Icon: ComponentType<IconProps>;
+};
+
+const nav: NavItem[] = [
+  { href: "/dashboard", label: "대시보드", Icon: IconDashboard },
+  { href: "/projects", label: "프로젝트", Icon: IconProjects },
+  { href: "/services", label: "서비스", Icon: IconServices },
+  { href: "/catalog", label: "카탈로그", Icon: IconCatalog },
+  { href: "/wizard", label: "서비스 생성", Icon: IconWizard },
+  { href: "/pipelines", label: "파이프라인", Icon: IconPipelines },
+  { href: "/monitoring", label: "모니터링", Icon: IconMonitoring },
+  { href: "/logs", label: "로그", Icon: IconLogs },
+  { href: "/audit", label: "감사 로그", Icon: IconAudit },
+  { href: "/workspaces", label: "워크스페이스", Icon: IconWorkspaces },
+  { href: "/infrastructure", label: "인프라", Icon: IconInfrastructure },
+  { href: "/settings", label: "설정", Icon: IconSettings },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -73,20 +95,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
           <p className="mt-1 text-xs text-[var(--muted)]">플랫폼 포털</p>
         </div>
-        <nav className="flex flex-1 flex-col gap-1 p-3">
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
           {nav.map((item) => {
             const active = pathname.startsWith(item.href);
+            const { Icon } = item;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-lg px-3 py-2 text-sm transition ${
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
                   active
                     ? "bg-[var(--primary)]/15 text-white"
                     : "text-[var(--muted)] hover:bg-white/5 hover:text-white"
                 }`}
               >
-                {item.label}
+                <Icon
+                  size={18}
+                  className={`shrink-0 ${active ? "opacity-100" : "opacity-80"}`}
+                />
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}
@@ -97,8 +124,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={onLogout}
-            className="mt-3 text-xs text-[var(--muted)] hover:text-white"
+            className="mt-3 inline-flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-white"
           >
+            <IconLogout size={14} />
             로그아웃
           </button>
         </div>

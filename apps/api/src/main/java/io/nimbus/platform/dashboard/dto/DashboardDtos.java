@@ -32,7 +32,10 @@ public final class DashboardDtos {
             long environments,
             long readyServices,
             long failedSagas,
-            long auditEvents
+            long auditEvents,
+            long openIncidents,
+            long failedPipelines,
+            long unreadNotifications
     ) {
     }
 

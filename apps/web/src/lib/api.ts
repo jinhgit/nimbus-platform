@@ -50,6 +50,9 @@ export type DashboardOverview = {
     readyServices: number;
     failedSagas: number;
     auditEvents: number;
+    openIncidents?: number;
+    failedPipelines?: number;
+    unreadNotifications?: number;
   };
   recentPromotes: {
     id: string;
@@ -133,6 +136,7 @@ export type AppService = {
   k8sDeployment?: string;
   k8sStatus?: string;
   k8sClusterType?: string;
+  tags?: string[];
 };
 
 export type K8sClusterStatus = {
@@ -440,12 +444,22 @@ export async function fetchCatalogTemplate(templateId: string) {
 export async function fetchServices(params: {
   workspaceId?: string;
   projectId?: string;
+  tag?: string;
 }) {
   const sp = new URLSearchParams();
   if (params.workspaceId) sp.set("workspaceId", params.workspaceId);
   if (params.projectId) sp.set("projectId", params.projectId);
+  if (params.tag) sp.set("tag", params.tag);
   const q = sp.toString();
   return apiGet<AppService[]>(`/api/v1/services${q ? `?${q}` : ""}`);
+}
+
+export async function updateServiceTags(serviceId: string, tags: string[]) {
+  return request<AppService>(
+    `/api/v1/services/${serviceId}/tags`,
+    { method: "PUT", body: JSON.stringify({ tags }) },
+    true,
+  );
 }
 
 export async function fetchService(serviceId: string) {
@@ -959,6 +973,50 @@ export type AiStatus = {
 
 export async function fetchAiStatus() {
   return apiGet<AiStatus>("/api/v1/ai/status");
+}
+
+export type AppNotification = {
+  id: string;
+  workspaceId: string;
+  type: string;
+  title: string;
+  body?: string;
+  href?: string;
+  sourceType?: string;
+  sourceId?: string;
+  unread: boolean;
+  createdAt?: string;
+  readAt?: string;
+};
+
+export async function fetchNotifications(workspaceId?: string, limit = 30) {
+  const sp = new URLSearchParams();
+  if (workspaceId) sp.set("workspaceId", workspaceId);
+  sp.set("limit", String(limit));
+  return apiGet<AppNotification[]>(`/api/v1/notifications?${sp}`);
+}
+
+export async function fetchNotificationUnreadCount(workspaceId?: string) {
+  const q = workspaceId ? `?workspaceId=${workspaceId}` : "";
+  return apiGet<{ unread: number }>(`/api/v1/notifications/unread-count${q}`);
+}
+
+export async function syncNotifications(workspaceId?: string) {
+  const q = workspaceId ? `?workspaceId=${workspaceId}` : "";
+  return apiPost<{
+    created: number;
+    scanned: number;
+    items: AppNotification[];
+  }>(`/api/v1/notifications/sync${q}`);
+}
+
+export async function markNotificationRead(id: string) {
+  return apiPost<AppNotification>(`/api/v1/notifications/${id}/read`);
+}
+
+export async function markAllNotificationsRead(workspaceId?: string) {
+  const q = workspaceId ? `?workspaceId=${workspaceId}` : "";
+  return apiPost<{ unread: number }>(`/api/v1/notifications/read-all${q}`);
 }
 
 export type AuditLogItem = {

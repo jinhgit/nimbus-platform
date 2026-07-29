@@ -20,8 +20,9 @@ export default function ServicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [canMutate, setCanMutate] = useState(true);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [tagFilter, setTagFilter] = useState("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (tag?: string) => {
     setLoading(true);
     setError(null);
     const me = await fetchMe();
@@ -34,7 +35,10 @@ export default function ServicesPage() {
       setLoading(false);
       return;
     }
-    const res = await fetchServices({ workspaceId: ws });
+    const res = await fetchServices({
+      workspaceId: ws,
+      tag: tag?.trim() || undefined,
+    });
     if (res.success && res.data) {
       setServices(res.data);
     } else {
@@ -76,15 +80,44 @@ export default function ServicesPage() {
       {error ? (
         <ErrorBanner
           message={error}
-          onRetry={workspaceId ? load : undefined}
+          onRetry={workspaceId ? () => load(tagFilter) : undefined}
         />
       ) : null}
+
+      <div className="mb-4 flex gap-2">
+        <input
+          className="nimbus-input max-w-xs"
+          placeholder="태그 필터 (예: payment)"
+          value={tagFilter}
+          onChange={(e) => setTagFilter(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && load(tagFilter)}
+        />
+        <button
+          type="button"
+          onClick={() => load(tagFilter)}
+          className="nimbus-btn-ghost"
+        >
+          필터
+        </button>
+        {tagFilter ? (
+          <button
+            type="button"
+            onClick={() => {
+              setTagFilter("");
+              load("");
+            }}
+            className="text-xs text-[var(--muted)] hover:text-white"
+          >
+            초기화
+          </button>
+        ) : null}
+      </div>
 
       <Card padding={false}>
         {services.length === 0 ? (
           <EmptyState
             title="서비스가 없습니다"
-            description="Service Wizard로 GitHub · K8s · Environment까지 한 번에 프로비저닝할 수 있습니다."
+            description="Wizard로 생성하거나 태그 필터를 비워 보세요."
             action={
               canMutate ? (
                 <Link href="/wizard" className="nimbus-btn-primary">
@@ -108,6 +141,18 @@ export default function ServicesPage() {
                       {s.databaseType ? ` · ${s.databaseType}` : ""}
                       {s.cacheType ? ` · ${s.cacheType}` : ""}
                     </p>
+                    {s.tags && s.tags.length > 0 ? (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {s.tags.map((t) => (
+                          <span
+                            key={t}
+                            className="rounded border border-[var(--border)] px-1.5 py-0.5 text-[10px] text-sky-300/90"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                     {s.githubRepoUrl ? (
                       <p className="mt-1 truncate text-[11px] text-sky-400/90">
                         {s.githubOwner}/{s.githubRepoName}

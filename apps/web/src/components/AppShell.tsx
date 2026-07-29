@@ -14,6 +14,7 @@ import {
   type UserSummary,
 } from "@/lib/api";
 import { CommandPalette } from "@/components/CommandPalette";
+import { NotificationBell } from "@/components/NotificationBell";
 import {
   IconAudit,
   IconCatalog,
@@ -209,7 +210,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-auto">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex h-12 items-center justify-end gap-2 border-b border-[var(--border)] bg-[var(--background)]/80 px-4 backdrop-blur-md">
+          <p className="mr-auto hidden text-[11px] text-[var(--muted)] sm:block">
+            <kbd className="rounded border border-[var(--border)] px-1">⌘K</kbd>{" "}
+            검색
+          </p>
+          <NotificationBell />
+        </header>
+        <main className="min-w-0 flex-1 overflow-auto">{children}</main>
+      </div>
       <CommandPalette />
     </div>
   );

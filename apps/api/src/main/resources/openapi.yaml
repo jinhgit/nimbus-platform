@@ -5,7 +5,7 @@ info:
     AI Native Internal Developer Platform REST API (핵심 엔드포인트 스냅샷).
     상세 시나리오 스펙은 docs/api/API-*.md 를 함께 본다.
     저장소 소스: docs/api/openapi.yaml · 런타임 서빙: classpath:openapi.yaml (동기화 필수).
-  version: 0.4.0
+  version: 0.5.0
   contact:
     name: Nimbus Platform
 
@@ -756,6 +756,73 @@ paths:
       responses:
         "200":
           description: LIVE if Application CR found else SIMULATED
+
+
+  /api/v1/notifications:
+    get:
+      tags: [Auth]
+      summary: List in-app notifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Notifications
+
+  /api/v1/notifications/unread-count:
+    get:
+      tags: [Auth]
+      summary: Unread notification count
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Count
+
+  /api/v1/notifications/sync:
+    post:
+      tags: [Auth]
+      summary: Sync notifications from incidents/sagas/pipelines
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Sync result
+
+  /api/v1/services/{serviceId}/tags:
+    put:
+      tags: [Services]
+      summary: Replace service tags
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/serviceId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tags:
+                  type: array
+                  items: { type: string }
+      responses:
+        "200":
+          description: Updated service
 
 
 components:

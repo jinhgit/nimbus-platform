@@ -18,7 +18,7 @@ const STATIC_ITEMS: PaletteItem[] = [
   { id: "catalog", label: "Catalog", href: "/catalog", keywords: "template blueprint" },
   { id: "wizard", label: "Create Service", href: "/wizard", keywords: "wizard 생성" },
   { id: "pipelines", label: "Pipelines", href: "/pipelines", keywords: "ci build actions" },
-  { id: "incidents", label: "Incidents", href: "/incidents", keywords: "이슈 failure saga" },
+  { id: "incidents", label: "Incidents", href: "/incidents", keywords: "이슈 failure saga notification" },
   { id: "monitoring", label: "Monitoring", href: "/monitoring", keywords: "metrics" },
   { id: "logs", label: "Logs", href: "/logs", keywords: "로그" },
   { id: "audit", label: "Audit", href: "/audit", keywords: "감사" },

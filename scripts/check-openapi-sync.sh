@@ -33,6 +33,11 @@ REQUIRED_PATHS=(
   "/api/v1/ai/yaml/explain"
   "/api/v1/audit"
   "/api/v1/secrets/{secretId}/rotate"
+  "/api/v1/projects/{projectId}/clone"
+  "/api/v1/catalog/{templateId}"
+  "/api/v1/services/{serviceId}/argo-sync"
+  "/api/v1/notifications"
+  "/api/v1/services/{serviceId}/tags"
 )
 
 for p in "${REQUIRED_PATHS[@]}"; do

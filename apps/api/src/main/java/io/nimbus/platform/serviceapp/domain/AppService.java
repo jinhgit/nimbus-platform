@@ -84,6 +84,10 @@ public class AppService extends BaseEntity {
     @Column(name = "k8s_cluster_type", length = 32)
     private String k8sClusterType;
 
+    /** Comma-separated tags, e.g. "payment,prod,critical" */
+    @Column(length = 400)
+    private String tags;
+
     protected AppService() {
     }
 
@@ -139,6 +143,10 @@ public class AppService extends BaseEntity {
         this.k8sDeployment = deployment;
         this.k8sStatus = status;
         this.k8sClusterType = clusterType;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
     }
 
     public UUID getProjectId() {
@@ -215,6 +223,10 @@ public class AppService extends BaseEntity {
 
     public String getK8sDeployment() {
         return k8sDeployment;
+    }
+
+    public String getTags() {
+        return tags;
     }
 
     public String getK8sStatus() {

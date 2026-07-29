@@ -62,7 +62,7 @@
 | GitHub Integration | 🔶 | OAuth SCM + PAT + Adapter |
 | CI/CD Pipeline | 🔶~✅ | 시뮬 파이프라인 + thin GitHub Actions run 조회 |
 | Background Job Queue | 🔶 | `@Async` (Rabbit/Kafka 아님) |
-| Notification (Realtime) | ❌ | |
+| Notification (Realtime) | 🔶~✅ | in-app 벨 + 폴링 · Incident/Saga/Pipeline 스캔 동기화 |
 | Incident | ✅ | 스캔·ACK·Resolve · rule-engine 분석 · UI `/incidents` |
 | Audit Log 검색 | ✅ | `GET /api/v1/audit` 필터 (action/resource/actor) |
 | Environment 도메인 | ✅ | Sprint A — DEV/STAGE/PROD 엔티티·API·UI |
@@ -129,7 +129,7 @@
 | Phase 3 Infra 풀 | 🔶 |
 | Phase 4 AI 풀 | 🔶 |
 | Phase 5 Observability 풀 | 🔶 |
-| Phase 6 Coverage/E2E | 🔶~✅ | Smoke + Playwright 1경로 · OpenAPI sync CI |
+| Phase 6 Coverage/E2E | 🔶~✅ | Smoke + Playwright 2경로 (core/ops) · OpenAPI sync CI |
 
 ---
 
@@ -142,7 +142,7 @@
 | API-03-01 Project | CRUD, Archive, Clone | ✅ Archive/Restore/Clone API+UI |
 | API-03-02 Environment | CRUD, Health, Archive, Promote | ✅~🔶 (GitOps 실 PR 후속) |
 | API-03-03 Variable/Secret | Config, AES mask, Reveal | ✅ (Rotation/GH Sync 후속) |
-| API-03-04 Metadata | Label, Tag | ❌ |
+| API-03-04 Metadata | Label, Tag | ✅ Service tags PUT + 목록 tag 필터 |
 | API-03-05 Catalog | Template, Blueprint | ✅ 목록+상세(Blueprint/Helm/TF/Actions) |
 | API-04-01 Wizard | Workflow | ✅ 핵심 |
 | API-04-02 AI | Decision Engine | 🔶 rule-engine |
@@ -219,8 +219,9 @@ DEMO-SCENARIO 기준 핵심 플로우는 **구현됨**.
 | **Members/Invite UI · Promote GitOps thin · Playwright · OpenAPI CI** | ✅ |
 | **Pipeline GH Actions thin · Incident · ⌘K · Ollama provider** | ✅ |
 | **Secret Rotation · Catalog 상세 · Project Archive/Clone · Argo Sync thin** | ✅ |
+| **Notification · Dashboard 연동 · Service Tags · E2E 확대** | ✅ |
 
-**다음:** Notification / Secret GH Live sealed-box / E2E 경로 확대
+**다음:** Resource Explorer 보강 / Promote GitOps 심화 / Redis optional
 
 ---
 

@@ -4,7 +4,10 @@ import io.nimbus.platform.catalog.domain.RuntimeType;
 import io.nimbus.platform.serviceapp.domain.EnvironmentType;
 import io.nimbus.platform.serviceapp.domain.ServiceStatus;
 
+import jakarta.validation.constraints.Size;
+
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public final class ServiceDtos {
@@ -34,8 +37,14 @@ public final class ServiceDtos {
             String k8sDeployment,
             String k8sStatus,
             String k8sClusterType,
+            List<String> tags,
             Instant createdAt,
             Instant updatedAt
+    ) {
+    }
+
+    public record UpdateTagsRequest(
+            @Size(max = 20) List<@Size(max = 40) String> tags
     ) {
     }
 }

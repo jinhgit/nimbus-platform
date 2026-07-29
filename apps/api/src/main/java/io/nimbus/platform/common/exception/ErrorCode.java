@@ -81,6 +81,9 @@ public enum ErrorCode {
     INCIDENT_NOT_FOUND("INC001", "Incident not found", HttpStatus.NOT_FOUND),
     INCIDENT_INVALID_STATE("INC002", "Incident is not in a valid state", HttpStatus.BAD_REQUEST),
 
+    // Notification
+    NOTIFICATION_NOT_FOUND("NOTIF001", "Notification not found", HttpStatus.NOT_FOUND),
+
     // GitHub / SCM
     GITHUB_NOT_CONNECTED("GITHUB001", "GitHub is not connected", HttpStatus.BAD_REQUEST),
     GITHUB_REPO_EXISTS("GITHUB002", "Repository already exists", HttpStatus.CONFLICT),

@@ -33,6 +33,7 @@ import {
   revealEnvSecret,
   rotateEnvSecret,
   syncEnvSecretsToGitHub,
+  updateServiceTags,
   type AppService,
   type ArchitectureReview,
   type ArgoSyncStatus,
@@ -99,6 +100,7 @@ export default function ServiceDetailPage() {
   const [workspaceRole, setWorkspaceRole] = useState<string | null>(null);
   const [argo, setArgo] = useState<ArgoSyncStatus | null>(null);
   const [rotatedOnce, setRotatedOnce] = useState<Record<string, string>>({});
+  const [tagInput, setTagInput] = useState("");
 
   const loadConfig = useCallback(async (envId: string) => {
     const [v, s] = await Promise.all([
@@ -137,6 +139,7 @@ export default function ServiceDetailPage() {
         return;
       }
       setService(s.data);
+      setTagInput((s.data.tags ?? []).join(", "));
       setDeploy(d.success ? (d.data ?? null) : null);
       setMetrics(m.success ? (m.data ?? null) : null);
       setPipelines(p.success && p.data ? p.data : []);
@@ -378,6 +381,26 @@ export default function ServiceDetailPage() {
     await loadConfig(selectedEnvId);
   }
 
+  async function onSaveTags() {
+    if (!service || !canMutate) return;
+    setEnvBusy(true);
+    setError(null);
+    setMessage(null);
+    const tags = tagInput
+      .split(/[,\s]+/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const res = await updateServiceTags(service.id, tags);
+    setEnvBusy(false);
+    if (!res.success || !res.data) {
+      setError(res.error?.message ?? "태그 저장 실패");
+      return;
+    }
+    setService(res.data);
+    setTagInput((res.data.tags ?? []).join(", "));
+    setMessage("태그를 저장했습니다.");
+  }
+
   async function onSyncGitHubSecrets() {
     if (!selectedEnvId) return;
     setEnvBusy(true);
@@ -454,6 +477,34 @@ export default function ServiceDetailPage() {
           {service.description && (
             <p className="mt-1 text-sm text-[var(--muted)]">{service.description}</p>
           )}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {(service.tags ?? []).map((t) => (
+              <span
+                key={t}
+                className="rounded border border-[var(--border)] px-2 py-0.5 text-[11px] text-sky-300/90"
+              >
+                {t}
+              </span>
+            ))}
+            {canMutate ? (
+              <>
+                <input
+                  className="nimbus-input !py-1 text-xs"
+                  placeholder="tags: payment, critical"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                />
+                <button
+                  type="button"
+                  disabled={envBusy}
+                  onClick={onSaveTags}
+                  className="rounded border border-[var(--border)] px-2 py-1 text-[11px] hover:bg-white/5"
+                >
+                  태그 저장
+                </button>
+              </>
+            ) : null}
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link

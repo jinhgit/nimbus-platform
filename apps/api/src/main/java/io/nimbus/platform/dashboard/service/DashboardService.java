@@ -9,6 +9,11 @@ import io.nimbus.platform.dashboard.dto.DashboardDtos;
 import io.nimbus.platform.environment.domain.PromotionRecord;
 import io.nimbus.platform.environment.repository.PromotionRecordRepository;
 import io.nimbus.platform.environment.repository.ServiceEnvironmentRepository;
+import io.nimbus.platform.incident.domain.IncidentStatus;
+import io.nimbus.platform.incident.repository.IncidentRepository;
+import io.nimbus.platform.notification.repository.NotificationRepository;
+import io.nimbus.platform.pipeline.domain.PipelineStatus;
+import io.nimbus.platform.pipeline.repository.BuildPipelineRepository;
 import io.nimbus.platform.project.repository.ProjectRepository;
 import io.nimbus.platform.provision.domain.ProvisionSaga;
 import io.nimbus.platform.provision.domain.SagaStatus;
@@ -36,6 +41,9 @@ public class DashboardService {
     private final PromotionRecordRepository promotionRecordRepository;
     private final ProvisionSagaRepository sagaRepository;
     private final AuditLogRepository auditLogRepository;
+    private final IncidentRepository incidentRepository;
+    private final BuildPipelineRepository pipelineRepository;
+    private final NotificationRepository notificationRepository;
 
     public DashboardService(
             WorkspaceBootstrapService workspaceBootstrapService,
@@ -44,7 +52,10 @@ public class DashboardService {
             ServiceEnvironmentRepository environmentRepository,
             PromotionRecordRepository promotionRecordRepository,
             ProvisionSagaRepository sagaRepository,
-            AuditLogRepository auditLogRepository
+            AuditLogRepository auditLogRepository,
+            IncidentRepository incidentRepository,
+            BuildPipelineRepository pipelineRepository,
+            NotificationRepository notificationRepository
     ) {
         this.workspaceBootstrapService = workspaceBootstrapService;
         this.projectRepository = projectRepository;
@@ -53,6 +64,9 @@ public class DashboardService {
         this.promotionRecordRepository = promotionRecordRepository;
         this.sagaRepository = sagaRepository;
         this.auditLogRepository = auditLogRepository;
+        this.incidentRepository = incidentRepository;
+        this.pipelineRepository = pipelineRepository;
+        this.notificationRepository = notificationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -72,6 +86,11 @@ public class DashboardService {
         long failedSagas = sagaRepository.countByWorkspaceIdAndStatusAndDeletedAtIsNull(ws, SagaStatus.FAILED)
                 + sagaRepository.countByWorkspaceIdAndStatusAndDeletedAtIsNull(ws, SagaStatus.ROLLED_BACK);
         long audits = auditLogRepository.countByWorkspaceId(ws);
+        long openIncidents = incidentRepository.countByWorkspaceIdAndStatusAndDeletedAtIsNull(
+                ws, IncidentStatus.OPEN);
+        long failedPipelines = pipelineRepository.countByWorkspaceIdAndStatusAndDeletedAtIsNull(
+                ws, PipelineStatus.FAILED);
+        long unreadNotifications = notificationRepository.countUnread(ws, principal.userId());
 
         List<DashboardDtos.PromoteItem> promotes = promotionRecordRepository
                 .findByWorkspaceIdAndDeletedAtIsNullOrderByCreatedAtDesc(ws, PageRequest.of(0, 5))
@@ -95,7 +114,10 @@ public class DashboardService {
                 ws,
                 role,
                 canMutate,
-                new DashboardDtos.Counts(projects, services, environments, ready, failedSagas, audits),
+                new DashboardDtos.Counts(
+                        projects, services, environments, ready, failedSagas, audits,
+                        openIncidents, failedPipelines, unreadNotifications
+                ),
                 promotes,
                 sagas,
                 auditItems

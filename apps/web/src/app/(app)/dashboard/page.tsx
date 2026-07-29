@@ -189,6 +189,24 @@ export default function DashboardPage() {
           hint="FAILED · ROLLED_BACK"
         />
         <StatCard
+          label="Open Incidents"
+          value={counts?.openIncidents ?? 0}
+          tone={(counts?.openIncidents ?? 0) > 0 ? "bad" : "ok"}
+          hint="운영 이슈"
+        />
+        <StatCard
+          label="Failed Pipelines"
+          value={counts?.failedPipelines ?? 0}
+          tone={(counts?.failedPipelines ?? 0) > 0 ? "warn" : "ok"}
+          hint="빌드 실패"
+        />
+        <StatCard
+          label="Notifications"
+          value={counts?.unreadNotifications ?? 0}
+          tone={(counts?.unreadNotifications ?? 0) > 0 ? "info" : "default"}
+          hint="읽지 않음"
+        />
+        <StatCard
           label="Audit"
           value={counts?.auditEvents ?? 0}
           tone="default"
@@ -200,6 +218,18 @@ export default function DashboardPage() {
           tone={cluster?.available ? "ok" : "warn"}
           hint={cluster?.clusterType ?? "local k8s"}
         />
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href="/incidents" className="nimbus-btn-ghost !px-3 !py-1.5 text-xs">
+          Incidents
+        </Link>
+        <Link href="/pipelines" className="nimbus-btn-ghost !px-3 !py-1.5 text-xs">
+          Pipelines
+        </Link>
+        <Link href="/audit" className="nimbus-btn-ghost !px-3 !py-1.5 text-xs">
+          Audit
+        </Link>
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">

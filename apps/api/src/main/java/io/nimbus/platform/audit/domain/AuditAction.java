@@ -55,6 +55,8 @@ public enum AuditAction {
     ACK_INCIDENT,
     RESOLVE_INCIDENT,
 
+    UPDATE_SERVICE_TAGS,
+
     DEPLOY_K8S,
     DELETE_K8S
 }

@@ -5,8 +5,11 @@ import io.nimbus.platform.auth.security.SecurityUtils;
 import io.nimbus.platform.common.api.ApiResponse;
 import io.nimbus.platform.serviceapp.dto.ServiceDtos;
 import io.nimbus.platform.serviceapp.service.AppServiceQueryService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,19 +30,29 @@ public class ServiceController {
     @GetMapping("/services")
     public ApiResponse<List<ServiceDtos.ServiceResponse>> list(
             @RequestParam(required = false) UUID workspaceId,
-            @RequestParam(required = false) UUID projectId
+            @RequestParam(required = false) UUID projectId,
+            @RequestParam(required = false) String tag
     ) {
         NimbusPrincipal principal = SecurityUtils.requirePrincipal();
         if (projectId != null) {
             return ApiResponse.ok(appServiceQueryService.listByProject(principal, projectId));
         }
-        return ApiResponse.ok(appServiceQueryService.listByWorkspace(principal, workspaceId));
+        return ApiResponse.ok(appServiceQueryService.listByWorkspace(principal, workspaceId, tag));
     }
 
     @GetMapping("/services/{serviceId}")
     public ApiResponse<ServiceDtos.ServiceResponse> get(@PathVariable UUID serviceId) {
         NimbusPrincipal principal = SecurityUtils.requirePrincipal();
         return ApiResponse.ok(appServiceQueryService.get(principal, serviceId));
+    }
+
+    @PutMapping("/services/{serviceId}/tags")
+    public ApiResponse<ServiceDtos.ServiceResponse> updateTags(
+            @PathVariable UUID serviceId,
+            @Valid @RequestBody ServiceDtos.UpdateTagsRequest request
+    ) {
+        NimbusPrincipal principal = SecurityUtils.requirePrincipal();
+        return ApiResponse.ok(appServiceQueryService.updateTags(principal, serviceId, request));
     }
 
     @GetMapping("/projects/{projectId}/services")

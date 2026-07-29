@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react";
 import {
   createPipeline,
+  fetchGithubPipelineRuns,
   fetchMe,
   fetchPipelineLogs,
   fetchPipelines,
   fetchServices,
   rerunPipeline,
   type AppService,
+  type GithubRunsResponse,
   type Pipeline,
   type PipelineLogs,
 } from "@/lib/api";
+import { ErrorBanner, Page, PageHeader, StatusBadge } from "@/components/ui";
 
 export default function PipelinesPage() {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
@@ -19,12 +22,23 @@ export default function PipelinesPage() {
   const [serviceId, setServiceId] = useState("");
   const [selected, setSelected] = useState<Pipeline | null>(null);
   const [logs, setLogs] = useState<PipelineLogs | null>(null);
+  const [ghRuns, setGhRuns] = useState<GithubRunsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function refresh(ws?: string) {
     const res = await fetchPipelines({ workspaceId: ws });
     if (res.success && res.data) setPipelines(res.data);
+  }
+
+  async function loadGhRuns(sid: string) {
+    if (!sid) {
+      setGhRuns(null);
+      return;
+    }
+    const res = await fetchGithubPipelineRuns(sid);
+    if (res.success && res.data) setGhRuns(res.data);
+    else setGhRuns(null);
   }
 
   useEffect(() => {
@@ -34,11 +48,18 @@ export default function PipelinesPage() {
       const s = await fetchServices({ workspaceId: ws });
       if (s.success && s.data) {
         setServices(s.data);
-        if (s.data[0]) setServiceId(s.data[0].id);
+        if (s.data[0]) {
+          setServiceId(s.data[0].id);
+          await loadGhRuns(s.data[0].id);
+        }
       }
       await refresh(ws);
     });
   }, []);
+
+  useEffect(() => {
+    if (serviceId) loadGhRuns(serviceId);
+  }, [serviceId]);
 
   // poll running pipelines
   useEffect(() => {
@@ -87,19 +108,18 @@ export default function PipelinesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Pipelines</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          이미지 빌드 파이프라인 (Checkout → Docker build → Tag → Push 시뮬)
-        </p>
-      </div>
+    <Page>
+      <PageHeader
+        eyebrow="Operations"
+        title="Pipelines"
+        description="로컬 시뮬 빌드 + GitHub Actions run (SCM 연결 시 LIVE, 아니면 SIMULATED)"
+      />
 
       <div className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
         <label className="block min-w-[220px] flex-1 text-sm">
           <span className="mb-1 block text-[var(--muted)]">서비스</span>
           <select
-            className="w-full rounded-lg border border-[var(--border)] bg-black/30 px-3 py-2"
+            className="nimbus-input w-full"
             value={serviceId}
             onChange={(e) => setServiceId(e.target.value)}
           >
@@ -114,15 +134,66 @@ export default function PipelinesPage() {
           type="button"
           onClick={onRun}
           disabled={loading || !serviceId}
-          className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-hover)] disabled:opacity-60"
+          className="nimbus-btn-primary disabled:opacity-60"
         >
           {loading ? "시작 중…" : "빌드 실행"}
         </button>
       </div>
 
-      {error && (
-        <p className="mb-4 text-sm text-red-300">{error}</p>
-      )}
+      {error ? <ErrorBanner message={error} /> : null}
+
+      {ghRuns ? (
+        <section className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-medium">GitHub Actions</h2>
+              <p className="text-[11px] text-[var(--muted)]">
+                {ghRuns.repository ?? "repo 미바인딩"} · mode{" "}
+                <span className="text-sky-300">{ghRuns.mode}</span>
+                {ghRuns.message ? ` · ${ghRuns.message}` : ""}
+              </p>
+            </div>
+            <StatusBadge value={ghRuns.mode} />
+          </div>
+          {ghRuns.runs.length === 0 ? (
+            <p className="text-sm text-[var(--muted)]">
+              표시할 Actions run 이 없습니다. SCM 연결 및 repo 바인딩 후 확인하세요.
+            </p>
+          ) : (
+            <ul className="divide-y divide-[var(--border)] text-sm">
+              {ghRuns.runs.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex flex-wrap items-center justify-between gap-2 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-zinc-100">{r.name}</p>
+                    <p className="text-[11px] text-[var(--muted)]">
+                      {r.headBranch ?? "—"} · {r.event ?? "—"}
+                      {r.updatedAt
+                        ? ` · ${new Date(r.updatedAt).toLocaleString("ko-KR")}`
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge value={r.conclusion ?? r.status ?? "—"} />
+                    {r.htmlUrl ? (
+                      <a
+                        href={r.htmlUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-[var(--primary)] hover:underline"
+                      >
+                        열기
+                      </a>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-[var(--border)] bg-[var(--card)]">
@@ -205,6 +276,6 @@ export default function PipelinesPage() {
           )}
         </section>
       </div>
-    </div>
+    </Page>
   );
 }

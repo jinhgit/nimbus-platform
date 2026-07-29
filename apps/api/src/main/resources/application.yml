@@ -73,6 +73,12 @@ nimbus:
     demo-metrics-when-unavailable: true
   pipeline:
     auto-on-wizard: ${PIPELINE_AUTO_ON_WIZARD:true}
+  ai:
+    # rule (default) | ollama — Ollama down 시 자동 rule fallback
+    provider: ${AI_PROVIDER:rule}
+    ollama-base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    ollama-model: ${OLLAMA_MODEL:llama3.2}
+    ollama-timeout-ms: ${OLLAMA_TIMEOUT_MS:8000}
 
 logging:
   level:

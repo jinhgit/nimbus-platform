@@ -123,6 +123,16 @@ export function IconLogs(props: IconProps) {
 }
 
 /** 감사 로그 — 체크 클립보드 */
+export function IconIncidents(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+    </IconBase>
+  );
+}
+
 export function IconAudit(props: IconProps) {
   return (
     <IconBase {...props}>

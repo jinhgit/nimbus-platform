@@ -840,6 +840,101 @@ export async function rerunPipeline(pipelineId: string) {
   return apiPost<Pipeline>(`/api/v1/pipelines/${pipelineId}/rerun`);
 }
 
+export type GithubWorkflowRun = {
+  id: number;
+  name: string;
+  status?: string;
+  conclusion?: string;
+  htmlUrl?: string;
+  headBranch?: string;
+  event?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type GithubRunsResponse = {
+  serviceId: string;
+  repository?: string;
+  mode: string;
+  message?: string;
+  runs: GithubWorkflowRun[];
+};
+
+export async function fetchGithubPipelineRuns(serviceId: string) {
+  return apiGet<GithubRunsResponse>(
+    `/api/v1/pipelines/github-runs?serviceId=${serviceId}`,
+  );
+}
+
+export type Incident = {
+  id: string;
+  workspaceId: string;
+  serviceId?: string;
+  serviceName?: string;
+  sourceType: string;
+  sourceId?: string;
+  title: string;
+  severity: string;
+  status: string;
+  summary?: string;
+  analysisText?: string;
+  provider?: string;
+  openedAt?: string;
+  resolvedAt?: string;
+};
+
+export type IncidentCounts = {
+  open: number;
+  acknowledged: number;
+  resolved: number;
+};
+
+export async function fetchIncidents(params?: {
+  workspaceId?: string;
+  status?: string;
+}) {
+  const sp = new URLSearchParams();
+  if (params?.workspaceId) sp.set("workspaceId", params.workspaceId);
+  if (params?.status) sp.set("status", params.status);
+  const q = sp.toString();
+  return apiGet<Incident[]>(`/api/v1/incidents${q ? `?${q}` : ""}`);
+}
+
+export async function fetchIncidentCounts(workspaceId?: string) {
+  const q = workspaceId ? `?workspaceId=${workspaceId}` : "";
+  return apiGet<IncidentCounts>(`/api/v1/incidents/counts${q}`);
+}
+
+export async function scanIncidents(workspaceId?: string) {
+  const q = workspaceId ? `?workspaceId=${workspaceId}` : "";
+  return apiPost<{
+    opened: number;
+    scanned: number;
+    created: Incident[];
+  }>(`/api/v1/incidents/scan${q}`);
+}
+
+export async function acknowledgeIncident(id: string) {
+  return apiPost<Incident>(`/api/v1/incidents/${id}/acknowledge`);
+}
+
+export async function resolveIncident(id: string) {
+  return apiPost<Incident>(`/api/v1/incidents/${id}/resolve`);
+}
+
+export type AiStatus = {
+  configuredProvider: string;
+  activeProvider: string;
+  ollamaBaseUrl?: string;
+  ollamaModel?: string;
+  ollamaReachable: boolean;
+  message?: string;
+};
+
+export async function fetchAiStatus() {
+  return apiGet<AiStatus>("/api/v1/ai/status");
+}
+
 export type AuditLogItem = {
   id: string;
   actorId?: string;

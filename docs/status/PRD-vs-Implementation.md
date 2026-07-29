@@ -60,9 +60,10 @@
 | Dashboard widgets | ✅ | `GET /api/v1/dashboard/overview` — counts + recent promote/saga/audit |
 | Service Wizard 7단계 | ✅ | |
 | GitHub Integration | 🔶 | OAuth SCM + PAT + Adapter |
-| CI/CD Pipeline | 🔶 | Job 시뮬 + workflow 파일 |
+| CI/CD Pipeline | 🔶~✅ | 시뮬 파이프라인 + thin GitHub Actions run 조회 |
 | Background Job Queue | 🔶 | `@Async` (Rabbit/Kafka 아님) |
 | Notification (Realtime) | ❌ | |
+| Incident | ✅ | 스캔·ACK·Resolve · rule-engine 분석 · UI `/incidents` |
 | Audit Log 검색 | ✅ | `GET /api/v1/audit` 필터 (action/resource/actor) |
 | Environment 도메인 | ✅ | Sprint A — DEV/STAGE/PROD 엔티티·API·UI |
 | Environment Promote | ✅ | Sprint B + thin GitOps (branch meta · PR 시도 · SIMULATED fallback) |
@@ -88,9 +89,9 @@
 | Architecture Review | ✅ | rule-engine |
 | Runtime/DB/Cache 추천 | ✅ | |
 | YAML Generator/Explain 풀셋 | 🔶~✅ | Explain: `POST /api/v1/ai/yaml/explain` rule-engine · Wizard UI |
-| Incident Analysis | ❌ → **실운영 P2** | |
+| Incident Analysis | ✅ | rule-engine 분석 + Incident 도메인 |
 | Cost Advisor | ⏸ | v2 |
-| Ollama Provider 기본 | 🔶 | 구조 여지, 기본 rule |
+| Ollama Provider 기본 | ✅~🔶 | `AI_PROVIDER=ollama` + fallback rule · Settings 상태 |
 | Multi-Agent / MCP | ⏸ | v2 |
 
 ### 2.5 PRD v1.5A — Database
@@ -114,7 +115,7 @@
 | Catalog / Pipelines / Monitoring / Logs | ✅ | |
 | Settings (SCM OAuth) | ✅ | |
 | Audit UI | ✅ | `/audit` 필터·테이블 |
-| Command Palette ⌘K | ❌ | |
+| Command Palette ⌘K | ✅ | `CommandPalette` ⌘/Ctrl+K |
 | shadcn 풀 디자인 시스템 | 🔶 | Tailwind 커스텀 |
 | 전 화면 실시간 WS | 🔶 | SSE/폴링 일부 |
 
@@ -215,8 +216,9 @@ DEMO-SCENARIO 기준 핵심 플로우는 **구현됨**.
 | **Service Detail YAML Explain + OpenAPI 스냅샷 + Smoke** | ✅ |
 | **Dashboard widgets + RBAC + Loading/Empty/Error 통일** | ✅ |
 | **Members/Invite UI · Promote GitOps thin · Playwright · OpenAPI CI** | ✅ |
+| **Pipeline GH Actions thin · Incident · ⌘K · Ollama provider** | ✅ |
 
-**다음:** Ollama Provider / Incident (얇게) / Pipeline 실연동
+**다음:** Secret Rotation / Catalog 상세 / Project Archive·Clone UI / Argo Sync thin
 
 ---
 

@@ -51,6 +51,10 @@ public enum AuditAction {
 
     RECORD_DEPLOYMENT,
 
+    OPEN_INCIDENT,
+    ACK_INCIDENT,
+    RESOLVE_INCIDENT,
+
     DEPLOY_K8S,
     DELETE_K8S
 }

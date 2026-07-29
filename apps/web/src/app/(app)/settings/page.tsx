@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   connectGitHub,
   disconnectGitHub,
+  fetchAiStatus,
   fetchGitHubHealth,
   fetchGitHubOauthConfig,
   fetchGitHubRepositories,
@@ -14,6 +15,7 @@ import {
   removeWorkspaceMember,
   startGitHubOauth,
   updateWorkspaceMemberRole,
+  type AiStatus,
   type GitHubHealth,
   type GitHubRepo,
   type WorkspaceMember,
@@ -56,6 +58,7 @@ export default function SettingsPage() {
   const [showPat, setShowPat] = useState(false);
   const [health, setHealth] = useState<GitHubHealth | null>(null);
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -128,6 +131,9 @@ export default function SettingsPage() {
       }
     });
     refreshGithub();
+    fetchAiStatus().then((res) => {
+      if (res.success && res.data) setAiStatus(res.data);
+    });
   }, [loadMembers]);
 
   async function onInvite(e: FormEvent) {
@@ -465,6 +471,33 @@ export default function SettingsPage() {
           >
             연결 해제
           </button>
+        )}
+      </Card>
+
+      <Card className="mt-6">
+        <h2 className="mb-2 text-sm font-medium">AI Provider</h2>
+        <p className="mb-3 text-xs text-[var(--muted)]">
+          기본은 rule-engine. <code className="text-zinc-300">AI_PROVIDER=ollama</code> 와
+          Ollama 로컬 기동 시 LLM 보조 설명을 붙입니다 (실패 시 자동 fallback).
+        </p>
+        {aiStatus ? (
+          <ul className="space-y-1 text-sm text-[var(--muted)]">
+            <li>
+              설정:{" "}
+              <span className="text-zinc-200">{aiStatus.configuredProvider}</span>
+            </li>
+            <li>
+              활성:{" "}
+              <span className="text-zinc-200">{aiStatus.activeProvider}</span>
+            </li>
+            <li>
+              Ollama: {aiStatus.ollamaBaseUrl} · {aiStatus.ollamaModel} ·{" "}
+              {aiStatus.ollamaReachable ? "연결됨" : "오프라인/미사용"}
+            </li>
+            <li className="text-xs">{aiStatus.message}</li>
+          </ul>
+        ) : (
+          <p className="text-sm text-[var(--muted)]">AI 상태 로딩 중…</p>
         )}
       </Card>
 

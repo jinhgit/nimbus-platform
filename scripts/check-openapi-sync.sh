@@ -26,6 +26,10 @@ REQUIRED_PATHS=(
   "/api/v1/workspaces/{workspaceId}/members/invite"
   "/api/v1/environments/{environmentId}/promote"
   "/api/v1/services/{serviceId}/promotions"
+  "/api/v1/pipelines/github-runs"
+  "/api/v1/incidents"
+  "/api/v1/incidents/scan"
+  "/api/v1/ai/status"
   "/api/v1/ai/yaml/explain"
   "/api/v1/audit"
 )

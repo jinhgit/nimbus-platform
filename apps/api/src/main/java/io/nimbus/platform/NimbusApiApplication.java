@@ -1,5 +1,6 @@
 package io.nimbus.platform;
 
+import io.nimbus.platform.ai.config.AiProperties;
 import io.nimbus.platform.auth.security.GithubProperties;
 import io.nimbus.platform.auth.security.JwtProperties;
 import io.nimbus.platform.k8s.config.KubernetesProperties;
@@ -13,7 +14,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
         JwtProperties.class,
         GithubProperties.class,
         KubernetesProperties.class,
-        ObservabilityProperties.class
+        ObservabilityProperties.class,
+        AiProperties.class
 })
 public class NimbusApiApplication {
 

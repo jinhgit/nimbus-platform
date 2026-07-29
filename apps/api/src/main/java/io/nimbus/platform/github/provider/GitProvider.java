@@ -46,6 +46,16 @@ public interface GitProvider {
             String base
     );
 
+    /**
+     * Thin: recent GitHub Actions workflow runs (empty list if none).
+     */
+    java.util.List<WorkflowRun> listWorkflowRuns(
+            String accessToken,
+            String owner,
+            String repo,
+            int perPage
+    );
+
     record RateLimitStatus(int remaining, int limit, long resetEpochSeconds) {
     }
 
@@ -53,5 +63,18 @@ public interface GitProvider {
     }
 
     record CreatedPullRequest(int number, String htmlUrl, String state) {
+    }
+
+    record WorkflowRun(
+            long id,
+            String name,
+            String status,
+            String conclusion,
+            String htmlUrl,
+            String headBranch,
+            String event,
+            String createdAt,
+            String updatedAt
+    ) {
     }
 }

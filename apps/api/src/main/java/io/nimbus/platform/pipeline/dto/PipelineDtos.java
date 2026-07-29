@@ -42,4 +42,27 @@ public final class PipelineDtos {
             String logs
     ) {
     }
+
+    /** Thin GitHub Actions workflow run snapshot */
+    public record GithubWorkflowRun(
+            long id,
+            String name,
+            String status,
+            String conclusion,
+            String htmlUrl,
+            String headBranch,
+            String event,
+            String createdAt,
+            String updatedAt
+    ) {
+    }
+
+    public record GithubRunsResponse(
+            UUID serviceId,
+            String repository,
+            String mode,
+            String message,
+            java.util.List<GithubWorkflowRun> runs
+    ) {
+    }
 }

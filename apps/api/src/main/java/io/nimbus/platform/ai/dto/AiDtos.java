@@ -93,4 +93,14 @@ public final class AiDtos {
             String provider
     ) {
     }
+
+    public record AiStatusResponse(
+            String configuredProvider,
+            String activeProvider,
+            String ollamaBaseUrl,
+            String ollamaModel,
+            boolean ollamaReachable,
+            String message
+    ) {
+    }
 }

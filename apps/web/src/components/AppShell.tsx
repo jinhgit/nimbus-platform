@@ -13,10 +13,12 @@ import {
   type MeResponse,
   type UserSummary,
 } from "@/lib/api";
+import { CommandPalette } from "@/components/CommandPalette";
 import {
   IconAudit,
   IconCatalog,
   IconDashboard,
+  IconIncidents,
   IconInfrastructure,
   IconLogs,
   IconLogout,
@@ -55,6 +57,7 @@ const navSections: NavSection[] = [
     title: "Operations",
     items: [
       { href: "/pipelines", label: "Pipelines", Icon: IconPipelines },
+      { href: "/incidents", label: "Incidents", Icon: IconIncidents },
       { href: "/monitoring", label: "Monitoring", Icon: IconMonitoring },
       { href: "/logs", label: "Logs", Icon: IconLogs },
       { href: "/audit", label: "Audit", Icon: IconAudit },
@@ -207,6 +210,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="min-w-0 flex-1 overflow-auto">{children}</main>
+      <CommandPalette />
     </div>
   );
 }

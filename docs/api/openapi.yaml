@@ -5,7 +5,7 @@ info:
     AI Native Internal Developer Platform REST API (핵심 엔드포인트 스냅샷).
     상세 시나리오 스펙은 docs/api/API-*.md 를 함께 본다.
     저장소 소스: docs/api/openapi.yaml · 런타임 서빙: classpath:openapi.yaml (동기화 필수).
-  version: 0.2.0
+  version: 0.3.0
   contact:
     name: Nimbus Platform
 
@@ -560,6 +560,107 @@ paths:
       responses:
         "200":
           description: openapi.yaml body
+
+  /api/v1/pipelines/github-runs:
+    get:
+      tags: [Deployments]
+      summary: Thin GitHub Actions workflow runs (LIVE or SIMULATED)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: serviceId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: GitHub runs snapshot
+
+  /api/v1/incidents:
+    get:
+      tags: [Deployments]
+      summary: List incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Incidents
+
+  /api/v1/incidents/counts:
+    get:
+      tags: [Deployments]
+      summary: Incident status counts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Counts
+
+  /api/v1/incidents/scan:
+    post:
+      tags: [Deployments]
+      summary: Scan failed sagas/pipelines/envs into incidents
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workspaceId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Scan result
+
+  /api/v1/incidents/{incidentId}/acknowledge:
+    post:
+      tags: [Deployments]
+      summary: Acknowledge incident
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: incidentId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Updated
+
+  /api/v1/incidents/{incidentId}/resolve:
+    post:
+      tags: [Deployments]
+      summary: Resolve incident
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: incidentId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Updated
+
+  /api/v1/ai/status:
+    get:
+      tags: [AI]
+      summary: AI provider status (rule | ollama)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Provider status
+
 
 components:
   securitySchemes:

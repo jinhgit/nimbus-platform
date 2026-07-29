@@ -292,6 +292,48 @@ public class GitHubAdapter implements GitProvider {
         }
     }
 
+    @Override
+    public java.util.List<WorkflowRun> listWorkflowRuns(
+            String accessToken,
+            String owner,
+            String repo,
+            int perPage
+    ) {
+        try {
+            int limit = Math.min(Math.max(perPage, 1), 30);
+            String body = restClient.get()
+                    .uri("/repos/{owner}/{repo}/actions/runs?per_page={perPage}", owner, repo, limit)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .retrieve()
+                    .body(String.class);
+            JsonNode root = objectMapper.readTree(body);
+            JsonNode runs = root.path("workflow_runs");
+            java.util.List<WorkflowRun> out = new java.util.ArrayList<>();
+            if (runs.isArray()) {
+                for (JsonNode n : runs) {
+                    out.add(new WorkflowRun(
+                            n.path("id").asLong(0),
+                            n.path("name").asText(n.path("display_title").asText("workflow")),
+                            n.path("status").asText(null),
+                            n.path("conclusion").asText(null),
+                            n.path("html_url").asText(null),
+                            n.path("head_branch").asText(null),
+                            n.path("event").asText(null),
+                            n.path("created_at").asText(null),
+                            n.path("updated_at").asText(null)
+                    ));
+                }
+            }
+            return out;
+        } catch (RestClientResponseException ex) {
+            throw mapHttpError(ex);
+        } catch (BusinessException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new BusinessException(ErrorCode.GITHUB_API_FAILED, ex.getMessage());
+        }
+    }
+
     private BusinessException mapHttpError(RestClientResponseException ex) {
         int status = ex.getStatusCode().value();
         String body = ex.getResponseBodyAsString();

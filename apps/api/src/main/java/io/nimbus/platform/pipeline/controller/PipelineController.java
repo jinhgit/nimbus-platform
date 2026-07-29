@@ -5,6 +5,7 @@ import io.nimbus.platform.auth.security.SecurityUtils;
 import io.nimbus.platform.common.api.ApiResponse;
 import io.nimbus.platform.pipeline.dto.PipelineDtos;
 import io.nimbus.platform.pipeline.service.BuildPipelineService;
+import io.nimbus.platform.pipeline.service.GitHubActionsRunService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,9 +23,22 @@ import java.util.UUID;
 public class PipelineController {
 
     private final BuildPipelineService pipelineService;
+    private final GitHubActionsRunService gitHubActionsRunService;
 
-    public PipelineController(BuildPipelineService pipelineService) {
+    public PipelineController(
+            BuildPipelineService pipelineService,
+            GitHubActionsRunService gitHubActionsRunService
+    ) {
         this.pipelineService = pipelineService;
+        this.gitHubActionsRunService = gitHubActionsRunService;
+    }
+
+    @GetMapping("/github-runs")
+    public ApiResponse<PipelineDtos.GithubRunsResponse> githubRuns(
+            @RequestParam UUID serviceId
+    ) {
+        NimbusPrincipal principal = SecurityUtils.requirePrincipal();
+        return ApiResponse.ok(gitHubActionsRunService.listForService(principal, serviceId));
     }
 
     @PostMapping

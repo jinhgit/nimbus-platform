@@ -213,6 +213,7 @@ cd apps/web && npm run test:e2e
 | 문서 | 용도 |
 |------|------|
 | [README](../../README.md) | 설치 · 아키텍처 · 시연 링크 |
+| [Session Handoff](../status/SESSION-HANDOFF.md) | 컨텍스트 스위칭 · 세션 재개 |
 | [PRD-vs-Implementation](../status/PRD-vs-Implementation.md) | 구현 매트릭스 |
 | [Screenshots](screenshots/README.md) | 화면 캡처 인덱스 |
 | [Free-Only](../architecture/05-Free-Only-Constraints.md) | 비용 제약 |

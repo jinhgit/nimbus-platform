@@ -35,6 +35,7 @@
 | **시연 스크립트** | [docs/demo/DEMO-SCENARIO.md](docs/demo/DEMO-SCENARIO.md) (8~12분 고정) |
 | **스크린샷** | [docs/demo/screenshots/](docs/demo/screenshots/) |
 | **검증** | [docs/demo/VERIFICATION.md](docs/demo/VERIFICATION.md) · `scripts/verify-demo-flow.sh` |
+| **세션 핸드오프** | [docs/status/SESSION-HANDOFF.md](docs/status/SESSION-HANDOFF.md) (context switch) |
 
 > **Backstage 클론이 아니다.**  
 > Catalog + Service Wizard + AI Decision Engine + GitOps 파일 생성 + 감사 로그를  
@@ -720,6 +721,7 @@ node scripts/capture-demo-screenshots.mjs
 | Evolution Map | [docs/architecture/03-Canonical-Decisions.md](docs/architecture/03-Canonical-Decisions.md) |
 | Free-only | [docs/architecture/05-Free-Only-Constraints.md](docs/architecture/05-Free-Only-Constraints.md) |
 | **구현 매트릭스** | [docs/status/PRD-vs-Implementation.md](docs/status/PRD-vs-Implementation.md) |
+| **세션 핸드오프** | [docs/status/SESSION-HANDOFF.md](docs/status/SESSION-HANDOFF.md) |
 | **시연 시나리오** | [docs/demo/DEMO-SCENARIO.md](docs/demo/DEMO-SCENARIO.md) |
 
 ---

@@ -28,12 +28,13 @@
 
 | | |
 |---|---|
-| **Version** | 0.x — TVP(시연 MVP) + 실운영 P0 착수 |
+| **Version** | 0.x — 시연 MVP 완료 · 운영 기능 확장됨 |
 | **Repo** | https://github.com/jinhgit/nimbus-platform |
 | **PRD** | [docs/prd/PRD-MASTER.md](docs/prd/PRD-MASTER.md) |
 | **구현 현황** | [docs/status/PRD-vs-Implementation.md](docs/status/PRD-vs-Implementation.md) |
-| **시연** | [docs/demo/DEMO-SCENARIO.md](docs/demo/DEMO-SCENARIO.md) (10~15분) |
-| **전략** | 로컬 k3d 마감 **보류** · **실운영 풀스택** 우선 |
+| **시연 스크립트** | [docs/demo/DEMO-SCENARIO.md](docs/demo/DEMO-SCENARIO.md) (8~12분 고정) |
+| **스크린샷** | [docs/demo/screenshots/](docs/demo/screenshots/) |
+| **검증** | [docs/demo/VERIFICATION.md](docs/demo/VERIFICATION.md) · `scripts/verify-demo-flow.sh` |
 
 > **Backstage 클론이 아니다.**  
 > Catalog + Service Wizard + AI Decision Engine + GitOps 파일 생성 + 감사 로그를  
@@ -62,8 +63,8 @@
 17. [Backend API 개요](#17-backend-api-개요)
 18. [보안](#18-보안)
 19. [실운영 프로필](#19-실운영-프로필)
-20. [면접 시연 (10~15분)](#20-면접-시연-1015분)
-21. [테스트](#21-테스트)
+20. [면접 시연 (8~12분)](#20-면접-시연-812분)
+21. [테스트 · 검증](#21-테스트--검증)
 22. [개발 로드맵](#22-개발-로드맵)
 23. [Free-only 제약](#23-free-only-제약)
 24. [문서 링크](#24-문서-링크)
@@ -80,18 +81,18 @@
 
 | 영역 | 무엇을 하는가 | 상태 |
 |------|---------------|:----:|
-| Auth / Workspace | Dev Login · GitHub OAuth · JWT · RBAC 골격 | ✅~🔶 |
-| Project / Service | 비즈니스 컨텍스트 · 서비스 단위 배포 대상 | ✅ |
-| Service Catalog | Golden Path 템플릿 시드 · 조회 | ✅ |
-| Service Wizard | 7단계 Self-Service 생성 워크플로 | ✅ |
-| AI Recommendation | Runtime/DB/Cache · Architecture Review | ✅ |
-| GitHub SCM | OAuth / PAT · Repo 생성 · Actions 템플릿 | 🔶 |
-| Provision | 비동기 Job · Helm/TF/Argo 파일 · Progress | 🔶 |
-| Kubernetes | k3d/kind 로컬 배포 경로 (시연용, 로컬 마감 보류) | 🔶 |
-| Monitoring / Logs | Prom/Grafana 링크 · demo 메트릭 · 로그 스트림 | 🔶 |
-| Pipeline | 이미지 빌드 Job 시뮬 · 재실행 | 🔶 |
-| **Audit Log** | mutation 기록 · 조회 API · `/audit` UI | ✅ |
-| Environment Promote / Secrets | 실운영 P1 | ❌ |
+| Auth / Workspace / RBAC | Dev Login · GitHub OAuth · JWT · VIEWER 차단 | ✅ |
+| Project / Service | CRUD · Archive/Clone · Tags | ✅ |
+| Service Catalog | 목록 + Blueprint/Helm/TF 상세 | ✅ |
+| Service Wizard | 7단계 · Saga · Retry | ✅ |
+| AI | Recommend · Review · YAML Explain · Ollama 옵션 | ✅ |
+| GitHub SCM | OAuth/PAT · Repo · Actions thin | 🔶 |
+| Environment · Promote · Secrets | DEV→STAGE→PROD · AES · Rotation · GH Sync thin | ✅ |
+| Argo / GitOps | Application 매니페스트 · Sync thin LIVE/SIM | 🔶~✅ |
+| Pipeline · Incident · Notification | 시뮬 빌드 · 이슈 스캔 · 벨 알림 | ✅ |
+| Audit · Dashboard | mutation 감사 · ops 위젯 | ✅ |
+| Kubernetes (로컬) | k3d/kind 경로 (시연, 로컬 마감 보류 가능) | 🔶 |
+| Monitoring / Logs | Prom/Grafana 링크 · demo 메트릭 | 🔶 |
 
 > **웹 서비스가 목적이 아니다.**  
 > **Platform을 설계·명세·구현·고도화하는 역량**을 증명하는 포트폴리오 제품이다.
@@ -506,17 +507,18 @@ curl -s http://localhost:9090/-/ready   # obs-up 후
 
 | 메뉴 | 경로 | 설명 |
 |------|------|------|
-| 대시보드 | `/dashboard` | 집계 · 진입점 |
-| 프로젝트 | `/projects` | CRUD |
-| 서비스 | `/services` · `/services/[id]` | 목록 · Detail |
-| 카탈로그 | `/catalog` | Golden Path |
-| 서비스 생성 | `/wizard` | 7단계 Wizard |
-| 파이프라인 | `/pipelines` | 빌드 Job |
-| 모니터링 | `/monitoring` | 메트릭 · 외부 링크 |
-| 로그 | `/logs` | 스트림 |
-| **감사 로그** | `/audit` | 실운영 감사 |
-| 워크스페이스 | `/workspaces` | 멤버/팀 |
-| 인프라 | `/infrastructure` | 클러스터 상태 |
+| Dashboard | `/dashboard` | Ops 카운트 · 위젯 |
+| Projects | `/projects` | 생성 · 보관 · 복제 |
+| Services | `/services` · `/services/[id]` | 태그 필터 · Env · Promote · Argo |
+| Catalog | `/catalog` · `/catalog/[id]` | Golden Path 상세 |
+| Create Service | `/wizard` | 7단계 Wizard + Saga |
+| Pipelines | `/pipelines` | 시뮬 빌드 · GH Actions thin |
+| Incidents | `/incidents` | 실패 스캔 · rule 분석 |
+| Monitoring / Logs | `/monitoring` · `/logs` | 메트릭 · 스트림 |
+| Audit | `/audit` | mutation 감사 |
+| Settings | `/settings` | Members · SCM · AI Provider |
+| Infrastructure | `/infrastructure` | 로컬 클러스터 |
+| (global) | ⌘K · 벨 알림 | Command Palette · Notifications |
 | 설정 | `/settings` | GitHub SCM |
 
 ---
@@ -598,43 +600,61 @@ java -jar nimbus-api.jar --spring.profiles.active=prod
 
 ---
 
-## 20. 면접 시연 (10~15분)
+## 20. 면접 시연 (8~12분)
 
-전체 대본: [docs/demo/DEMO-SCENARIO.md](docs/demo/DEMO-SCENARIO.md)
+**고정 대본:** [docs/demo/DEMO-SCENARIO.md](docs/demo/DEMO-SCENARIO.md)  
+**스크린샷:** [docs/demo/screenshots/](docs/demo/screenshots/)  
+**검증 기록:** [docs/demo/VERIFICATION.md](docs/demo/VERIFICATION.md)
 
 | # | 화면 | 말할 포인트 |
 |---|------|-------------|
-| 1 | Login | free-only Dev Login 또는 GitHub OAuth |
-| 2 | Dashboard | Platform Portal 감성 |
-| 3 | Project 생성 | 비즈니스 컨텍스트 |
-| 4 | Catalog → Wizard | Golden Path |
-| 5 | **AI Recommend** | Confidence · Reason (핵심 임팩트) |
-| 6 | Preview | Helm / TF / Actions / Argo 파일 |
-| 7 | Provision Progress | 비동기 Job |
-| 8 | Service Detail | Repo · K8s · Pipeline 연결 |
-| 9 | Monitoring / Logs / Pipelines | 운영 가시성 |
-| 10 | **Audit** | 누가 무엇을 했는지 (실운영 감각) |
-| 11 | 문서 | PRD 축적 + 구현 매트릭스 정직성 |
+| 1 | Login | free-only Dev Login (OAuth 옵션) |
+| 2 | Dashboard | Projects · Env · Failed Saga · **Incident · Notifications** |
+| 3 | Projects | 비즈니스 컨텍스트 · 복제/보관 |
+| 4 | Wizard | Golden Path · AI Recommend · Preview · Saga Deploy |
+| 5 | Service Detail | Env Promote · Secret 로테이션 · Argo thin · Tags |
+| 6 | Audit | mutation 감사 |
+| 7 | Incidents + 벨 | 실패 스캔 · in-app 알림 |
+| 8 | (선택) | Catalog 상세 · VIEWER RBAC · ⌘K |
+
+<p align="center">
+  <img src="docs/demo/screenshots/02-dashboard.png" width="48%" alt="Dashboard"/>
+  <img src="docs/demo/screenshots/07-service-detail.png" width="48%" alt="Service Detail"/>
+</p>
+<p align="center">
+  <img src="docs/demo/screenshots/04-wizard.png" width="48%" alt="Wizard"/>
+  <img src="docs/demo/screenshots/08-audit.png" width="48%" alt="Audit"/>
+</p>
 
 ---
 
-## 21. 테스트
+## 21. 테스트 · 검증
 
 ```bash
-# Backend (권장)
+# Backend
 cd apps/api && ./gradlew test
 # 또는
 make test-api
+
+# OpenAPI 동기화
+bash scripts/check-openapi-sync.sh
+
+# 핵심 데모 플로우 (API 기동 필요)
+bash scripts/verify-demo-flow.sh
+
+# E2E (API :8080 + Web)
+cd apps/web && npm run test:e2e
+
+# 스크린샷 재캡처
+node scripts/capture-demo-screenshots.mjs
 ```
 
 | 영역 | 도구 · 예시 |
 |------|-------------|
-| Auth flow | `AuthFlowIntegrationTest` |
-| Wizard flow | `WizardFlowIntegrationTest` |
-| Audit | `AuditLogIntegrationTest` |
-| Crypto / K8s unit | `TokenCryptoServiceTest`, `LocalKubernetesGatewayTest` |
-
-프론트 E2E / CI workflow 는 로드맵에 포함 (현재 monorepo 내 수동 검증 중심).
+| Auth / Wizard / Audit / Promote | `*IntegrationTest` |
+| Notification / Tags / Argo | `NotificationIntegrationTest`, `ServiceTagsIntegrationTest`, `ArgoSyncIntegrationTest` |
+| E2E | Playwright `platform-smoke` · `ops-features` |
+| OpenAPI | CI `check-openapi-sync.sh` |
 
 ---
 
@@ -644,18 +664,20 @@ make test-api
 
 | Phase | 내용 | 상태 |
 |-------|------|:----:|
-| 0~1 | Monorepo · Auth · Workspace · Project | ✅ |
-| 2 | Catalog · Wizard · AI · Preview | ✅ |
-| 2.x | GitHub SCM · K8s path · Obs · Pipeline | 🔶 |
-| **P0** | Audit · application-prod · 매트릭스 문서 | ✅ |
+| 0~1 | Monorepo · Auth · Workspace · Project · RBAC | ✅ |
+| 2 | Catalog · Wizard · AI · Preview · Saga | ✅ |
+| P0 | Audit · application-prod · 매트릭스 문서 | ✅ |
+| Ops | Environment · Promote · Secrets · Tags · Argo thin · Pipeline · Incident · Notification | ✅ |
+| Demo | 시나리오 고정 · 스크린샷 · `verify-demo-flow.sh` | ✅ |
+| 2.x | GitHub SCM LIVE · K8s LIVE · Obs 풀스택 | 🔶 |
 
-### 다음 (실운영 풀스택)
+### 다음 (선택 고도화)
 
 | 우선순위 | 작업 |
 |----------|------|
-| **P1** | Environment 도메인 · Promote · Variable/Secret · Saga 강화 · ArgoCD 실연동 |
-| **P2** | 실 Docker build · Incident AI · Ollama 기본 경로 · 테스트/OpenAPI/E2E |
-| ⏸ 로컬 | k3d/kind 시연 스크립트 마감 (보류) |
+| **P2** | ArgoCD/K8s LIVE 경로 강화 · 실 Docker build · Incident AI 심화 |
+| **P2** | Ollama 기본 경로 튜닝 · E2E 확대 |
+| ⏸ 로컬 | k3d/kind 시연 스크립트 마감 (보류 가능) |
 | ⏸ v2 | Multi-cloud · FinOps · Mesh · 과금 리소스 자동화 |
 
 로드맵 원본: [PRD v1.5D](docs/prd/PRD-v1.5D-Engineering-Roadmap.md) ·  

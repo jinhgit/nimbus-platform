@@ -1,323 +1,227 @@
-# Nimbus Platform — 최종 시연 시나리오 (Demo)
+# Nimbus Platform — 면접 시연 시나리오 (고정)
 
-**성격:** 포트폴리오·면접 시연 가이드  
-**길이:** 약 10~15분  
-**원칙:** 시연 가치가 높은 MVP 경로만 실제 동작. 과금 클라우드 실생성은 v2.
+**기준일:** 2026-07-30  
+**길이:** 약 **8~12분** (핵심 경로) · 확장 시 15분  
+**원칙:** free-only · 과금 클라우드 실생성 없음 · **코드가 있는 것만 시연**
 
-> **핵심 한 문장 (면접용)**  
-> 개발자가 버튼 한 번만 누르면 GitHub 저장소 생성부터 Kubernetes 배포까지  
-> 자동으로 이루어지는 **Platform Engineering Portal** 을 직접 설계·구현했습니다.
-
----
-
-## 1. 왜 시연이 중요한가
-
-이 프로젝트는 문서·아키텍처만으로도 가치가 있지만,  
-**로그인 → Wizard → AI 추천 → Provision Progress → GitHub/K8s 확인** 을  
-실제로 보여줬을 때 임팩트가 훨씬 커진다.
-
-| 기존 포트폴리오 | Nimbus로 더 보여주는 것 |
-|----------------|-------------------------|
-| Terraform 3-Tier EKS 등 **인프라 구축 능력** | 그 위에 **플랫폼을 만드는 엔지니어** 역량 |
-| “Kubernetes를 사용했습니다” | “개발자 Self-Service Platform을 설계·구현했습니다” |
+> **면접용 한 문장**  
+> 개발자가 Catalog·Wizard·AI 추천으로 서비스를 올리고,  
+> Environment Promote · Secret · Audit · Incident 까지 **Self-Service 운영 포털**로  
+> 이어지는 Platform Engineering 제품을 설계·구현했습니다.
 
 ---
 
-## 2. 최종 시연 플로우 (10~15분)
+## 0. 시연 전 기동 (2분)
 
-### 2.1 로그인
+```bash
+# 터미널 1 — API (H2 local)
+cd apps/api && ./gradlew bootRun --args='--spring.profiles.active=local'
 
-```text
-GitHub 로그인
-    ↓
-Workspace 진입
+# 터미널 2 — Web
+cd apps/web && npm run dev
 ```
 
-- MVP: GitHub OAuth (실연 권장) · 로컬 Dev Login 폴백 가능
-- 로그인 직후 개인/팀 Workspace 컨텍스트 표시
+| 확인 | URL |
+|------|-----|
+| API health | http://localhost:8080/api/v1/health → `UP` |
+| OpenAPI | http://localhost:8080/v3/api-docs |
+| Portal | http://localhost:3000/login |
 
-### 2.2 Dashboard
+**계정:** Dev Login 아무 이름/이메일 (예: `Demo User` / `demo@nimbus.local`)
 
-**Platform Portal** 느낌이 바로 나도록:
+**선택:** Settings에서 GitHub SCM(OAuth/PAT) 연결 시 Repo/Actions LIVE 경로 가능.  
+미연결이어도 **시뮬 프로비저닝**으로 전체 스토리 가능.
 
-| 위젯 | 예시 |
-|------|------|
-| Project 개수 | 1 |
-| Service 개수 | 1 |
-| Kubernetes Cluster 상태 | Healthy |
-| 최근 배포 | payment-api · SUCCESS |
-| 최근 AI 추천 | Architecture / Runtime |
-| CPU / Memory | 클러스터·서비스 요약 |
-| Deployment 상태 | Running / Healthy |
+스크린샷 참고: [`docs/demo/screenshots/`](screenshots/README.md)
 
-### 2.3 Project 생성
+---
+
+## 1. 8분 핵심 스크립트 (고정)
+
+시연은 **아래 순서만** 지킨다. 옆길로 빠지지 않는다.
+
+| # | 화면 | 말할 것 (30초 이내) | 클릭/입력 |
+|---|------|---------------------|-----------|
+| **1** | Login | “로컬 free-only는 Dev Login, 프로덕션은 GitHub OAuth” | Dev Login |
+| **2** | Dashboard | “프로젝트·서비스·Env·Failed Saga·Incident·알림 카운트” | 숫자·위젯 가리키기 |
+| **3** | Projects | “비즈니스 컨텍스트 단위, 보관/복제 지원” | 프로젝트 생성 `Payment Platform` |
+| **4** | Create Service (Wizard) | “Golden Path Self-Service” | service `payment-api` → 템플릿 → AI 추천 → Preview → Deploy |
+| **5** | Provision | “Saga 단계 DB + 보상 로그 + Retry (mutator)” | Progress / Saga 단계 |
+| **6** | Service Detail | “Env DEV→STAGE 승격, Secret AES, Argo thin, Tags” | Environments 탭 강조 |
+| **7** | Promote (선택 1분) | “config 복사 + GitOps branch meta / PR 시도” | DEV → STAGE 승격 |
+| **8** | Audit | “mutation 전부 감사” | PROMOTE / CREATE 필터 |
+| **9** | Incidents + Bell | “실패 Saga/Pipeline 스캔 → 알림” | 이슈 스캔 · 벨 아이콘 |
+| **10** | 마무리 Dashboard | “플랫폼 한 화면으로 운영 상태 요약” | Open Incidents 등 |
+
+**확장 옵션 (시간 있을 때만 1개)**
+
+- Catalog 상세 (Blueprint/Helm 탭)
+- VIEWER 초대 → Promote 버튼 숨김 (RBAC)
+- ⌘K Command Palette
+- Settings · AI Provider (`rule` / `ollama`)
+
+---
+
+## 2. 화면별 상세 (대본)
+
+### 2.1 Login → Dashboard
 
 ```text
-Create Project
-    ↓
-Payment Platform
-    ↓
-생성 완료
+Login (Dev) → Dashboard
 ```
 
-- Project = 비즈니스 컨텍스트 (여러 Service를 담는 단위)
+- 헤더 벨: Notifications (읽지 않음 카운트)
+- Stat: Projects / Services / Environments / Ready / Failed Sagas / **Open Incidents** / **Failed Pipelines** / Notifications / Cluster
 
-### 2.4 Service Wizard (메인)
+### 2.2 Project
+
+```text
+Projects → 이름 Payment Platform → 만들기
+```
+
+- 이후 **복제 / 보관 / 복원**은 “메타데이터 운영”으로 한 줄만 언급 가능
+
+### 2.3 Wizard (메인 스토리)
 
 ```text
 Create Service
-    ↓
-Service Name: payment-api
-    ↓
-Runtime: Spring Boot
-    ↓
-Template: REST API
-    ↓
-Environment: Production
-    ↓
-AI Recommendation 클릭
+  → 서비스 정보 (payment-api, Project 선택)
+  → 템플릿 (Spring Boot REST 등)
+  → 인프라 (Environment)
+  → AI 리뷰 (Recommend)
+  → 미리보기 (YAML/Helm/Argo…)
+  → 프로비저닝 (Execute)
+  → 완료 → 서비스 상세
 ```
 
-### 2.5 AI Recommendation
+**말할 포인트**
 
-면접관 반응이 좋은 핵심 화면.
+- AI는 Chatbot이 아니라 **Decision Engine** (confidence / reason / rule-engine, Ollama 옵션)
+- Preview = Zero-YAML 플랫폼이 대신 만드는 산출물
+- Provision = **Saga** (step · compensate · retry)
 
-```text
-AI Recommendation
-──────────────────────
-Runtime        Spring Boot        Confidence 97%
-Database       PostgreSQL
-Cache          Redis
-Deployment     Replica 3 · HPA Enabled
+### 2.4 Service Detail
 
-Reason
-  트래픽이 증가할 가능성이 높습니다.
-```
+강조 순서:
 
-- Chatbot이 아니라 **Platform Engineer Decision Engine** 톤
-- Confidence · Reason · 적용 가능한 추천 값
+1. **Environments** — DEV / STAGE / PRODUCTION  
+2. **Variables / Secrets** — AES 마스킹 · 로테이션 · (mutator) Reveal  
+3. **Promote** — DEV→STAGE, GitOps mode 표시  
+4. **ArgoCD Sync** — LIVE 또는 SIMULATED 매니페스트  
+5. **Tags** — `payment, critical` 저장 후 Services 필터  
+6. **YAML Explain** — rule-engine 하이라이트  
 
-### 2.6 Preview
+### 2.5 Audit / Incidents / Pipelines
 
-AI/Blueprint 기준으로 생성될 산출물 전부 미리보기:
-
-```text
-Blueprint
-    ↓
-Repository Structure
-    ↓
-Helm
-    ↓
-Terraform Variables
-    ↓
-GitHub Actions
-    ↓
-YAML (Deployment 등)
-```
-
-### 2.7 Provision 시작 (실시간 Progress)
-
-```text
-Deploy 클릭
-```
-
-진행 표시 예:
-
-```text
-Repository 생성      ███████
-GitHub Actions 생성  █████
-Helm 생성            ███
-Terraform 생성       ████
-ArgoCD 생성          ██
-Deploy               █
-```
-
-- 비동기 Job + Step Progress (WebSocket/SSE 또는 폴링)
-- Saga 개념: 실패 시 보상 가능 설계
-
-### 2.8 GitHub 확인
-
-자동 생성된 저장소 `payment-api`:
-
-```text
-README
-src/
-helm/
-terraform/
-.github/
-```
-
-### 2.9 GitHub Actions
-
-Actions 탭에서 파이프라인:
-
-```text
-Build → Test → Docker → Success
-```
-
-(MVP: free tier / 로컬 생성 후 실행 범위 내)
-
-### 2.10 Kubernetes (Portal)
-
-```text
-Running · Replica · Pod · CPU · Memory
-```
-
-- 클러스터: **k3d / kind** (free-only)
-
-### 2.11 Monitoring
-
-```text
-Grafana · Prometheus 연결
-    ↓
-CPU · Memory · Request Dashboard
-```
-
-### 2.12 Logs
-
-```text
-payment-api
-INFO  Started ...
-```
-
-실시간 로그 스트림 (또는 최근 로그 뷰)
-
-### 2.13 AI Architecture Review
-
-```text
-Analyze
-    ↓
-Architecture Score  92
-추천
-  · Redis 추가
-  · HPA 활성화
-  · latest 태그 금지
-```
-
-### 2.14 완료 — Dashboard 재확인
-
-```text
-Project      1
-Service      1
-Deployment   Healthy
-GitHub       Connected
-Cluster      Healthy
-```
+| 메뉴 | 시연 |
+|------|------|
+| Audit | `CREATE_PROJECT`, `EXECUTE_WIZARD`, `PROMOTE_ENVIRONMENT` |
+| Incidents | 이슈 스캔 → OPEN 목록 · rule 분석 |
+| Pipelines | 로컬 시뮬 빌드 + GitHub Actions run (SIMULATED/LIVE) |
+| Catalog | 카드 → Blueprint/Helm 상세 |
 
 ---
 
-## 3. MVP에서 **실제로 동작**해야 하는 기능
+## 3. 실제로 동작하는 것 (DoD)
 
-| 기능 | MVP |
-|------|:---:|
-| 로그인 (GitHub / Dev Login) | ✅ |
-| Dashboard | ✅ |
-| Project 생성 | ✅ |
-| Service 생성 (Wizard) | ✅ |
-| AI 추천 | ✅ |
-| GitHub Repository 생성 | ✅ |
-| GitHub Actions 생성 | ✅ |
-| Helm Chart 생성 | ✅ |
-| Terraform 파일 생성 | ✅ |
-| ArgoCD Manifest 생성 | ✅ |
-| Kubernetes (k3d/kind) 배포 | ✅ |
-| 진행률 표시 | ✅ |
-| 로그 보기 | ✅ |
-| AI Architecture Review | ✅ |
-| Monitoring (로컬 Prom/Grafana 링크·요약) | ✅ |
-
----
-
-## 4. MVP에서 **제외** (v2)
-
-| 제외 항목 | 이유 |
-|-----------|------|
-| AWS EKS 실제 생성 | 과금 · free-only 위반 |
-| Route53 자동 연결 | 과금 |
-| ACM 인증서 발급 | 과금 |
-| ALB 생성 | 과금 |
-| RDS 생성 | 과금 |
-| Multi Cluster / Multi Cloud | 범위 과다 |
-| Vault 연동 (프로덕션) | v2 |
-| Kafka 기반 대규모 Workflow | v2 (MVP: Async/Queue 수준) |
-
-구현 구조(Adapter, Provider 인터페이스)는 남겨 두고 **기본 경로는 로컬·OSS·무료 티어**만 탄다.  
-→ [05-Free-Only-Constraints](../architecture/05-Free-Only-Constraints.md)
+| 기능 | 시연 | 비고 |
+|------|:----:|------|
+| Dev Login / me · canMutate | ✅ | |
+| Dashboard overview API 위젯 | ✅ | |
+| Project CRUD · Archive · Clone | ✅ | |
+| Catalog 목록 + 상세 | ✅ | |
+| Wizard 7단계 + Saga | ✅ | SCM 없으면 sim |
+| AI Recommend / Review / YAML Explain | ✅ | rule 기본 |
+| Environment · Variable · Secret · Rotate | ✅ | |
+| Promote + GitOps thin | ✅ | |
+| Argo sync thin | ✅ | |
+| Pipeline sim + GH Actions thin | ✅ | |
+| Audit | ✅ | |
+| Incident scan/ACK/resolve | ✅ | |
+| Notifications bell | ✅ | |
+| Service tags | ✅ | |
+| RBAC VIEWER 차단 | ✅ | Settings Members |
+| ⌘K Palette | ✅ | |
+| OpenAPI + CI + Playwright | ✅ | |
 
 ---
 
-## 5. 시연 인프라 추천 구성
+## 4. 시연에서 빼는 것
 
-| 레이어 | 추천 |
-|--------|------|
-| 코드 공개 | GitHub public repo |
-| Frontend | Vercel (또는 로컬) |
-| Backend | Render / 개인 서버 / 로컬 Spring Boot |
-| K8s 시연 | **로컬 k3d 또는 kind** (면접장 노트북) |
-| AI | **Ollama 로컬** (유료 API 불필요) |
-| GitHub | Free OAuth App + Free Actions 한도 주의 |
+| 항목 | 이유 |
+|------|------|
+| AWS EKS / RDS / ALB 실생성 | 과금 · free-only |
+| “항상 LIVE GitHub/K8s” 주장 | 미연결 시 SIMULATED 정직하게 말하기 |
+| Multi-cluster / Vault Cloud | v2 |
+| 긴 이론 강의 | 8분은 클릭 스토리 중심 |
 
-이 조합이면 면접장에서:
+**Fallback 멘트**
 
-```text
-로그인 → 서비스 생성 → AI 추천 → GitHub 저장소 생성
-→ Kubernetes 배포 진행 상황 확인
+- GitHub rate limit / 미연결 → “Adapter는 있고 시연은 free-only 시뮬 경로”  
+- k8s 없음 → “배포 상태 SIMULATED, 매니페스트·Saga는 동일”  
+- Ollama 없음 → “기본 rule-engine, Settings에서 provider 상태 확인”
+
+---
+
+## 5. 5분 초압축 버전
+
+시간이 없으면 **이것만**:
+
+1. Login  
+2. Dashboard 숫자  
+3. Project 생성  
+4. Wizard → Deploy 완료  
+5. Service Detail Env + Promote 한 번  
+6. Audit 한 줄  
+
+---
+
+## 6. 시연 직전 체크리스트
+
+- [ ] API `:8080` health UP  
+- [ ] Web `:3000` login 화면  
+- [ ] Dev Login 성공 → Dashboard  
+- [ ] Project 1개 생성  
+- [ ] Wizard 끝까지 (또는 기존 READY 서비스 1개)  
+- [ ] Service Detail Environments 표시  
+- [ ] Audit에 최근 mutation  
+- [ ] 벨 아이콘 열림  
+- [ ] (선택) VIEWER 멤버 초대 데모 준비  
+
+자동화 검증:
+
+```bash
+# 핵심 데모 플로우 (API :8080 기동 필요) — 최우선
+bash scripts/verify-demo-flow.sh
+
+# API 단위·통합
+cd apps/api && ./gradlew test
+
+# OpenAPI 동기화
+bash scripts/check-openapi-sync.sh
+
+# E2E (API 기동 필요)
+cd apps/web && npm run test:e2e
 ```
 
-까지 자연스럽게 이어진다.
+검증 결과 기록: [`docs/demo/VERIFICATION.md`](VERIFICATION.md)
 
 ---
 
-## 6. 시연 체크리스트 (DoD)
-
-시연 직전 확인:
-
-- [ ] GitHub OAuth (또는 Dev Login) 동작
-- [ ] Create Project → Create Service Wizard 끝까지
-- [ ] AI Recommendation UI (score/confidence/reason)
-- [ ] Preview (Blueprint / Helm / TF / Actions / YAML)
-- [ ] Provision Progress 실시간 갱신
-- [ ] GitHub에 `payment-api` 구조 확인 가능
-- [ ] k3d/kind에 Pod Running (또는 명확한 상태 표시)
-- [ ] Dashboard 요약 숫자 갱신
-- [ ] Architecture Review 한 번 실행
-- [ ] 장애 시 Fallback 문구 준비 (AI timeout, GitHub rate limit 등)
-
----
-
-## 7. 구현 우선순위 (이 시연을 기준으로)
-
-시연 시나리오를 **역산**한 구현 순서:
-
-1. Auth (GitHub) + Workspace + Project ✅ (Phase 1 진행 중/완료 영역)
-2. Service 엔티티 + Catalog Template
-3. Service Wizard (UI + 상태 저장 + Validate/Preview)
-4. AI Recommendation (Ollama + Context + Confidence)
-5. Provision Job (Saga Step + Progress API/WS)
-6. GitHub Adapter (Repo · Actions · 구조 커밋)
-7. Helm / TF / Argo Manifest 생성
-8. k3d/kind 배포 + 상태 조회
-9. Dashboard 위젯 · Logs · Monitoring 링크
-10. AI Architecture Review
-
----
-
-## 8. 관련 문서
+## 7. 관련 문서
 
 | 문서 | 용도 |
 |------|------|
-| [PRD-MASTER](../prd/PRD-MASTER.md) | 제품 한 장 요약 |
-| [Evolution Map](../architecture/03-Canonical-Decisions.md) | 설계 누적 |
-| [Free-Only](../architecture/05-Free-Only-Constraints.md) | 과금 없는 실행 경로 |
-| [API-04-01 Wizard](../api/API-04-01-Service-Wizard-Core.md) | Wizard 스펙 |
-| [API-04-02 AI](../api/API-04-02-AI-Recommendation.md) | AI Decision Engine |
-| [API-04-03 Provision](../api/API-04-03-Provisioning-Orchestration.md) | Saga / Progress |
-| [PRD v1.5D Roadmap](../prd/PRD-v1.5D-Engineering-Roadmap.md) | 일정·KPI |
+| [README](../../README.md) | 설치 · 아키텍처 · 시연 링크 |
+| [PRD-vs-Implementation](../status/PRD-vs-Implementation.md) | 구현 매트릭스 |
+| [Screenshots](screenshots/README.md) | 화면 캡처 인덱스 |
+| [Free-Only](../architecture/05-Free-Only-Constraints.md) | 비용 제약 |
+| [OpenAPI](../api/openapi.yaml) | REST 스냅샷 |
 
 ---
 
-## 9. 메모
+## 8. 유지 규칙
 
-- 시연 스크립트는 **삭제하지 않고 유지**한다. 구현 범위의 나침반이다.
-- UI 카피·더미 데이터보다 **Wizard → AI → Progress → GitHub** 한 줄 연결이 최우선이다.
-- free-only 원칙과 충돌하는 시연 스텝(EKS 실생성 등)은 넣지 않는다.
+1. 이 문서는 **구현이 끝난 경로만** 시연 스텝에 넣는다.  
+2. 새 기능 시연에 넣을 때는 **표 §3 DoD** 와 **§1 스크립트 표** 를 같이 수정한다.  
+3. SIMULATED 는 숨기지 않는다 — 플랫폼 설계 포인트로 말한다.

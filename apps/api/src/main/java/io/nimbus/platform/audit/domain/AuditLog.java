@@ -44,7 +44,7 @@ public class AuditLog {
     private String actorName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 48)
+    @Column(nullable = false, length = 48, columnDefinition = "varchar(48)")
     private AuditAction action;
 
     @Column(name = "resource_type", length = 64)

@@ -2,7 +2,8 @@
 
 **목적:** 컨텍스트 스위칭 / 새 세션 재개용.  
 **최종 갱신:** 2026-07-30  
-**HEAD (push 완료):** `6397c34` on `main`  
+**HEAD (push 완료):** `4285466` on `main` (핸드오프 문서 포함)  
+**데모 freeze 커밋:** `6397c34`  
 **Remote:** https://github.com/jinhgit/nimbus-platform (push 시 리다이렉트 메시지 가능; origin URL은 `nimbus-platform-prd.git` 일 수 있음)
 
 > 이 문서는 “어디까지 했고, 다음에 무엇을 보면 되는지”만 담는다.  
@@ -41,6 +42,7 @@ AI-native IDP 포트폴리오 제품.
 | `cb5d57c` | Secret rotation · Catalog detail · Project archive/clone · Argo sync thin |
 | `1547bea` | Notifications · Dashboard ops · Service tags · E2E ops |
 | **`6397c34`** | **Demo freeze: 시나리오 · 스크린샷 11장 · verify script · VERIFICATION** |
+| **`4285466`** | **Session handoff 문서 (context switch)** |
 
 그 이전: Auth/Workspace/Project, Catalog/Wizard/AI, Audit P0, YAML Explain, Deployment history 등.
 
@@ -249,8 +251,8 @@ docs/status/SESSION-HANDOFF.md 읽고 상태 확인한 뒤
 
 ## 14. Working tree 메모 (이 문서 작성 시점)
 
-- 데모 패키징 커밋 `6397c34` **push 완료**
-- dirty 없음 가정 (이 핸드오프 파일 추가 후 1커밋 필요할 수 있음)
+- 데모 패키징 `6397c34` + 핸드오프 `4285466` **push 완료**
+- 이 문서 HEAD 필드를 갱신한 뒤 로컬 dirty 가 남을 수 있음 → `docs` 만 추가 커밋해도 됨
 - 로컬 API가 떠 있을 수 있음 (`:8080`) — 재기동 시 H2 파일 잠금 주의
 
 ---

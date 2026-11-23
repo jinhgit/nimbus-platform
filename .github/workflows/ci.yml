@@ -49,7 +49,7 @@ jobs:
 
   e2e:
     name: Playwright smoke
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [api-test, web-typecheck, openapi]
     steps:
       - uses: actions/checkout@v4

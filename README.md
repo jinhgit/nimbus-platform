@@ -129,10 +129,10 @@ Nimbus는 그 경로를 **Catalog + Wizard + AI + Provision** 으로 줄인다.
 | 운영 | 로그 없음 | **Audit · Monitoring · Pipeline** |
 | 성장 | 일회성 데모 | **PRD 축적 → TVP → 실운영 풀스택** |
 
-### 면접용 한 문장
+### 한 줄 소개
 
 > 개발자가 버튼 한 번만 누르면 GitHub 저장소 생성부터 Kubernetes 배포 흐름까지  
-> 자동으로 이루어지는 **Platform Engineering Portal** 을 직접 설계·구현했습니다.
+> 자동으로 이루어지는 **Platform Engineering Portal** 입니다.
 
 ---
 
@@ -601,13 +601,13 @@ java -jar nimbus-api.jar --spring.profiles.active=prod
 
 ---
 
-## 20. 면접 시연 (8~12분)
+## 20. 시연
 
 **고정 대본:** [docs/demo/DEMO-SCENARIO.md](docs/demo/DEMO-SCENARIO.md)  
 **스크린샷:** [docs/demo/screenshots/](docs/demo/screenshots/)  
 **검증 기록:** [docs/demo/VERIFICATION.md](docs/demo/VERIFICATION.md)
 
-| # | 화면 | 말할 포인트 |
+| # | 화면 |
 |---|------|-------------|
 | 1 | Login | free-only Dev Login (OAuth 옵션) |
 | 2 | Dashboard | Projects · Env · Failed Saga · **Incident · Notifications** |
